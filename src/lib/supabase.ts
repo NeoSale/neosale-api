@@ -1,13 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseUrl = process.env.SUPABASE_URL!
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY!
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables')
+if (!supabaseUrl || !supabaseAnonKey || 
+    supabaseUrl.includes('your-project') || 
+    supabaseAnonKey.includes('your_supabase')) {
+  console.error('❌ Supabase Configuration Error:');
+  console.error('Please configure real Supabase credentials in your .env file');
+  console.error('Current values:');
+  console.error(`  SUPABASE_URL: ${supabaseUrl || 'undefined'}`);
+  console.error(`  SUPABASE_ANON_KEY: ${supabaseAnonKey ? '[SET]' : 'undefined'}`);
+  console.error('');
+  console.error('To fix this:');
+  console.error('1. Go to https://supabase.com/dashboard');
+  console.error('2. Select your project (or create one)');
+  console.error('3. Go to Settings > API');
+  console.error('4. Copy the URL and anon key to your .env file');
+  console.error('5. Replace the placeholder values with real ones');
+  throw new Error('Missing or invalid Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
