@@ -1,0 +1,79 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+// Carregar variáveis de ambiente PRIMEIRO
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
+console.log('🚀 Iniciando servidor...');
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const morgan_1 = __importDefault(require("morgan"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_1 = require("./lib/swagger");
+const leadRoutes_1 = require("./routes/leadRoutes");
+const controleEnviosRoutes_1 = require("./routes/controleEnviosRoutes");
+const errorHandler_1 = require("./middleware/errorHandler");
+const app = (0, express_1.default)();
+const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+// Middleware de segurança
+app.use((0, helmet_1.default)());
+// CORS
+app.use((0, cors_1.default)({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+}));
+// Logging
+app.use((0, morgan_1.default)('combined'));
+// Parse JSON
+app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.urlencoded({ extended: true }));
+// Swagger configurado em ./lib/swagger.ts
+// Rota raiz com informações da API
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Bem-vindo à NeoSale API! 🚀',
+        version: '1.0.0',
+        endpoints: {
+            documentation: `${BASE_URL}/api-docs`,
+            health: `${BASE_URL}/health`,
+            leads: `${BASE_URL}/api/leads`,
+            controleEnvios: `${BASE_URL}/api/controle-envios`
+        },
+        description: 'API para gerenciamento de leads do sistema NeoSale'
+    });
+});
+// Rotas
+app.use('/api/leads', leadRoutes_1.leadRoutes);
+app.use('/api/controle-envios', controleEnviosRoutes_1.controleEnviosRoutes);
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));
+// Rota de health check
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+// Middleware de tratamento de erros
+app.use(errorHandler_1.errorHandler);
+// Rota 404
+app.use('*', (req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'Rota não encontrada',
+        path: req.originalUrl
+    });
+});
+// Iniciar servidor
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`);
+    console.log(`❤️  Health check em ${BASE_URL}/health`);
+});
+exports.default = app;
+//# sourceMappingURL=server.js.map

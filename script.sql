@@ -80,3 +80,11 @@ insert into leads (nome, telefone, email, empresa, cargo, origem_id, status_agen
   ('Fernanda Alves', '(11) 92222-0123', 'fernanda.alves@gmail.com', 'WebSolutions', 'Product Manager', (select id from origens_leads where nome = 'inbound'), false, (select id from mensagem_status limit 1 offset 7), (select id from etapas_funil where nome = 'qualificacao'), (select id from status_negociacao where nome = 'em_aberto'), '2024-01-22 15:40:00'),
   ('Marcos Pereira', '(11) 91111-4567', 'marcos.pereira@hotmail.com', 'TechVision', 'CEO', (select id from origens_leads where nome = 'inbound'), true, (select id from mensagem_status limit 1 offset 8), (select id from etapas_funil where nome = 'fechamento'), (select id from status_negociacao where nome = 'fechado'), '2024-01-23 08:15:00'),
   ('Juliana Souza', '(11) 90000-8901', 'juliana.souza@yahoo.com.br', 'DevOps Inc', 'Engenheira DevOps', (select id from origens_leads where nome = 'outbound'), false, (select id from mensagem_status limit 1 offset 9), (select id from etapas_funil where nome = 'lead'), (select id from status_negociacao where nome = 'perdido'), '2024-01-24 12:50:00');
+
+create table controle_envios_diarios (
+  id uuid primary key default gen_random_uuid(),
+  data date not null unique, -- uma linha por dia
+  quantidade_enviada integer default 0,
+  limite_diario integer not null,
+  created_at timestamp default now()
+);

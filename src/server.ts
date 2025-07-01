@@ -1,18 +1,22 @@
 // Carregar variáveis de ambiente PRIMEIRO
 import dotenv from 'dotenv'
-dotenv.config({ path: '.env.local' })
+dotenv.config()
+
+console.log('🚀 Iniciando servidor...')
 
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import swaggerUi from 'swagger-ui-express'
-import swaggerJsdoc from 'swagger-jsdoc'
+import { swaggerSpec } from './lib/swagger'
 import { leadRoutes } from './routes/leadRoutes'
+import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 const app = express()
 const PORT = process.env.PORT || 3000
+const BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`
 
 // Middleware de segurança
 app.use(helmet())
@@ -30,26 +34,7 @@ app.use(morgan('combined'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
-// Configuração do Swagger
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'NeoSale API',
-      version: '1.0.0',
-      description: 'API para gerenciamento de leads do NeoSale'
-    },
-    servers: [
-      {
-        url: `http://localhost:${PORT}`,
-        description: 'Servidor de desenvolvimento'
-      }
-    ]
-  },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts']
-}
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions)
+// Swagger configurado em ./lib/swagger.ts
 
 // Rota raiz com informações da API
 app.get('/', (req, res) => {
@@ -58,9 +43,10 @@ app.get('/', (req, res) => {
     message: 'Bem-vindo à NeoSale API! 🚀',
     version: '1.0.0',
     endpoints: {
-      documentation: `http://localhost:${PORT}/api-docs`,
-      health: `http://localhost:${PORT}/health`,
-      leads: `http://localhost:${PORT}/api/leads`
+      documentation: `${BASE_URL}/api-docs`,
+      health: `${BASE_URL}/health`,
+      leads: `${BASE_URL}/api/leads`,
+      controleEnvios: `${BASE_URL}/api/controle-envios`
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
   })
@@ -68,13 +54,19 @@ app.get('/', (req, res) => {
 
 // Rotas
 app.use('/api/leads', leadRoutes)
+app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // Rota de health check
 app.get('/health', (req, res) => {
+  // Usar fuso horário do Brasil para timestamp
+  const agora = new Date()
+  const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"})
+  
   res.json({ 
     status: 'OK', 
-    timestamp: new Date().toISOString(),
+    timestamp: brasilTime,
+    timezone: 'America/Sao_Paulo',
     uptime: process.uptime()
   })
 })
@@ -94,8 +86,8 @@ app.use('*', (req, res) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
-  console.log(`📚 Documentação disponível em http://localhost:${PORT}/api-docs`)
-  console.log(`❤️  Health check em http://localhost:${PORT}/health`)
+  console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
+  console.log(`❤️  Health check em ${BASE_URL}/health`)
 })
 
 export default app

@@ -1,8 +1,10 @@
-import { Router } from 'express'
-import { LeadController } from '../controllers/leadController'
-
-const router = Router()
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.leadRoutes = void 0;
+const express_1 = require("express");
+const leadController_1 = require("../controllers/leadController");
+const router = (0, express_1.Router)();
+exports.leadRoutes = router;
 /**
  * @swagger
  * components:
@@ -38,7 +40,6 @@ const router = Router()
  *         hasPrev:
  *           type: boolean
  */
-
 /**
  * @swagger
  * /api/leads:
@@ -62,8 +63,7 @@ const router = Router()
  *                 message:
  *                   type: string
  */
-router.get('/', LeadController.listarLeads)
-
+router.get('/', leadController_1.LeadController.listarLeads);
 /**
  * @swagger
  * /api/leads/paginated:
@@ -108,8 +108,7 @@ router.get('/', LeadController.listarLeads)
  *                 message:
  *                   type: string
  */
-router.get('/paginated', LeadController.listarLeadsPaginados)
-
+router.get('/paginated', leadController_1.LeadController.listarLeadsPaginados);
 /**
  * @swagger
  * /api/leads/stats:
@@ -151,8 +150,7 @@ router.get('/paginated', LeadController.listarLeadsPaginados)
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/stats', LeadController.obterEstatisticas)
-
+router.get('/stats', leadController_1.LeadController.obterEstatisticas);
 /**
  * @swagger
  * /api/leads/import:
@@ -181,8 +179,7 @@ router.get('/stats', LeadController.obterEstatisticas)
  *       201:
  *         description: Leads importados com sucesso
  */
-router.post('/import', LeadController.importLeads)
-
+router.post('/import', leadController_1.LeadController.importLeads);
 /**
  * @swagger
  * /api/leads/bulk:
@@ -244,8 +241,7 @@ router.post('/import', LeadController.importLeads)
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/bulk', LeadController.bulkImportLeads)
-
+router.post('/bulk', leadController_1.LeadController.bulkImportLeads);
 /**
  * @swagger
  * /api/leads/import/info:
@@ -256,8 +252,7 @@ router.post('/bulk', LeadController.bulkImportLeads)
  *       200:
  *         description: Informações de importação
  */
-router.get('/import/info', LeadController.getImportInfo)
-
+router.get('/import/info', leadController_1.LeadController.getImportInfo);
 /**
  * @swagger
  * /api/leads/{id}/agendar:
@@ -287,8 +282,7 @@ router.get('/import/info', LeadController.getImportInfo)
  *       200:
  *         description: Lead agendado com sucesso
  */
-router.post('/:id/agendar', LeadController.agendarLead)
-
+router.post('/:id/agendar', leadController_1.LeadController.agendarLead);
 /**
  * @swagger
  * /api/leads/{id}/mensagem:
@@ -318,8 +312,7 @@ router.post('/:id/agendar', LeadController.agendarLead)
  *       200:
  *         description: Mensagem enviada com sucesso
  */
-router.post('/:id/mensagem', LeadController.enviarMensagem)
-
+router.post('/:id/mensagem', leadController_1.LeadController.enviarMensagem);
 /**
  * @swagger
  * /api/leads/{id}/etapa:
@@ -347,8 +340,7 @@ router.post('/:id/mensagem', LeadController.enviarMensagem)
  *       200:
  *         description: Etapa atualizada com sucesso
  */
-router.put('/:id/etapa', LeadController.atualizarEtapa)
-
+router.put('/:id/etapa', leadController_1.LeadController.atualizarEtapa);
 /**
  * @swagger
  * /api/leads/{id}/status:
@@ -376,8 +368,7 @@ router.put('/:id/etapa', LeadController.atualizarEtapa)
  *       200:
  *         description: Status atualizado com sucesso
  */
-router.put('/:id/status', LeadController.atualizarStatus)
-
+router.put('/:id/status', leadController_1.LeadController.atualizarStatus);
 /**
  * @swagger
  * /api/leads/{id}:
@@ -449,8 +440,7 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *       500:
  *         description: Erro interno do servidor
  */
-router.put('/:id', LeadController.atualizarLead)
-
+router.put('/:id', leadController_1.LeadController.atualizarLead);
 /**
  * @swagger
  * /api/leads/{id}:
@@ -482,8 +472,7 @@ router.put('/:id', LeadController.atualizarLead)
  *       500:
  *         description: Erro interno do servidor
  */
-router.delete('/:id', LeadController.excluirLead)
-
+router.delete('/:id', leadController_1.LeadController.excluirLead);
 /**
  * @swagger
  * /api/leads/{id}/mensagem:
@@ -544,6 +533,5 @@ router.delete('/:id', LeadController.excluirLead)
  *       500:
  *         description: Erro interno do servidor
  */
-router.put('/:id/mensagem', LeadController.atualizarMensagem)
-
-export { router as leadRoutes }
+router.put('/:id/mensagem', leadController_1.LeadController.atualizarMensagem);
+//# sourceMappingURL=leadRoutes.js.map

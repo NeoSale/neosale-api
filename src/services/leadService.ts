@@ -1,8 +1,16 @@
 import { supabase } from '../lib/supabase'
-import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput } from '../lib/validators'
+import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, AtualizarMensagemInput } from '../lib/validators'
 export class LeadService {
+  // Verificar se Supabase está configurado
+  private static checkSupabaseConnection() {
+    if (!supabase) {
+      throw new Error('Supabase não está configurado. Configure as credenciais no arquivo .env');
+    }
+  }
+
   // Importar leads
   static async importLeads(data: ImportLeadsInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação de leads:', data.leads.length, 'leads')
     
     const results = []
@@ -10,7 +18,7 @@ export class LeadService {
     for (const leadData of data.leads) {
       try {
         // Criar mensagem_status primeiro
-        const { data: mensagemStatus, error: mensagemError } = await supabase
+        const { data: mensagemStatus, error: mensagemError } = await supabase!
           .from('mensagem_status')
           .insert({})
           .select()
@@ -21,8 +29,8 @@ export class LeadService {
           throw mensagemError
         }
         
-        // Criar lead com referência ao mensagem_status
-        const { data: lead, error: leadError } = await supabase
+        // Criar lead com referência ao mensagem_status// Inserir lead
+        const { data: lead, error: leadError } = await supabase!
           .from('leads')
           .insert({
             nome: leadData.nome,
@@ -55,10 +63,11 @@ export class LeadService {
 
   // Importar leads em lote (bulk) sem origem_id
   static async bulkImportLeads(data: BulkLeadsInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads')
     
     // Buscar a origem 'outbound'
-    const { data: origens, error: origemError } = await supabase
+    const { data: origens, error: origemError } = await supabase!
       .from('origens_leads')
       .select('id')
       .eq('nome', 'outbound')
@@ -74,7 +83,7 @@ export class LeadService {
     for (const leadData of data.leads) {
       try {
         // Criar mensagem_status primeiro
-        const { data: mensagemStatus, error: mensagemError } = await supabase
+        const { data: mensagemStatus, error: mensagemError } = await supabase!
           .from('mensagem_status')
           .insert({})
           .select()
@@ -86,7 +95,7 @@ export class LeadService {
         }
         
         // Criar lead com referência ao mensagem_status e origem outbound
-        const { data: lead, error: leadError } = await supabase
+        const { data: lead, error: leadError } = await supabase!
           .from('leads')
           .insert({
             nome: leadData.nome,
@@ -119,6 +128,7 @@ export class LeadService {
   
   // Agendar lead
   static async agendarLead(id: string, data: AgendamentoInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Agendando lead:', id)
     
     const updateData: any = {
@@ -129,7 +139,7 @@ export class LeadService {
       updateData.agendado_em = data.agendado_em
     }
     
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await supabase!
       .from('leads')
       .update(updateData)
       .eq('id', id)
@@ -147,10 +157,11 @@ export class LeadService {
   
   // Enviar mensagem
   static async enviarMensagem(id: string, data: MensagemInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Enviando mensagem para lead:', id, 'tipo:', data.tipo_mensagem)
     
     // Buscar o lead para obter o mensagem_status_id
-    const { data: lead, error: leadError } = await supabase
+    const { data: lead, error: leadError } = await supabase!
       .from('leads')
       .select('mensagem_status_id')
       .eq('id', id)
@@ -164,9 +175,12 @@ export class LeadService {
     // Atualizar mensagem_status
     const updateData: any = {}
     updateData[`${data.tipo_mensagem}_enviada`] = true
-    updateData[`${data.tipo_mensagem}_data`] = new Date().toISOString()
+    // Usar fuso horário do Brasil para registrar data/hora
+    const agora = new Date()
+    const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"}).replace(' ', 'T') + '.000Z'
+    updateData[`${data.tipo_mensagem}_data`] = brasilTime
     
-    const { data: mensagemStatus, error: mensagemError } = await supabase
+    const { data: mensagemStatus, error: mensagemError } = await supabase!
       .from('mensagem_status')
       .update(updateData)
       .eq('id', lead.mensagem_status_id)
@@ -181,12 +195,64 @@ export class LeadService {
     console.log('✅ Mensagem enviada com sucesso:', data.tipo_mensagem)
     return mensagemStatus
   }
+
+  // Atualizar status de mensagem enviada
+  static async atualizarMensagem(id: string, data: AtualizarMensagemInput) {
+    LeadService.checkSupabaseConnection();
+    console.log('🔄 Atualizando status de mensagem do lead:', id, 'tipo:', data.tipo_mensagem)
+    
+    // Buscar o lead para obter o mensagem_status_id
+    const { data: lead, error: leadError } = await supabase!
+      .from('leads')
+      .select('mensagem_status_id')
+      .eq('id', id)
+      .single()
+    
+    if (leadError) {
+      console.error('❌ Erro ao buscar lead:', leadError)
+      throw leadError
+    }
+    
+    // Preparar dados para atualização
+    const updateData: any = {}
+    updateData[`${data.tipo_mensagem}_enviada`] = data.enviada
+    
+    // Se data foi fornecida, usar ela; senão usar data atual se enviada for true
+    if (data.data) {
+      updateData[`${data.tipo_mensagem}_data`] = data.data
+    } else if (data.enviada) {
+      // Usar fuso horário do Brasil para registrar data/hora
+      const agora = new Date()
+      const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"}).replace(' ', 'T') + '.000Z'
+      updateData[`${data.tipo_mensagem}_data`] = brasilTime
+    } else {
+      // Se enviada for false e não há data específica, limpar a data
+      updateData[`${data.tipo_mensagem}_data`] = null
+    }
+    
+    // Atualizar mensagem_status
+    const { data: mensagemStatus, error: mensagemError } = await supabase!
+      .from('mensagem_status')
+      .update(updateData)
+      .eq('id', lead.mensagem_status_id)
+      .select()
+      .single()
+    
+    if (mensagemError) {
+      console.error('❌ Erro ao atualizar status de mensagem:', mensagemError)
+      throw mensagemError
+    }
+    
+    console.log('✅ Status de mensagem atualizado com sucesso:', data.tipo_mensagem)
+    return mensagemStatus
+  }
   
   // Atualizar etapa do funil
   static async atualizarEtapa(id: string, data: EtapaInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Atualizando etapa do lead:', id, 'nova etapa:', data.etapa_funil_id)
     
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await supabase!
       .from('leads')
       .update({ etapa_funil_id: data.etapa_funil_id })
       .eq('id', id)
@@ -204,9 +270,10 @@ export class LeadService {
   
   // Atualizar status de negociação
   static async atualizarStatus(id: string, data: StatusInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Atualizando status do lead:', id, 'novo status:', data.status_negociacao_id)
     
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await supabase!
       .from('leads')
       .update({ status_negociacao_id: data.status_negociacao_id })
       .eq('id', id)
@@ -224,9 +291,10 @@ export class LeadService {
   
   // Buscar lead por ID
   static async buscarPorId(id: string) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Buscando lead:', id)
     
-    const { data: lead, error } = await supabase
+    const { data: lead, error } = await supabase!
       .from('leads')
       .select(`
         *,
@@ -249,9 +317,10 @@ export class LeadService {
   
   // Listar todos os leads
   static async listarTodos() {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Listando todos os leads')
     
-    const { data: leads, error } = await supabase
+    const { data: leads, error } = await supabase!
       .from('leads')
       .select(`
         *,
@@ -273,12 +342,13 @@ export class LeadService {
 
   // Listar leads com paginação
   static async listarComPaginacao(params: PaginationInput) {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Listando leads com paginação:', params)
     
     const { page, limit, search } = params
     const offset = (page - 1) * limit
     
-    let query = supabase
+    let query = supabase!
       .from('leads')
       .select(`
         *,
@@ -330,18 +400,19 @@ export class LeadService {
 
   // Obter estatísticas dos leads
   static async obterEstatisticas() {
+    LeadService.checkSupabaseConnection();
     console.log('🔄 Obtendo estatísticas dos leads')
     
     try {
       // Total de leads
-      const { count: total, error: totalError } = await supabase
+      const { count: total, error: totalError } = await supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
       
       if (totalError) throw totalError
       
       // Leads com email
-      const { count: withEmail, error: emailError } = await supabase
+      const { count: withEmail, error: emailError } = await supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .not('email', 'is', null)
@@ -350,7 +421,7 @@ export class LeadService {
       if (emailError) throw emailError
       
       // Leads qualificados (etapa >= qualificacao)
-      const { data: etapaQualificacao, error: etapaError } = await supabase
+      const { data: etapaQualificacao, error: etapaError } = await supabase!
         .from('etapas_funil')
         .select('id')
         .in('nome', ['qualificacao', 'reuniao', 'apresentacao', 'negociacao', 'fechamento'])
@@ -359,7 +430,7 @@ export class LeadService {
       
       const etapaIds = etapaQualificacao.map(e => e.id)
       
-      const { count: qualified, error: qualifiedError } = await supabase
+      const { count: qualified, error: qualifiedError } = await supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .in('etapa_funil_id', etapaIds)
@@ -370,7 +441,7 @@ export class LeadService {
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
       
-      const { count: newLeads, error: newError } = await supabase
+      const { count: newLeads, error: newError } = await supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', sevenDaysAgo.toISOString())
@@ -378,7 +449,7 @@ export class LeadService {
       if (newError) throw newError
       
       // Leads por status de negociação
-      const { data: statusData, error: statusError } = await supabase
+      const { data: statusData, error: statusError } = await supabase!
         .from('leads')
         .select(`
           status_negociacao:status_negociacao_id(
@@ -414,10 +485,11 @@ export class LeadService {
   // Atualizar lead
   static async atualizarLead(id: string, data: UpdateLeadInput) {
     try {
+      LeadService.checkSupabaseConnection();
       console.log('🔄 Atualizando lead:', id, data)
       
       // Verificar se o lead existe
-      const { data: leadExistente, error: errorVerificacao } = await supabase
+      const { data: leadExistente, error: errorVerificacao } = await supabase!
         .from('leads')
         .select('id')
         .eq('id', id)
@@ -428,7 +500,7 @@ export class LeadService {
       }
       
       // Atualizar o lead
-      const { data: leadAtualizado, error: errorAtualizacao } = await supabase
+      const { data: leadAtualizado, error: errorAtualizacao } = await supabase!
         .from('leads')
         .update({
           ...data
@@ -459,10 +531,11 @@ export class LeadService {
   // Excluir lead
   static async excluirLead(id: string) {
     try {
+      LeadService.checkSupabaseConnection();
       console.log('🔄 Excluindo lead:', id)
       
       // Verificar se o lead existe e obter o mensagem_status_id
-      const { data: leadExistente, error: errorVerificacao } = await supabase
+      const { data: leadExistente, error: errorVerificacao } = await supabase!
         .from('leads')
         .select('id, mensagem_status_id')
         .eq('id', id)
@@ -473,7 +546,7 @@ export class LeadService {
       }
       
       // Excluir o lead (isso também excluirá o mensagem_status devido ao CASCADE)
-      const { error: errorExclusao } = await supabase
+      const { error: errorExclusao } = await supabase!
         .from('leads')
         .delete()
         .eq('id', id)

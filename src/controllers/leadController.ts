@@ -9,7 +9,8 @@ import {
   statusSchema,
   idParamSchema,
   paginationSchema,
-  updateLeadSchema
+  updateLeadSchema,
+  atualizarMensagemSchema
 } from '../lib/validators'
 import { ZodError } from 'zod'
 import { createError } from '../middleware/errorHandler'
@@ -60,7 +61,7 @@ export class LeadController {
         data: leads
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
 
@@ -107,7 +108,7 @@ export class LeadController {
   static async agendarLead(req: Request, res: Response) {
     
     try {
-      const id = this.extractIdFromUrl(req)
+      const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
       const validatedData = agendamentoSchema.parse(req.body)
@@ -119,13 +120,13 @@ export class LeadController {
         data: lead
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
   
   // GET /api/leads/[id]/agendamento
   static async getAgendamentoInfo(req: Request, res: Response) {
-    const id = this.extractIdFromUrl(req)
+    const id = LeadController.extractIdFromUrl(req)
     
     return res.status(200).json({
       success: true,
@@ -141,9 +142,8 @@ export class LeadController {
   
   // Enviar mensagem
   static async enviarMensagem(req: Request, res: Response) {
-    
     try {
-      const id = this.extractIdFromUrl(req)
+      const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
       const validatedData = mensagemSchema.parse(req.body)
@@ -155,13 +155,13 @@ export class LeadController {
         data: mensagemStatus
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
   
   // GET /api/leads/[id]/mensagens
   static async getMensagensInfo(req: Request, res: Response) {
-    const id = this.extractIdFromUrl(req)
+    const id = LeadController.extractIdFromUrl(req)
     
     return res.status(200).json({
       success: true,
@@ -179,7 +179,7 @@ export class LeadController {
   static async atualizarEtapa(req: Request, res: Response) {
     
     try {
-      const id = this.extractIdFromUrl(req)
+      const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
       const validatedData = etapaSchema.parse(req.body)
@@ -191,13 +191,13 @@ export class LeadController {
         data: lead
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
   
   // GET /api/leads/[id]/etapa
   static async getEtapaInfo(req: Request, res: Response) {
-    const id = this.extractIdFromUrl(req)
+    const id = LeadController.extractIdFromUrl(req)
     
     return res.status(200).json({
       success: true,
@@ -215,7 +215,7 @@ export class LeadController {
   static async atualizarStatus(req: Request, res: Response) {
     
     try {
-      const id = this.extractIdFromUrl(req)
+      const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
       const validatedData = statusSchema.parse(req.body)
@@ -227,13 +227,13 @@ export class LeadController {
         data: lead
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
   
   // GET /api/leads/[id]/status
   static async getStatusInfo(req: Request, res: Response) {
-    const id = this.extractIdFromUrl(req)
+    const id = LeadController.extractIdFromUrl(req)
     
     return res.status(200).json({
       success: true,
@@ -250,7 +250,7 @@ export class LeadController {
   // GET /api/leads/[id] - Buscar lead específico
   static async buscarLead(req: Request, res: Response) {
     try {
-      const id = this.extractIdFromUrl(req)
+      const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
       const lead = await LeadService.buscarPorId(id)
@@ -261,7 +261,7 @@ export class LeadController {
         data: lead
       })
     } catch (error) {
-      return this.handleError(res, error)
+      return LeadController.handleError(res, error)
     }
   }
   
@@ -384,6 +384,25 @@ export class LeadController {
         message: resultado.message
       })
       
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
+
+  // Atualizar status de mensagem enviada
+  static async atualizarMensagem(req: Request, res: Response) {
+    try {
+      const id = LeadController.extractIdFromUrl(req)
+      idParamSchema.parse({ id })
+      
+      const validatedData = atualizarMensagemSchema.parse(req.body)
+      const mensagemStatus = await LeadService.atualizarMensagem(id, validatedData)
+      
+      return res.status(200).json({
+        success: true,
+        message: `Status da ${validatedData.tipo_mensagem} atualizado com sucesso`,
+        data: mensagemStatus
+      })
     } catch (error) {
       return LeadController.handleError(res, error)
     }

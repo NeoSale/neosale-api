@@ -1,4 +1,6 @@
 import swaggerJSDoc from 'swagger-jsdoc'
+import path from 'path'
+import fs from 'fs'
 
 const options: swaggerJSDoc.Options = {
   definition: {
@@ -266,7 +268,22 @@ const options: swaggerJSDoc.Options = {
       }
     }
   },
-  apis: ['./pages/api/**/*.ts'], // Caminho para os arquivos da API
+  apis: [
+    path.join(__dirname, '../routes/*.ts'),
+    path.join(__dirname, '../routes/*.js')
+  ]
+}
+
+const routesPath = path.join(__dirname, '../routes')
+console.log('🔍 Swagger __dirname:', __dirname)
+console.log('🔍 Routes path:', routesPath)
+console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
+
+if (fs.existsSync(routesPath)) {
+  const files = fs.readdirSync(routesPath)
+  console.log('🔍 Files in routes:', files)
 }
 
 export const swaggerSpec = swaggerJSDoc(options)
+console.log('📚 Swagger spec generated')
+console.log('📚 Swagger spec paths:', (swaggerSpec as any).paths ? Object.keys((swaggerSpec as any).paths) : 'No paths found')

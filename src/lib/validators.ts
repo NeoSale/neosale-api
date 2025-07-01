@@ -82,6 +82,16 @@ export const updateLeadSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
+export const atualizarMensagemSchema = z.object({
+  tipo_mensagem: z.enum(['mensagem_1', 'mensagem_2', 'mensagem_3'], {
+    errorMap: () => ({ message: 'Tipo de mensagem deve ser mensagem_1, mensagem_2 ou mensagem_3' })
+  }),
+  enviada: z.boolean({
+    errorMap: () => ({ message: 'Campo enviada deve ser um valor booleano' })
+  }),
+  data: z.string().datetime().optional()
+})
+
 export type ImportLeadsInput = z.infer<typeof importLeadsSchema>
 export type BulkLeadsInput = z.infer<typeof bulkLeadsSchema>
 export type AgendamentoInput = z.infer<typeof agendamentoSchema>
@@ -91,3 +101,4 @@ export type StatusInput = z.infer<typeof statusSchema>
 export type IdParam = z.infer<typeof idParamSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
+export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>
