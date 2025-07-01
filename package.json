@@ -1,12 +1,13 @@
 {
   "name": "neosale-api",
-  "version": "0.1.0",
+  "version": "0.1.8",
   "private": true,
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src/**/*.ts",
+    "deploy": "bash build-and-push.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",
