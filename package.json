@@ -1,13 +1,17 @@
 {
   "name": "neosale-api",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts",
-    "deploy": "bash build-and-push.sh"
+    "deploy": "bash build-and-push.sh",
+    "deploy:patch": "echo '1' | bash build-and-push.sh",
+    "deploy:minor": "echo '2' | bash build-and-push.sh",
+    "deploy:major": "echo '3' | bash build-and-push.sh",
+    "deploy:auto": "echo '5' | bash build-and-push.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",

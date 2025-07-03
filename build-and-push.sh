@@ -1,6 +1,14 @@
 #!/bin/bash
 
 # Script para build e push da imagem Docker do NeoSale API
+# Versiona automaticamente a aplicação e a imagem Docker
+
+# Cores para output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
 # Configurações
 IMAGE_NAME="neosale-api"
@@ -35,12 +43,14 @@ increment_version() {
 }
 
 # Verificar se deve incrementar versão
-echo -e "${YELLOW}🔄 Deseja incrementar a versão automaticamente?${NC}"
-echo "1) Patch (0.1.0 -> 0.1.1) - Correções de bugs"
+echo -e "${BLUE}🚀 NeoSale API - Build & Deploy Automático${NC}"
+echo -e "${YELLOW}🔄 Como deseja incrementar a versão?${NC}"
+echo "1) Patch (0.1.0 -> 0.1.1) - Correções de bugs e pequenos ajustes"
 echo "2) Minor (0.1.0 -> 0.2.0) - Novas funcionalidades"
 echo "3) Major (0.1.0 -> 1.0.0) - Mudanças que quebram compatibilidade"
 echo "4) Manter versão atual"
-read -p "Escolha uma opção (1-4): " choice
+echo "5) Versão automática (detecta tipo baseado nas mudanças)"
+read -p "Escolha uma opção (1-5): " choice
 
 # Extrair versão atual do package.json
 if [ -f "package.json" ]; then
@@ -51,31 +61,82 @@ else
     exit 1
 fi
 
+# Função para detectar tipo de versão automaticamente
+detect_version_type() {
+    # Verificar se há mudanças staged
+    if ! git diff --cached --quiet; then
+        # Verificar tipos de mudanças
+        has_breaking=$(git diff --cached | grep -i -E "(breaking|major|incompatible)" | wc -l)
+        has_feat=$(git diff --cached | grep -i -E "(feat|feature|add|new)" | wc -l)
+        has_fix=$(git diff --cached | grep -i -E "(fix|bug|error|issue|problem|correct)" | wc -l)
+        
+        if [ $has_breaking -gt 0 ]; then
+            echo "major"
+        elif [ $has_feat -gt 0 ]; then
+            echo "minor"
+        else
+            echo "patch"
+        fi
+    else
+        echo "patch"
+    fi
+}
+
 # Processar escolha do usuário
 case $choice in
     1)
         NEW_VERSION=$(increment_version $CURRENT_VERSION "patch")
+        echo -e "${GREEN}📈 Incrementando versão PATCH: $CURRENT_VERSION -> $NEW_VERSION${NC}"
         ;;
     2)
         NEW_VERSION=$(increment_version $CURRENT_VERSION "minor")
+        echo -e "${GREEN}📈 Incrementando versão MINOR: $CURRENT_VERSION -> $NEW_VERSION${NC}"
         ;;
     3)
         NEW_VERSION=$(increment_version $CURRENT_VERSION "major")
+        echo -e "${GREEN}📈 Incrementando versão MAJOR: $CURRENT_VERSION -> $NEW_VERSION${NC}"
         ;;
     4)
         NEW_VERSION=$CURRENT_VERSION
+        echo -e "${YELLOW}📋 Mantendo versão atual: $NEW_VERSION${NC}"
+        ;;
+    5)
+        AUTO_TYPE=$(detect_version_type)
+        NEW_VERSION=$(increment_version $CURRENT_VERSION $AUTO_TYPE)
+        echo -e "${GREEN}🤖 Versão automática detectada ($AUTO_TYPE): $CURRENT_VERSION -> $NEW_VERSION${NC}"
         ;;
     *)
-        echo -e "${RED}❌ Opção inválida. Mantendo versão atual.${NC}"
-        NEW_VERSION=$CURRENT_VERSION
+        echo -e "${RED}❌ Opção inválida. Usando versão automática.${NC}"
+        AUTO_TYPE=$(detect_version_type)
+        NEW_VERSION=$(increment_version $CURRENT_VERSION $AUTO_TYPE)
+        echo -e "${GREEN}🤖 Versão automática ($AUTO_TYPE): $CURRENT_VERSION -> $NEW_VERSION${NC}"
         ;;
 esac
 
 # Atualizar package.json se a versão mudou
 if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     echo -e "${YELLOW}📝 Atualizando package.json para versão $NEW_VERSION...${NC}"
-    sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json
-    echo -e "${GREEN}✅ Versão atualizada no package.json${NC}"
+    
+    # Backup do package.json
+    cp package.json package.json.backup
+    
+    # Atualizar versão no package.json
+    if sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/g" package.json; then
+        # Verificar se a atualização foi bem-sucedida
+        UPDATED_VERSION=$(grep '"version"' package.json | sed 's/.*"version": "\(.*\)".*/\1/')
+        if [ "$UPDATED_VERSION" = "$NEW_VERSION" ]; then
+            echo -e "${GREEN}✅ Versão atualizada no package.json: $CURRENT_VERSION -> $NEW_VERSION${NC}"
+            rm package.json.backup
+        else
+            echo -e "${RED}❌ Erro ao atualizar versão no package.json${NC}"
+            mv package.json.backup package.json
+            exit 1
+        fi
+    else
+        echo -e "${RED}❌ Erro ao executar sed no package.json${NC}"
+        mv package.json.backup package.json
+        exit 1
+    fi
     
     # Fazer commit das mudanças
     echo -e "${YELLOW}📝 Fazendo commit das mudanças...${NC}"
@@ -189,14 +250,8 @@ fi
 
 VERSION=$NEW_VERSION
 echo -e "${GREEN}🚀 Usando versão: $VERSION${NC}"
-
-# Cores para output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-echo -e "${GREEN}🚀 Iniciando build da imagem Docker do NeoSale API${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}🐳 Iniciando build da imagem Docker do NeoSale API${NC}"
 
 # Verificar se o Docker está rodando
 if ! docker info > /dev/null 2>&1; then
@@ -246,6 +301,16 @@ if [ $? -eq 0 ]; then
     echo -e "${GREEN}   - $DOCKER_USERNAME/$IMAGE_NAME:$VERSION${NC}"
     echo -e "${GREEN}   - $DOCKER_USERNAME/$IMAGE_NAME:latest${NC}"
     echo -e "${GREEN}🚀 Para executar: docker run -p 3000:3000 $DOCKER_USERNAME/$IMAGE_NAME:$VERSION${NC}"
+    
+    # Criar tag git para a versão
+    echo -e "${YELLOW}🏷️  Criando tag git para versão $VERSION...${NC}"
+    git tag -a "v$VERSION" -m "Release version $VERSION"
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✅ Tag git v$VERSION criada com sucesso${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Erro ao criar tag git ou tag já existe${NC}"
+    fi
     
     # Deploy automático no EasyPanel
     echo -e "${YELLOW}🚀 Iniciando deploy automático no EasyPanel...${NC}"
@@ -297,4 +362,19 @@ else
     echo -e "${YELLOW}⚠️  Erro no push ou nenhuma mudança para enviar${NC}"
 fi
 
-echo -e "${GREEN}✨ Processo concluído!${NC}"
+# Fazer push das tags
+echo -e "${YELLOW}📤 Fazendo push das tags...${NC}"
+git push --tags
+
+if [ $? -eq 0 ]; then
+    echo -e "${GREEN}✅ Tags enviadas com sucesso${NC}"
+else
+    echo -e "${YELLOW}⚠️  Erro ao enviar tags${NC}"
+fi
+
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${GREEN}✨ Deploy concluído com sucesso!${NC}"
+echo -e "${GREEN}📦 Versão: $VERSION${NC}"
+echo -e "${GREEN}🐳 Docker Hub: $DOCKER_USERNAME/$IMAGE_NAME:$VERSION${NC}"
+echo -e "${GREEN}🏷️  Git Tag: v$VERSION${NC}"
+echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
