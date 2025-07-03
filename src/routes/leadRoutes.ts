@@ -19,6 +19,30 @@ const router = Router()
  *           type: string
  *         telefone:
  *           type: string
+ *         empresa:
+ *           type: string
+ *         cargo:
+ *           type: string
+ *         contador:
+ *           type: integer
+ *         escritorio:
+ *           type: string
+ *         responsavel:
+ *           type: string
+ *         cnpj:
+ *           type: string
+ *         observacao:
+ *           type: string
+ *         segmento:
+ *           type: string
+ *         erp_atual:
+ *           type: string
+ *         origem_id:
+ *           type: string
+ *           format: uuid
+ *         qualificacao_id:
+ *           type: string
+ *           format: uuid
  *         created_at:
  *           type: string
  *           format: date-time
@@ -166,36 +190,69 @@ router.get('/stats', LeadController.obterEstatisticas)
  *           schema:
  *             type: object
  *             properties:
- *               nome:
- *                 type: string
- *                 description: Nome do lead
- *               telefone:
- *                 type: string
- *                 description: Telefone do lead
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email do lead (opcional)
- *               empresa:
- *                 type: string
- *                 description: Empresa do lead (opcional)
- *               cargo:
- *                 type: string
- *                 description: Cargo do lead (opcional)
- *               origem_id:
+               nome:
+                 type: string
+                 description: Nome do lead
+               telefone:
+                 type: string
+                 description: Telefone do lead
+               email:
+                 type: string
+                 format: email
+                 description: Email do lead (opcional)
+               empresa:
+                 type: string
+                 description: Empresa do lead (opcional)
+               cargo:
+                 type: string
+                 description: Cargo do lead (opcional)
+               contador:
+                 type: string
+                 description: Contador (opcional)
+               escritorio:
+                 type: string
+                 description: Escritório (opcional)
+               responsavel:
+                 type: string
+                 description: Responsável (opcional)
+               cnpj:
+                 type: string
+                 description: CNPJ (opcional)
+               observacao:
+                 type: string
+                 description: Observação (opcional)
+               segmento:
+                 type: string
+                 description: Segmento (opcional)
+               erp_atual:
+                 type: string
+                 description: ERP Atual (opcional)
+               origem_id:
                  type: string
                  format: uuid
                  description: ID da origem do lead (opcional, usa 'outbound' como padrão)
+               qualificacao_id:
+                 type: string
+                 format: uuid
+                 description: ID da qualificação (opcional)
  *             required:
                - nome
                - telefone
  *             example:
- *               nome: "João Silva"
- *               telefone: "(11) 99999-9999"
- *               email: "joao@email.com"
- *               empresa: "Empresa XYZ"
- *               cargo: "Gerente"
- *               origem_id: "123e4567-e89b-12d3-a456-426614174000"
+               nome: "João Silva"
+               telefone: "(11) 99999-9999"
+               email: "joao@email.com"
+               empresa: "Empresa XYZ"
+               cargo: "Gerente"
+               contador: "1"
+               escritorio: "Escritório Central"
+               responsavel: "Maria Santos"
+               cnpj: "12.345.678/0001-90"
+               observacao: "Cliente interessado em ERP"
+               segmento: "Tecnologia"
+               erp_atual: "SAP"
+               origem_id: "123e4567-e89b-12d3-a456-426614174000"
+               qualificacao_id: "456e7890-e89b-12d3-a456-426614174001"
  *     responses:
  *       201:
  *         description: Lead criado com sucesso
@@ -461,31 +518,62 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *           schema:
  *             type: object
  *             properties:
- *               nome:
- *                 type: string
- *                 description: Nome do lead
- *               telefone:
- *                 type: string
- *                 description: Telefone do lead
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email do lead
- *               origem_id:
- *                 type: string
- *                 format: uuid
- *                 description: ID da origem
- *               status_agendamento:
- *                 type: boolean
- *                 description: Status de agendamento
- *               etapa_funil_id:
- *                 type: string
- *                 format: uuid
- *                 description: ID da etapa do funil
- *               status_negociacao_id:
- *                 type: string
- *                 format: uuid
- *                 description: ID do status de negociação
+               nome:
+                 type: string
+                 description: Nome do lead
+               telefone:
+                 type: string
+                 description: Telefone do lead
+               email:
+                 type: string
+                 format: email
+                 description: Email do lead
+               empresa:
+                 type: string
+                 description: Empresa do lead
+               cargo:
+                 type: string
+                 description: Cargo do lead
+               contador:
+                 type: string
+                 description: Contador
+               escritorio:
+                 type: string
+                 description: Escritório
+               responsavel:
+                 type: string
+                 description: Responsável
+               cnpj:
+                 type: string
+                 description: CNPJ
+               observacao:
+                 type: string
+                 description: Observação
+               segmento:
+                 type: string
+                 description: Segmento
+               erp_atual:
+                 type: string
+                 description: ERP Atual
+               origem_id:
+                 type: string
+                 format: uuid
+                 description: ID da origem
+               qualificacao_id:
+                 type: string
+                 format: uuid
+                 description: ID da qualificação
+               status_agendamento:
+                 type: boolean
+                 description: Status de agendamento
+               etapa_funil_id:
+                 type: string
+                 format: uuid
+                 description: ID da etapa do funil
+               status_negociacao_id:
+                 type: string
+                 format: uuid
+                 description: ID do status de negociação
  *             example:
  *               nome: "João Silva"
  *               telefone: "(11) 99999-9999"

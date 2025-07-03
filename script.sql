@@ -41,6 +41,16 @@ insert into status_negociacao (id, nome) values
   (gen_random_uuid(), 'perdido'),
   (gen_random_uuid(), 'fechado');
 
+create table qualificacao (
+  id uuid primary key default gen_random_uuid(),
+  nome text unique
+);
+
+insert into qualificacao (nome) values
+  ('Desafios'),
+  ('Urgência'),
+  ('Decisor');
+
 create table leads (
   id uuid primary key default gen_random_uuid(),
   nome text,
@@ -48,11 +58,19 @@ create table leads (
   email text,
   empresa text,
   cargo text,
+  contador text,
+  escritorio text,
+  responsavel text,
+  cnpj text,
+  observacao text,
+  segmento text,
+  erp_atual text,
   origem_id uuid references origens_leads(id),
   status_agendamento boolean default false,
   mensagem_status_id uuid references mensagem_status(id),
   etapa_funil_id uuid references etapas_funil(id),
   status_negociacao_id uuid references status_negociacao(id),
+  qualificacao_id uuid references qualificacao(id),
   deletado boolean DEFAULT false,
   created_at timestamp default now()
 );

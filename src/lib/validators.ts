@@ -71,13 +71,21 @@ export const paginationSchema = z.object({
 export const updateLeadSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').optional(),
   telefone: z.string().min(1, 'Telefone é obrigatório').optional(),
-  email: z.string().email('Email inválido').optional(),
+  email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
+  contador: z.string().optional(),
+  escritorio: z.string().optional(),
+  responsavel: z.string().optional(),
+  cnpj: z.string().optional(),
+  observacao: z.string().optional(),
+  segmento: z.string().optional(),
+  erp_atual: z.string().optional(),
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
   status_agendamento: z.boolean().optional(),
   etapa_funil_id: z.string().uuid('etapa_funil_id deve ser um UUID válido').optional(),
-  status_negociacao_id: z.string().uuid('status_negociacao_id deve ser um UUID válido').optional()
+  status_negociacao_id: z.string().uuid('status_negociacao_id deve ser um UUID válido').optional(),
+  qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
@@ -99,7 +107,15 @@ export const createLeadSchema = z.object({
   email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
-  origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional()
+  contador: z.string().optional(),
+  escritorio: z.string().optional(),
+  responsavel: z.string().optional(),
+  cnpj: z.string().optional(),
+  observacao: z.string().optional(),
+  segmento: z.string().optional(),
+  erp_atual: z.string().optional(),
+  origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
+  qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional()
 })
 
 export type ImportLeadsInput = z.infer<typeof importLeadsSchema>

@@ -77,8 +77,16 @@ export class LeadService {
           email: data.email || null,
           empresa: data.empresa || null,
           cargo: data.cargo || null,
+          contador: data.contador || null,
+          escritorio: data.escritorio || null,
+          responsavel: data.responsavel || null,
+          cnpj: data.cnpj || null,
+          observacao: data.observacao || null,
+          segmento: data.segmento || null,
+          erp_atual: data.erp_atual || null,
           origem_id: origemId,
           mensagem_status_id: mensagemStatus.id,
+          qualificacao_id: data.qualificacao_id || null,
           deletado: false
         })
         .select(`
@@ -86,7 +94,8 @@ export class LeadService {
           mensagem_status:mensagem_status_id(*),
           origem:origem_id(*),
           etapa_funil:etapa_funil_id(*),
-          status_negociacao:status_negociacao_id(*)
+          status_negociacao:status_negociacao_id(*),
+          qualificacao:qualificacao_id(*)
         `)
         .single()
       

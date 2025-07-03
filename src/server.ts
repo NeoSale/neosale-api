@@ -12,6 +12,7 @@ import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './lib/swagger'
 import { leadRoutes } from './routes/leadRoutes'
 import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
+import referenciaRoutes from './routes/referenciaRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 const app = express()
@@ -46,7 +47,8 @@ app.get('/', (req, res) => {
       documentation: `${BASE_URL}/api-docs`,
       health: `${BASE_URL}/health`,
       leads: `${BASE_URL}/api/leads`,
-      controleEnvios: `${BASE_URL}/api/controle-envios`
+      controleEnvios: `${BASE_URL}/api/controle-envios`,
+      referencias: `${BASE_URL}/api/referencias`
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
   })
@@ -55,6 +57,7 @@ app.get('/', (req, res) => {
 // Rotas
 app.use('/api/leads', leadRoutes)
 app.use('/api/controle-envios', controleEnviosRoutes)
+app.use('/api/referencias', referenciaRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // Rota de health check
