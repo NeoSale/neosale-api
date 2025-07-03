@@ -53,9 +53,13 @@ app.use('/api/controle-envios', controleEnviosRoutes_1.controleEnviosRoutes);
 app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));
 // Rota de health check
 app.get('/health', (req, res) => {
+    // Usar fuso horário do Brasil para timestamp
+    const agora = new Date();
+    const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
     res.json({
         status: 'OK',
-        timestamp: new Date().toISOString(),
+        timestamp: brasilTime,
+        timezone: 'America/Sao_Paulo',
         uptime: process.uptime()
     });
 });

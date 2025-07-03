@@ -20,7 +20,7 @@ export const bulkLeadsSchema = z.object({
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
       telefone: z.string().min(1, 'Telefone é obrigatório'),
-      email: z.string().email('Email inválido'),
+      email: z.string().email('Email inválido').optional(),
       empresa: z.string().optional(),
       cargo: z.string().optional()
     })
@@ -92,6 +92,16 @@ export const atualizarMensagemSchema = z.object({
   data: z.string().datetime().optional()
 })
 
+// Validator para criação de um único lead
+export const createLeadSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  telefone: z.string().min(1, 'Telefone é obrigatório'),
+  email: z.string().optional(),
+  empresa: z.string().optional(),
+  cargo: z.string().optional(),
+  origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional()
+})
+
 export type ImportLeadsInput = z.infer<typeof importLeadsSchema>
 export type BulkLeadsInput = z.infer<typeof bulkLeadsSchema>
 export type AgendamentoInput = z.infer<typeof agendamentoSchema>
@@ -102,3 +112,4 @@ export type IdParam = z.infer<typeof idParamSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
 export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>
+export type CreateLeadInput = z.infer<typeof createLeadSchema>

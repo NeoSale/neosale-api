@@ -90,14 +90,50 @@ if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     
     # Detectar alterações em arquivos específicos
     has_src_changes=$(git diff --cached --name-only | grep "^src/" | wc -l)
-    has_config_changes=$(git diff --cached --name-only | grep -E "\.(json|js|ts|yml|yaml|md)$" | wc -l)
+    has_test_changes=$(git diff --cached --name-only | grep -E "(test|spec)" | wc -l)
+    has_doc_changes=$(git diff --cached --name-only | grep -E "\.(md|txt|rst)$" | wc -l)
+    has_config_changes=$(git diff --cached --name-only | grep -E "\.(json|yml|yaml|env)$" | wc -l)
     has_docker_changes=$(git diff --cached --name-only | grep -E "(Dockerfile|docker-compose|build-and-push)" | wc -l)
+    has_style_changes=$(git diff --cached --name-only | grep -E "\.(css|scss|less|style)" | wc -l)
+    
+    # Detectar se há mudanças no package.json (versão)
+    has_version_change=$(git diff --cached --name-only | grep "package.json" | wc -l)
+    
+    # Determinar tipo de commit semântico
+    commit_type="chore"
+    
+    # Prioridade: feat > fix > docs > style > refactor > test > chore
+    if [ $added_files -gt 0 ] && [ $has_src_changes -gt 0 ]; then
+        commit_type="feat"
+    elif [ $has_src_changes -gt 0 ] && [ $modified_files -gt 0 ]; then
+        # Verificar se é correção (palavras-chave em arquivos modificados)
+        fix_keywords=$(git diff --cached | grep -i -E "(fix|bug|error|issue|problem|correct)" | wc -l)
+        if [ $fix_keywords -gt 0 ]; then
+            commit_type="fix"
+        else
+            commit_type="feat"
+        fi
+    elif [ $has_doc_changes -gt 0 ]; then
+        commit_type="docs"
+    elif [ $has_style_changes -gt 0 ]; then
+        commit_type="style"
+    elif [ $has_test_changes -gt 0 ]; then
+        commit_type="test"
+    elif [ $has_config_changes -gt 0 ] || [ $has_docker_changes -gt 0 ]; then
+        commit_type="chore"
+    fi
     
     # Gerar descrição baseada nas alterações
     commit_description=""
     
     if [ $has_src_changes -gt 0 ]; then
-        commit_description="${commit_description}Atualizações no código fonte, "
+        if [ "$commit_type" = "feat" ]; then
+            commit_description="${commit_description}novas funcionalidades, "
+        elif [ "$commit_type" = "fix" ]; then
+            commit_description="${commit_description}correções de bugs, "
+        else
+            commit_description="${commit_description}atualizações no código, "
+        fi
     fi
     
     if [ $has_docker_changes -gt 0 ]; then
@@ -106,6 +142,18 @@ if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     
     if [ $has_config_changes -gt 0 ]; then
         commit_description="${commit_description}ajustes de configuração, "
+    fi
+    
+    if [ $has_doc_changes -gt 0 ]; then
+        commit_description="${commit_description}atualizações na documentação, "
+    fi
+    
+    if [ $has_test_changes -gt 0 ]; then
+        commit_description="${commit_description}atualizações nos testes, "
+    fi
+    
+    if [ $has_style_changes -gt 0 ]; then
+        commit_description="${commit_description}ajustes de estilo, "
     fi
     
     if [ $added_files -gt 0 ]; then
@@ -124,12 +172,13 @@ if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     commit_description=$(echo "$commit_description" | sed 's/, $//')
     
     if [ -z "$commit_description" ]; then
-        commit_description="Atualização de versão e melhorias gerais"
+        commit_description="atualização de versão e melhorias gerais"
     fi
     
-    echo -e "${GREEN}📋 Descrição gerada automaticamente: $commit_description${NC}"
+    echo -e "${GREEN}📋 Tipo de commit: $commit_type${NC}"
+    echo -e "${GREEN}📋 Descrição gerada: $commit_description${NC}"
     
-    git commit -m "chore: bump version to $NEW_VERSION - $commit_description"
+    git commit -m "$commit_type: bump version to $NEW_VERSION - $commit_description"
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Commit realizado com sucesso${NC}"

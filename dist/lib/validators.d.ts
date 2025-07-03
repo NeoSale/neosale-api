@@ -45,35 +45,35 @@ export declare const bulkLeadsSchema: z.ZodObject<{
     leads: z.ZodArray<z.ZodObject<{
         nome: z.ZodString;
         telefone: z.ZodString;
-        email: z.ZodString;
+        email: z.ZodOptional<z.ZodString>;
         empresa: z.ZodOptional<z.ZodString>;
         cargo: z.ZodOptional<z.ZodString>;
     }, "strip", z.ZodTypeAny, {
-        email: string;
         nome: string;
         telefone: string;
+        email?: string | undefined;
         empresa?: string | undefined;
         cargo?: string | undefined;
     }, {
-        email: string;
         nome: string;
         telefone: string;
+        email?: string | undefined;
         empresa?: string | undefined;
         cargo?: string | undefined;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     leads: {
-        email: string;
         nome: string;
         telefone: string;
+        email?: string | undefined;
         empresa?: string | undefined;
         cargo?: string | undefined;
     }[];
 }, {
     leads: {
-        email: string;
         nome: string;
         telefone: string;
+        email?: string | undefined;
         empresa?: string | undefined;
         cargo?: string | undefined;
     }[];
@@ -190,6 +190,28 @@ export declare const atualizarMensagemSchema: z.ZodObject<{
     enviada: boolean;
     data?: string | undefined;
 }>;
+export declare const createLeadSchema: z.ZodObject<{
+    nome: z.ZodString;
+    telefone: z.ZodString;
+    email: z.ZodOptional<z.ZodString>;
+    empresa: z.ZodOptional<z.ZodString>;
+    cargo: z.ZodOptional<z.ZodString>;
+    origem_id: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    nome: string;
+    telefone: string;
+    email?: string | undefined;
+    origem_id?: string | undefined;
+    empresa?: string | undefined;
+    cargo?: string | undefined;
+}, {
+    nome: string;
+    telefone: string;
+    email?: string | undefined;
+    origem_id?: string | undefined;
+    empresa?: string | undefined;
+    cargo?: string | undefined;
+}>;
 export type ImportLeadsInput = z.infer<typeof importLeadsSchema>;
 export type BulkLeadsInput = z.infer<typeof bulkLeadsSchema>;
 export type AgendamentoInput = z.infer<typeof agendamentoSchema>;
@@ -200,4 +222,5 @@ export type IdParam = z.infer<typeof idParamSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>;
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 //# sourceMappingURL=validators.d.ts.map

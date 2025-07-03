@@ -153,6 +153,69 @@ router.get('/paginated', leadController_1.LeadController.listarLeadsPaginados);
 router.get('/stats', leadController_1.LeadController.obterEstatisticas);
 /**
  * @swagger
+ * /api/leads:
+ *   post:
+ *     summary: Cria um novo lead
+ *     tags: [Leads]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *                 description: Nome do lead
+ *               telefone:
+ *                 type: string
+ *                 description: Telefone do lead
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do lead (opcional)
+ *               empresa:
+ *                 type: string
+ *                 description: Empresa do lead (opcional)
+ *               cargo:
+ *                 type: string
+ *                 description: Cargo do lead (opcional)
+ *               origem_id:
+                 type: string
+                 format: uuid
+                 description: ID da origem do lead (opcional, usa 'outbound' como padrão)
+ *             required:
+               - nome
+               - telefone
+ *             example:
+ *               nome: "João Silva"
+ *               telefone: "(11) 99999-9999"
+ *               email: "joao@email.com"
+ *               empresa: "Empresa XYZ"
+ *               cargo: "Gerente"
+ *               origem_id: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       201:
+ *         description: Lead criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Lead'
+ *       400:
+ *         description: Dados inválidos ou lead já existe
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/', leadController_1.LeadController.criarLead);
+/**
+ * @swagger
  * /api/leads/import:
  *   post:
  *     summary: Importa leads
@@ -202,23 +265,21 @@ router.post('/import', leadController_1.LeadController.importLeads);
  *                       type: string
  *                       description: Nome do lead
  *                     email:
- *                       type: string
- *                       format: email
- *                       description: Email do lead
- *                     telefone:
- *                       type: string
- *                       description: Telefone do lead
- *                   required:
- *                     - nome
- *                     - email
- *                     - telefone
+                       type: string
+                       format: email
+                       description: Email do lead (opcional)
+                     telefone:
+                       type: string
+                       description: Telefone do lead
+                   required:
+                     - nome
+                     - telefone
  *             example:
  *               leads:
  *                 - nome: "Bruno 01"
  *                   email: "bruno01@bruno.com"
  *                   telefone: "11982212127"
  *                 - nome: "Bruno 02"
- *                   email: "bruno02@bruno.com"
  *                   telefone: "11982212128"
  *     responses:
  *       201:
@@ -534,4 +595,38 @@ router.delete('/:id', leadController_1.LeadController.excluirLead);
  *         description: Erro interno do servidor
  */
 router.put('/:id/mensagem', leadController_1.LeadController.atualizarMensagem);
+/**
+ * @swagger
+ * /api/leads/{id}:
+ *   get:
+ *     summary: Busca um lead específico por ID
+ *     tags: [Leads]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do lead
+ *     responses:
+ *       200:
+ *         description: Lead encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Lead'
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/:id', leadController_1.LeadController.buscarLead);
 //# sourceMappingURL=leadRoutes.js.map

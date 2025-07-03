@@ -10,7 +10,8 @@ import {
   idParamSchema,
   paginationSchema,
   updateLeadSchema,
-  atualizarMensagemSchema
+  atualizarMensagemSchema,
+  createLeadSchema
 } from '../lib/validators'
 import { ZodError } from 'zod'
 import { createError } from '../middleware/errorHandler'
@@ -48,17 +49,45 @@ export class LeadController {
     })
   }
   
+  // Criar um único lead
+  static async criarLead(req: Request, res: Response) {
+    try {
+      const validatedData = createLeadSchema.parse(req.body)
+      const lead = await LeadService.criarLead(validatedData)
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Lead criado com sucesso',
+        data: lead
+      })
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
+  
   // Importar leads
   static async importLeads(req: Request, res: Response) {
     
     try {
       const validatedData = importLeadsSchema.parse(req.body)
-      const leads = await LeadService.importLeads(validatedData)
+      const result = await LeadService.importLeads(validatedData)
+      
+      const message = result.skipped.length > 0 
+        ? `${result.created.length} leads importados com sucesso, ${result.skipped.length} leads pulados por duplicação`
+        : `${result.created.length} leads importados com sucesso`
       
       return res.status(201).json({
         success: true,
-        message: `${leads.length} leads importados com sucesso`,
-        data: leads
+        message,
+        data: {
+          created: result.created,
+          skipped: result.skipped,
+          summary: {
+            total_processed: validatedData.leads.length,
+            created_count: result.created.length,
+            skipped_count: result.skipped.length
+          }
+        }
       })
     } catch (error) {
       return LeadController.handleError(res, error)
@@ -70,12 +99,24 @@ export class LeadController {
     
     try {
       const validatedData = bulkLeadsSchema.parse(req.body)
-      const leads = await LeadService.bulkImportLeads(validatedData)
+      const result = await LeadService.bulkImportLeads(validatedData)
+      
+      const message = result.skipped.length > 0 
+        ? `${result.created.length} leads importados em lote com sucesso, ${result.skipped.length} leads pulados por duplicação`
+        : `${result.created.length} leads importados em lote com sucesso`
       
       return res.status(201).json({
         success: true,
-        message: `${leads.length} leads importados em lote com sucesso`,
-        data: leads
+        message,
+        data: {
+          created: result.created,
+          skipped: result.skipped,
+          summary: {
+            total_processed: validatedData.leads.length,
+            created_count: result.created.length,
+            skipped_count: result.skipped.length
+          }
+        }
       })
     } catch (error) {
       return LeadController.handleError(res, error)

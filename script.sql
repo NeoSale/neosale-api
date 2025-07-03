@@ -53,6 +53,7 @@ create table leads (
   mensagem_status_id uuid references mensagem_status(id),
   etapa_funil_id uuid references etapas_funil(id),
   status_negociacao_id uuid references status_negociacao(id),
+  deletado boolean DEFAULT false,
   created_at timestamp default now()
 );
 

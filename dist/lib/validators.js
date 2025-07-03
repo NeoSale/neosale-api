@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.atualizarMensagemSchema = exports.updateLeadSchema = exports.paginationSchema = exports.idParamSchema = exports.statusSchema = exports.etapaSchema = exports.mensagemSchema = exports.agendamentoSchema = exports.bulkLeadsSchema = exports.importLeadsSchema = void 0;
+exports.createLeadSchema = exports.atualizarMensagemSchema = exports.updateLeadSchema = exports.paginationSchema = exports.idParamSchema = exports.statusSchema = exports.etapaSchema = exports.mensagemSchema = exports.agendamentoSchema = exports.bulkLeadsSchema = exports.importLeadsSchema = void 0;
 const zod_1 = require("zod");
 // Validator para importação de leads
 exports.importLeadsSchema = zod_1.z.object({
@@ -18,7 +18,7 @@ exports.bulkLeadsSchema = zod_1.z.object({
     leads: zod_1.z.array(zod_1.z.object({
         nome: zod_1.z.string().min(1, 'Nome é obrigatório'),
         telefone: zod_1.z.string().min(1, 'Telefone é obrigatório'),
-        email: zod_1.z.string().email('Email inválido'),
+        email: zod_1.z.string().email('Email inválido').optional(),
         empresa: zod_1.z.string().optional(),
         cargo: zod_1.z.string().optional()
     })).min(1, 'Pelo menos um lead deve ser fornecido')
@@ -79,5 +79,14 @@ exports.atualizarMensagemSchema = zod_1.z.object({
         errorMap: () => ({ message: 'Campo enviada deve ser um valor booleano' })
     }),
     data: zod_1.z.string().datetime().optional()
+});
+// Validator para criação de um único lead
+exports.createLeadSchema = zod_1.z.object({
+    nome: zod_1.z.string().min(1, 'Nome é obrigatório'),
+    telefone: zod_1.z.string().min(1, 'Telefone é obrigatório'),
+    email: zod_1.z.string().optional(),
+    empresa: zod_1.z.string().optional(),
+    cargo: zod_1.z.string().optional(),
+    origem_id: zod_1.z.string().uuid('origem_id deve ser um UUID válido').optional()
 });
 //# sourceMappingURL=validators.js.map

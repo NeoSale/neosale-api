@@ -3,8 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControleEnviosService = void 0;
 const supabase_1 = require("../lib/supabase");
 class ControleEnviosService {
+    // Verificar se Supabase está configurado
+    static checkSupabaseConnection() {
+        if (!supabase_1.supabase) {
+            throw new Error('Supabase não está configurado. Configure as credenciais no arquivo .env');
+        }
+    }
     // Buscar todos os registros de controle de envios
     static async getAllControleEnvios() {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Buscando todos os registros de controle de envios');
         const { data, error } = await supabase_1.supabase
             .from('controle_envios_diarios')
@@ -19,6 +26,7 @@ class ControleEnviosService {
     }
     // Buscar controle de envio por data específica
     static async getControleEnvioByDate(data) {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Buscando controle de envio para data:', data);
         const { data: controleEnvio, error } = await supabase_1.supabase
             .from('controle_envios_diarios')
@@ -39,6 +47,7 @@ class ControleEnviosService {
     }
     // Criar novo registro de controle de envio
     static async createControleEnvio(data) {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Criando novo controle de envio para data:', data);
         // Pegar o limite diário padrão das variáveis de ambiente
         const limiteDiarioPadrao = parseInt(process.env.LIMITE_DIARIO_PADRAO || '30');
@@ -60,6 +69,7 @@ class ControleEnviosService {
     }
     // Atualizar quantidade enviada
     static async updateQuantidadeEnviada(data, novaQuantidade) {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Atualizando quantidade enviada para data:', data, 'nova quantidade:', novaQuantidade);
         const { data: controleAtualizado, error } = await supabase_1.supabase
             .from('controle_envios_diarios')
@@ -76,6 +86,7 @@ class ControleEnviosService {
     }
     // Incrementar quantidade enviada
     static async incrementarQuantidadeEnviada(data, incremento = 1) {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Incrementando quantidade enviada para data:', data, 'incremento:', incremento);
         // Primeiro buscar o registro atual
         const controleAtual = await this.getControleEnvioByDate(data);
@@ -83,8 +94,9 @@ class ControleEnviosService {
         const novaQuantidade = controleAtual.quantidade_enviada + incremento;
         return await this.updateQuantidadeEnviada(data, novaQuantidade);
     }
-    // Verificar se ainda pode enviar mensagens hoje
+    // Verificar se pode enviar mensagem (não excedeu limite diário)
     static async podeEnviarMensagem(data) {
+        ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Verificando se pode enviar mensagem para data:', data);
         const controleEnvio = await this.getControleEnvioByDate(data);
         const podeEnviar = controleEnvio.quantidade_enviada < controleEnvio.limite_diario;

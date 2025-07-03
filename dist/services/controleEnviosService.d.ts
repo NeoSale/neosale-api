@@ -6,6 +6,7 @@ export interface ControleEnvio {
     created_at: string;
 }
 export declare class ControleEnviosService {
+    private static checkSupabaseConnection;
     static getAllControleEnvios(): Promise<ControleEnvio[]>;
     static getControleEnvioByDate(data: string): Promise<ControleEnvio>;
     static createControleEnvio(data: string): Promise<ControleEnvio>;

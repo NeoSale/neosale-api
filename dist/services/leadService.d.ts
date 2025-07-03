@@ -1,7 +1,30 @@
-import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, AtualizarMensagemInput } from '../lib/validators';
+import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, AtualizarMensagemInput, CreateLeadInput } from '../lib/validators';
 export declare class LeadService {
-    static importLeads(data: ImportLeadsInput): Promise<any[]>;
-    static bulkImportLeads(data: BulkLeadsInput): Promise<any[]>;
+    private static checkSupabaseConnection;
+    static criarLead(data: CreateLeadInput): Promise<any>;
+    static importLeads(data: ImportLeadsInput): Promise<{
+        created: any[];
+        skipped: {
+            motivo: string;
+            email: string;
+            nome: string;
+            telefone: string;
+            origem_id: string;
+            empresa?: string | undefined;
+            cargo?: string | undefined;
+        }[];
+    }>;
+    static bulkImportLeads(data: BulkLeadsInput): Promise<{
+        created: any[];
+        skipped: {
+            motivo: string;
+            nome: string;
+            telefone: string;
+            email?: string | undefined;
+            empresa?: string | undefined;
+            cargo?: string | undefined;
+        }[];
+    }>;
     static agendarLead(id: string, data: AgendamentoInput): Promise<any>;
     static enviarMensagem(id: string, data: MensagemInput): Promise<any>;
     static atualizarMensagem(id: string, data: AtualizarMensagemInput): Promise<any>;
@@ -29,7 +52,6 @@ export declare class LeadService {
     }>;
     static atualizarLead(id: string, data: UpdateLeadInput): Promise<any>;
     static excluirLead(id: string): Promise<{
-        success: boolean;
         message: string;
     }>;
 }

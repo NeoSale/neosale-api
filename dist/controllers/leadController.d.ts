@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 export declare class LeadController {
     private static extractIdFromUrl;
     private static handleError;
+    static criarLead(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static importLeads(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static bulkImportLeads(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getImportInfo(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

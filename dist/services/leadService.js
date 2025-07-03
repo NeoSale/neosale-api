@@ -3,12 +3,137 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LeadService = void 0;
 const supabase_1 = require("../lib/supabase");
 class LeadService {
+    // Verificar se Supabase está configurado
+    static checkSupabaseConnection() {
+        if (!supabase_1.supabase) {
+            throw new Error('Supabase não está configurado. Configure as credenciais no arquivo .env');
+        }
+    }
+    // Criar um único lead
+    static async criarLead(data) {
+        LeadService.checkSupabaseConnection();
+        console.log('🔄 Criando novo lead:', data.nome);
+        try {
+            // Verificar se telefone já existe
+            const { data: existingPhone, error: phoneError } = await supabase_1.supabase
+                .from('leads')
+                .select('id, nome, telefone')
+                .eq('telefone', data.telefone)
+                .eq('deletado', false)
+                .single();
+            if (existingPhone && !phoneError) {
+                throw new Error(`Já existe um lead com o telefone ${data.telefone}: ${existingPhone.nome}`);
+            }
+            // Verificar se email já existe (se fornecido)
+            if (data.email) {
+                const { data: existingEmail, error: emailError } = await supabase_1.supabase
+                    .from('leads')
+                    .select('id, nome, email')
+                    .eq('email', data.email)
+                    .eq('deletado', false)
+                    .single();
+                if (existingEmail && !emailError) {
+                    throw new Error(`Já existe um lead com o email ${data.email}: ${existingEmail.nome}`);
+                }
+            }
+            // Se origem_id não foi fornecido, usar origem 'outbound' como padrão
+            let origemId = data.origem_id;
+            if (!origemId) {
+                const { data: origens, error: origemError } = await supabase_1.supabase
+                    .from('origens_leads')
+                    .select('id')
+                    .eq('nome', 'outbound')
+                    .single();
+                if (origemError || !origens) {
+                    throw new Error('Origem "outbound" não encontrada. É necessário ter a origem "outbound" cadastrada.');
+                }
+                origemId = origens.id;
+            }
+            // Criar mensagem_status primeiro
+            const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
+                .from('mensagem_status')
+                .insert({})
+                .select()
+                .single();
+            if (mensagemError) {
+                console.error('❌ Erro ao criar mensagem_status:', mensagemError);
+                throw mensagemError;
+            }
+            // Criar o lead
+            const { data: novoLead, error } = await supabase_1.supabase
+                .from('leads')
+                .insert({
+                nome: data.nome,
+                telefone: data.telefone,
+                email: data.email || null,
+                empresa: data.empresa || null,
+                cargo: data.cargo || null,
+                origem_id: origemId,
+                mensagem_status_id: mensagemStatus.id,
+                deletado: false
+            })
+                .select(`
+          *,
+          mensagem_status:mensagem_status_id(*),
+          origem:origem_id(*),
+          etapa_funil:etapa_funil_id(*),
+          status_negociacao:status_negociacao_id(*)
+        `)
+                .single();
+            if (error) {
+                console.error('❌ Erro ao criar lead:', error);
+                throw error;
+            }
+            console.log('✅ Lead criado com sucesso:', novoLead.id);
+            return novoLead;
+        }
+        catch (error) {
+            console.error('❌ Erro ao criar lead:', error);
+            throw error;
+        }
+    }
     // Importar leads
     static async importLeads(data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Iniciando importação de leads:', data.leads.length, 'leads');
         const results = [];
+        const skipped = [];
         for (const leadData of data.leads) {
             try {
+                // Verificar se telefone já existe
+                const { data: existingPhone, error: phoneError } = await supabase_1.supabase
+                    .from('leads')
+                    .select('id, nome, telefone')
+                    .eq('telefone', leadData.telefone)
+                    .eq('deletado', false)
+                    .single();
+                if (phoneError && phoneError.code !== 'PGRST116') {
+                    console.error('❌ Erro ao verificar telefone:', phoneError);
+                    throw phoneError;
+                }
+                if (existingPhone) {
+                    console.log('⚠️ Lead com telefone já existe:', leadData.telefone, '- pulando');
+                    skipped.push({ ...leadData, motivo: 'Telefone já existe' });
+                    continue;
+                }
+                // Verificar se email já existe (apenas se email foi fornecido)
+                if (leadData.email) {
+                    const { data: existingEmail, error: emailError } = await supabase_1.supabase
+                        .from('leads')
+                        .select('id, nome, email')
+                        .eq('email', leadData.email)
+                        .eq('deletado', false)
+                        .single();
+                    if (emailError && emailError.code !== 'PGRST116') {
+                        console.error('❌ Erro ao verificar email:', emailError);
+                        throw emailError;
+                    }
+                    if (existingEmail) {
+                        console.log('⚠️ Lead com email já existe:', leadData.email, '- pulando');
+                        skipped.push({ ...leadData, motivo: 'Email já existe' });
+                        continue;
+                    }
+                }
                 // Criar mensagem_status primeiro
                 const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
                     .from('mensagem_status')
@@ -45,11 +170,12 @@ class LeadService {
                 throw error;
             }
         }
-        console.log('✅ Importação concluída:', results.length, 'leads criados');
-        return results;
+        console.log('✅ Importação concluída:', results.length, 'leads criados,', skipped.length, 'leads pulados');
+        return { created: results, skipped };
     }
     // Importar leads em lote (bulk) sem origem_id
     static async bulkImportLeads(data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads');
         // Buscar a origem 'outbound'
         const { data: origens, error: origemError } = await supabase_1.supabase
@@ -62,8 +188,43 @@ class LeadService {
         }
         const origemOutbound = origens.id;
         const results = [];
+        const skipped = [];
         for (const leadData of data.leads) {
             try {
+                // Verificar se telefone já existe
+                const { data: existingPhone, error: phoneError } = await supabase_1.supabase
+                    .from('leads')
+                    .select('id, nome, telefone')
+                    .eq('telefone', leadData.telefone)
+                    .eq('deletado', false)
+                    .single();
+                if (phoneError && phoneError.code !== 'PGRST116') {
+                    console.error('❌ Erro ao verificar telefone:', phoneError);
+                    throw phoneError;
+                }
+                if (existingPhone) {
+                    console.log('⚠️ Lead com telefone já existe:', leadData.telefone, '- pulando');
+                    skipped.push({ ...leadData, motivo: 'Telefone já existe' });
+                    continue;
+                }
+                // Verificar se email já existe (apenas se email foi fornecido)
+                if (leadData.email) {
+                    const { data: existingEmail, error: emailError } = await supabase_1.supabase
+                        .from('leads')
+                        .select('id, nome, email')
+                        .eq('email', leadData.email)
+                        .eq('deletado', false)
+                        .single();
+                    if (emailError && emailError.code !== 'PGRST116') {
+                        console.error('❌ Erro ao verificar email:', emailError);
+                        throw emailError;
+                    }
+                    if (existingEmail) {
+                        console.log('⚠️ Lead com email já existe:', leadData.email, '- pulando');
+                        skipped.push({ ...leadData, motivo: 'Email já existe' });
+                        continue;
+                    }
+                }
                 // Criar mensagem_status primeiro
                 const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
                     .from('mensagem_status')
@@ -100,11 +261,12 @@ class LeadService {
                 throw error;
             }
         }
-        console.log('✅ Importação em lote concluída:', results.length, 'leads criados');
-        return results;
+        console.log('✅ Importação em lote concluída:', results.length, 'leads criados,', skipped.length, 'leads pulados');
+        return { created: results, skipped };
     }
     // Agendar lead
     static async agendarLead(id, data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Agendando lead:', id);
         const updateData = {
             status_agendamento: true
@@ -116,6 +278,7 @@ class LeadService {
             .from('leads')
             .update(updateData)
             .eq('id', id)
+            .eq('deletado', false)
             .select()
             .single();
         if (error) {
@@ -127,12 +290,14 @@ class LeadService {
     }
     // Enviar mensagem
     static async enviarMensagem(id, data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Enviando mensagem para lead:', id, 'tipo:', data.tipo_mensagem);
         // Buscar o lead para obter o mensagem_status_id
         const { data: lead, error: leadError } = await supabase_1.supabase
             .from('leads')
             .select('mensagem_status_id')
             .eq('id', id)
+            .eq('deletado', false)
             .single();
         if (leadError) {
             console.error('❌ Erro ao buscar lead:', leadError);
@@ -141,7 +306,10 @@ class LeadService {
         // Atualizar mensagem_status
         const updateData = {};
         updateData[`${data.tipo_mensagem}_enviada`] = true;
-        updateData[`${data.tipo_mensagem}_data`] = new Date().toISOString();
+        // Usar fuso horário do Brasil para registrar data/hora
+        const agora = new Date();
+        const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(' ', 'T') + '.000Z';
+        updateData[`${data.tipo_mensagem}_data`] = brasilTime;
         const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
             .from('mensagem_status')
             .update(updateData)
@@ -157,12 +325,14 @@ class LeadService {
     }
     // Atualizar status de mensagem enviada
     static async atualizarMensagem(id, data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Atualizando status de mensagem do lead:', id, 'tipo:', data.tipo_mensagem);
         // Buscar o lead para obter o mensagem_status_id
         const { data: lead, error: leadError } = await supabase_1.supabase
             .from('leads')
             .select('mensagem_status_id')
             .eq('id', id)
+            .eq('deletado', false)
             .single();
         if (leadError) {
             console.error('❌ Erro ao buscar lead:', leadError);
@@ -176,7 +346,10 @@ class LeadService {
             updateData[`${data.tipo_mensagem}_data`] = data.data;
         }
         else if (data.enviada) {
-            updateData[`${data.tipo_mensagem}_data`] = new Date().toISOString();
+            // Usar fuso horário do Brasil para registrar data/hora
+            const agora = new Date();
+            const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(' ', 'T') + '.000Z';
+            updateData[`${data.tipo_mensagem}_data`] = brasilTime;
         }
         else {
             // Se enviada for false e não há data específica, limpar a data
@@ -198,11 +371,13 @@ class LeadService {
     }
     // Atualizar etapa do funil
     static async atualizarEtapa(id, data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Atualizando etapa do lead:', id, 'nova etapa:', data.etapa_funil_id);
         const { data: lead, error } = await supabase_1.supabase
             .from('leads')
             .update({ etapa_funil_id: data.etapa_funil_id })
             .eq('id', id)
+            .eq('deletado', false)
             .select()
             .single();
         if (error) {
@@ -214,11 +389,13 @@ class LeadService {
     }
     // Atualizar status de negociação
     static async atualizarStatus(id, data) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Atualizando status do lead:', id, 'novo status:', data.status_negociacao_id);
         const { data: lead, error } = await supabase_1.supabase
             .from('leads')
             .update({ status_negociacao_id: data.status_negociacao_id })
             .eq('id', id)
+            .eq('deletado', false)
             .select()
             .single();
         if (error) {
@@ -230,6 +407,7 @@ class LeadService {
     }
     // Buscar lead por ID
     static async buscarPorId(id) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Buscando lead:', id);
         const { data: lead, error } = await supabase_1.supabase
             .from('leads')
@@ -241,6 +419,7 @@ class LeadService {
         status_negociacao:status_negociacao_id(*)
       `)
             .eq('id', id)
+            .eq('deletado', false)
             .single();
         if (error) {
             console.error('❌ Erro ao buscar lead:', error);
@@ -251,6 +430,7 @@ class LeadService {
     }
     // Listar todos os leads
     static async listarTodos() {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Listando todos os leads');
         const { data: leads, error } = await supabase_1.supabase
             .from('leads')
@@ -261,6 +441,7 @@ class LeadService {
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*)
       `)
+            .eq('deletado', false)
             .order('created_at', { ascending: false });
         if (error) {
             console.error('❌ Erro ao listar leads:', error);
@@ -271,6 +452,7 @@ class LeadService {
     }
     // Listar leads com paginação
     static async listarComPaginacao(params) {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Listando leads com paginação:', params);
         const { page, limit, search } = params;
         const offset = (page - 1) * limit;
@@ -282,7 +464,8 @@ class LeadService {
         origem:origem_id(*),
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*)
-      `, { count: 'exact' });
+      `, { count: 'exact' })
+            .eq('deletado', false);
         // Aplicar filtro de busca se fornecido
         if (search && search.trim()) {
             query = query.or(`nome.ilike.%${search}%,email.ilike.%${search}%,telefone.ilike.%${search}%`);
@@ -318,18 +501,21 @@ class LeadService {
     }
     // Obter estatísticas dos leads
     static async obterEstatisticas() {
+        LeadService.checkSupabaseConnection();
         console.log('🔄 Obtendo estatísticas dos leads');
         try {
             // Total de leads
             const { count: total, error: totalError } = await supabase_1.supabase
                 .from('leads')
-                .select('*', { count: 'exact', head: true });
+                .select('*', { count: 'exact', head: true })
+                .eq('deletado', false);
             if (totalError)
                 throw totalError;
             // Leads com email
             const { count: withEmail, error: emailError } = await supabase_1.supabase
                 .from('leads')
                 .select('*', { count: 'exact', head: true })
+                .eq('deletado', false)
                 .not('email', 'is', null)
                 .neq('email', '');
             if (emailError)
@@ -345,6 +531,7 @@ class LeadService {
             const { count: qualified, error: qualifiedError } = await supabase_1.supabase
                 .from('leads')
                 .select('*', { count: 'exact', head: true })
+                .eq('deletado', false)
                 .in('etapa_funil_id', etapaIds);
             if (qualifiedError)
                 throw qualifiedError;
@@ -354,6 +541,7 @@ class LeadService {
             const { count: newLeads, error: newError } = await supabase_1.supabase
                 .from('leads')
                 .select('*', { count: 'exact', head: true })
+                .eq('deletado', false)
                 .gte('created_at', sevenDaysAgo.toISOString());
             if (newError)
                 throw newError;
@@ -364,7 +552,8 @@ class LeadService {
           status_negociacao:status_negociacao_id(
             nome
           )
-        `);
+        `)
+                .eq('deletado', false);
             if (statusError)
                 throw statusError;
             const byStatus = {};
@@ -390,15 +579,19 @@ class LeadService {
     // Atualizar lead
     static async atualizarLead(id, data) {
         try {
+            LeadService.checkSupabaseConnection();
             console.log('🔄 Atualizando lead:', id, data);
-            // Verificar se o lead existe
+            // Verificar se o lead existe e não está deletado
             const { data: leadExistente, error: errorVerificacao } = await supabase_1.supabase
                 .from('leads')
-                .select('id')
+                .select('id, deletado')
                 .eq('id', id)
                 .single();
             if (errorVerificacao || !leadExistente) {
                 throw new Error('Lead não encontrado');
+            }
+            if (leadExistente.deletado) {
+                throw new Error('Não é possível atualizar um lead excluído');
             }
             // Atualizar o lead
             const { data: leadAtualizado, error: errorAtualizacao } = await supabase_1.supabase
@@ -429,30 +622,36 @@ class LeadService {
     // Excluir lead
     static async excluirLead(id) {
         try {
-            console.log('🔄 Excluindo lead:', id);
-            // Verificar se o lead existe e obter o mensagem_status_id
+            LeadService.checkSupabaseConnection();
+            console.log('🔄 Marcando lead como deletado:', id);
+            // Verificar se o lead existe
             const { data: leadExistente, error: errorVerificacao } = await supabase_1.supabase
                 .from('leads')
-                .select('id, mensagem_status_id')
+                .select('id, deletado')
                 .eq('id', id)
                 .single();
             if (errorVerificacao || !leadExistente) {
                 throw new Error('Lead não encontrado');
             }
-            // Excluir o lead (isso também excluirá o mensagem_status devido ao CASCADE)
+            if (leadExistente.deletado) {
+                throw new Error('Lead já foi excluído');
+            }
+            // Marcar o lead como deletado (soft delete)
             const { error: errorExclusao } = await supabase_1.supabase
                 .from('leads')
-                .delete()
+                .update({ deletado: true })
                 .eq('id', id);
             if (errorExclusao) {
-                console.error('❌ Erro ao excluir lead:', errorExclusao);
-                throw errorExclusao;
+                console.error('❌ Erro ao marcar lead como deletado:', errorExclusao);
+                throw new Error('Erro ao excluir lead');
             }
-            console.log('✅ Lead excluído com sucesso:', id);
-            return { success: true, message: 'Lead excluído com sucesso' };
+            console.log('✅ Lead marcado como deletado com sucesso:', id);
+            return {
+                message: 'Lead excluído com sucesso'
+            };
         }
         catch (error) {
-            console.error('❌ Erro ao excluir lead:', error);
+            console.error('❌ Erro no serviço de exclusão:', error);
             throw error;
         }
     }

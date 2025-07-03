@@ -133,8 +133,11 @@ class ControleEnviosController {
     // GET /api/controle-envios/hoje - Buscar controle de hoje
     static async getControleEnvioHoje(req, res) {
         try {
-            const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-            console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje:', hoje);
+            // Obter data atual no fuso horário do Brasil (UTC-3)
+            const agora = new Date();
+            const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
+            const hoje = brasilTime.split(' ')[0]; // YYYY-MM-DD
+            console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje (Brasil):', hoje);
             const controleEnvio = await controleEnviosService_1.ControleEnviosService.getControleEnvioByDate(hoje);
             return res.json({
                 success: true,

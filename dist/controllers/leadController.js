@@ -32,15 +32,41 @@ class LeadController {
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
+    // Criar um único lead
+    static async criarLead(req, res) {
+        try {
+            const validatedData = validators_1.createLeadSchema.parse(req.body);
+            const lead = await leadService_1.LeadService.criarLead(validatedData);
+            return res.status(201).json({
+                success: true,
+                message: 'Lead criado com sucesso',
+                data: lead
+            });
+        }
+        catch (error) {
+            return LeadController.handleError(res, error);
+        }
+    }
     // Importar leads
     static async importLeads(req, res) {
         try {
             const validatedData = validators_1.importLeadsSchema.parse(req.body);
-            const leads = await leadService_1.LeadService.importLeads(validatedData);
+            const result = await leadService_1.LeadService.importLeads(validatedData);
+            const message = result.skipped.length > 0
+                ? `${result.created.length} leads importados com sucesso, ${result.skipped.length} leads pulados por duplicação`
+                : `${result.created.length} leads importados com sucesso`;
             return res.status(201).json({
                 success: true,
-                message: `${leads.length} leads importados com sucesso`,
-                data: leads
+                message,
+                data: {
+                    created: result.created,
+                    skipped: result.skipped,
+                    summary: {
+                        total_processed: validatedData.leads.length,
+                        created_count: result.created.length,
+                        skipped_count: result.skipped.length
+                    }
+                }
             });
         }
         catch (error) {
@@ -51,11 +77,22 @@ class LeadController {
     static async bulkImportLeads(req, res) {
         try {
             const validatedData = validators_1.bulkLeadsSchema.parse(req.body);
-            const leads = await leadService_1.LeadService.bulkImportLeads(validatedData);
+            const result = await leadService_1.LeadService.bulkImportLeads(validatedData);
+            const message = result.skipped.length > 0
+                ? `${result.created.length} leads importados em lote com sucesso, ${result.skipped.length} leads pulados por duplicação`
+                : `${result.created.length} leads importados em lote com sucesso`;
             return res.status(201).json({
                 success: true,
-                message: `${leads.length} leads importados em lote com sucesso`,
-                data: leads
+                message,
+                data: {
+                    created: result.created,
+                    skipped: result.skipped,
+                    summary: {
+                        total_processed: validatedData.leads.length,
+                        created_count: result.created.length,
+                        skipped_count: result.skipped.length
+                    }
+                }
             });
         }
         catch (error) {
@@ -85,7 +122,7 @@ class LeadController {
     // Agendar lead
     static async agendarLead(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const validatedData = validators_1.agendamentoSchema.parse(req.body);
             const lead = await leadService_1.LeadService.agendarLead(id, validatedData);
@@ -101,7 +138,7 @@ class LeadController {
     }
     // GET /api/leads/[id]/agendamento
     static async getAgendamentoInfo(req, res) {
-        const id = this.extractIdFromUrl(req);
+        const id = LeadController.extractIdFromUrl(req);
         return res.status(200).json({
             success: true,
             message: `Endpoint para agendamento do lead ${id}`,
@@ -116,7 +153,7 @@ class LeadController {
     // Enviar mensagem
     static async enviarMensagem(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const validatedData = validators_1.mensagemSchema.parse(req.body);
             const mensagemStatus = await leadService_1.LeadService.enviarMensagem(id, validatedData);
@@ -132,7 +169,7 @@ class LeadController {
     }
     // GET /api/leads/[id]/mensagens
     static async getMensagensInfo(req, res) {
-        const id = this.extractIdFromUrl(req);
+        const id = LeadController.extractIdFromUrl(req);
         return res.status(200).json({
             success: true,
             message: `Endpoint para envio de mensagens do lead ${id}`,
@@ -147,7 +184,7 @@ class LeadController {
     // Atualizar etapa do funil
     static async atualizarEtapa(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const validatedData = validators_1.etapaSchema.parse(req.body);
             const lead = await leadService_1.LeadService.atualizarEtapa(id, validatedData);
@@ -163,7 +200,7 @@ class LeadController {
     }
     // GET /api/leads/[id]/etapa
     static async getEtapaInfo(req, res) {
-        const id = this.extractIdFromUrl(req);
+        const id = LeadController.extractIdFromUrl(req);
         return res.status(200).json({
             success: true,
             message: `Endpoint para atualização de etapa do lead ${id}`,
@@ -178,7 +215,7 @@ class LeadController {
     // Atualizar status de negociação
     static async atualizarStatus(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const validatedData = validators_1.statusSchema.parse(req.body);
             const lead = await leadService_1.LeadService.atualizarStatus(id, validatedData);
@@ -194,7 +231,7 @@ class LeadController {
     }
     // GET /api/leads/[id]/status
     static async getStatusInfo(req, res) {
-        const id = this.extractIdFromUrl(req);
+        const id = LeadController.extractIdFromUrl(req);
         return res.status(200).json({
             success: true,
             message: `Endpoint para atualização de status do lead ${id}`,
@@ -209,7 +246,7 @@ class LeadController {
     // GET /api/leads/[id] - Buscar lead específico
     static async buscarLead(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const lead = await leadService_1.LeadService.buscarPorId(id);
             return res.status(200).json({
@@ -330,7 +367,7 @@ class LeadController {
     // Atualizar status de mensagem enviada
     static async atualizarMensagem(req, res) {
         try {
-            const id = this.extractIdFromUrl(req);
+            const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const validatedData = validators_1.atualizarMensagemSchema.parse(req.body);
             const mensagemStatus = await leadService_1.LeadService.atualizarMensagem(id, validatedData);

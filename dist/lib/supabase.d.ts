@@ -1,9 +1,9 @@
-export declare const supabase: import("@supabase/supabase-js").SupabaseClient<any, "public", any>;
+export declare const supabase: import("@supabase/supabase-js").SupabaseClient<any, "public", any> | null;
 export interface Lead {
     id: string;
     nome: string;
     telefone: string;
-    email: string;
+    email?: string;
     empresa?: string;
     cargo?: string;
     origem_id: string;
@@ -12,6 +12,7 @@ export interface Lead {
     mensagem_status_id: string;
     etapa_funil_id?: string;
     status_negociacao_id?: string;
+    deletado: boolean;
     created_at: string;
 }
 export interface MensagemStatus {
