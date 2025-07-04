@@ -171,4 +171,63 @@ export class ControleEnviosController {
       return ControleEnviosController.handleError(res, error)
     }
   }
+
+  // PUT /api/controle-envios/hoje/quantidade - Alterar quantidade enviada de hoje
+  static async alterarQuantidadeEnviadaHoje(req: Request, res: Response) {
+    try {
+      const { quantidade } = req.body
+      
+      console.log('📋 PUT /api/controle-envios/hoje/quantidade - Alterando quantidade para:', quantidade)
+      
+      // Validar quantidade
+      if (typeof quantidade !== 'number' || quantidade < 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'A quantidade deve ser um número não negativo'
+        })
+      }
+      
+      // Obter data atual no fuso horário do Brasil
+      const agora = new Date()
+      const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit'})
+      const hoje = brasilTime.split('/').reverse().join('-') // YYYY-MM-DD
+      
+      const controleAtualizado = await ControleEnviosService.alterarQuantidadeEnviada(hoje, quantidade)
+      
+      return res.json({
+        success: true,
+        data: controleAtualizado,
+        message: 'Quantidade enviada de hoje alterada com sucesso'
+      })
+    } catch (error) {
+      return ControleEnviosController.handleError(res, error)
+    }
+  }
+
+  // PUT /api/controle-envios/limite-diario - Alterar limite diário de hoje
+  static async alterarLimiteDiario(req: Request, res: Response) {
+    try {
+      const { limite } = req.body
+      
+      console.log('📋 PUT /api/controle-envios/limite-diario - Alterando limite para:', limite)
+      
+      // Validar limite
+      if (typeof limite !== 'number' || limite < 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'O limite deve ser um número não negativo'
+        })
+      }
+      
+      const controleAtualizado = await ControleEnviosService.alterarLimiteDiario(limite)
+      
+      return res.json({
+        success: true,
+        data: controleAtualizado,
+        message: 'Limite diário alterado com sucesso'
+      })
+    } catch (error) {
+      return ControleEnviosController.handleError(res, error)
+    }
+  }
 }

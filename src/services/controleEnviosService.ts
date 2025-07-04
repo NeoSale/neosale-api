@@ -142,4 +142,60 @@ export class ControleEnviosService {
       enviadas: controleEnvio.quantidade_enviada
     }
   }
+
+  // Alterar quantidade enviada para uma data específica
+  static async alterarQuantidadeEnviada(data: string, novaQuantidade: number): Promise<ControleEnvio> {
+    ControleEnviosService.checkSupabaseConnection();
+    console.log('🔄 Alterando quantidade enviada para data:', data, 'nova quantidade:', novaQuantidade)
+    
+    // Validar se a quantidade é válida
+    if (novaQuantidade < 0) {
+      throw new Error('A quantidade enviada não pode ser negativa')
+    }
+    
+    // Buscar ou criar o registro para a data
+    await this.getControleEnvioByDate(data)
+    
+    // Atualizar a quantidade
+    return await this.updateQuantidadeEnviada(data, novaQuantidade)
+  }
+
+  // Alterar limite diário para hoje
+  static async alterarLimiteDiario(novoLimite: number): Promise<ControleEnvio> {
+    ControleEnviosService.checkSupabaseConnection();
+    console.log('🔄 Alterando limite diário para:', novoLimite)
+    
+    // Validar se o limite é válido
+    if (novoLimite < 0) {
+      throw new Error('O limite diário não pode ser negativo')
+    }
+    
+    // Obter data atual no fuso horário do Brasil
+    const agora = new Date()
+    const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit'})
+    const hoje = brasilTime.split('/').reverse().join('-') // YYYY-MM-DD
+    
+    console.log('📅 Data de hoje (Brasil):', hoje)
+    
+    // Buscar ou criar o registro para hoje
+    const controleAtual = await this.getControleEnvioByDate(hoje)
+    
+    // Atualizar apenas o limite diário, mantendo a quantidade enviada atual
+    const { data: controleAtualizado, error } = await supabase!
+      .from('controle_envios_diarios')
+      .update({ 
+        limite_diario: novoLimite
+      })
+      .eq('data', hoje)
+      .select()
+      .single()
+    
+    if (error) {
+      console.error('❌ Erro ao atualizar limite diário:', error)
+      throw error
+    }
+    
+    console.log('✅ Limite diário atualizado com sucesso')
+    return controleAtualizado
+  }
 }

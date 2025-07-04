@@ -101,6 +101,90 @@ router.get('/hoje', ControleEnviosController.getControleEnvioHoje)
 
 /**
  * @swagger
+ * /api/controle-envios/hoje/quantidade:
+ *   put:
+ *     summary: Altera a quantidade enviada da data de hoje
+ *     tags: [Controle de Envios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quantidade
+ *             properties:
+ *               quantidade:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Nova quantidade enviada para hoje
+ *             example:
+ *               quantidade: 15
+ *     responses:
+ *       200:
+ *         description: Quantidade enviada alterada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/ControleEnvio'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/hoje/quantidade', ControleEnviosController.alterarQuantidadeEnviadaHoje)
+
+/**
+ * @swagger
+ * /api/controle-envios/limite-diario:
+ *   put:
+ *     summary: Altera o limite diário de hoje
+ *     tags: [Controle de Envios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - limite
+ *             properties:
+ *               limite:
+ *                 type: integer
+ *                 minimum: 0
+ *                 description: Novo limite diário de envios
+ *             example:
+ *               limite: 50
+ *     responses:
+ *       200:
+ *         description: Limite diário alterado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/ControleEnvio'
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/limite-diario', ControleEnviosController.alterarLimiteDiario)
+
+/**
+ * @swagger
  * /api/controle-envios/{data}:
  *   get:
  *     summary: Busca controle de envios por data específica
