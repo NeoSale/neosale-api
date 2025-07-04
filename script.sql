@@ -107,3 +107,19 @@ create table controle_envios_diarios (
   limite_diario integer not null,
   created_at timestamp default now()
 );
+
+create table configuracoes (
+  id uuid primary key default gen_random_uuid(),
+  chave text,
+  valor text,
+  created_at timestamp default now(),
+  updated_at timestamp default now()
+);
+
+-- Inserir configuração padrão
+insert into configuracoes (chave, valor) values ('horario_inicio', '08:00:00');
+insert into configuracoes (chave, valor) values ('horario_fim', '18:00:00');
+insert into configuracoes (chave, valor) values ('quantidade_diaria_maxima', '30');
+insert into configuracoes (chave, valor) values ('envia_somente_dias_uteis', 'true');
+
+

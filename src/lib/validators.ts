@@ -129,3 +129,20 @@ export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
 export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>
 export type CreateLeadInput = z.infer<typeof createLeadSchema>
+
+// Validator para criação de configuração
+export const createConfiguracaoSchema = z.object({
+  chave: z.string().min(1, 'Chave é obrigatória'),
+  valor: z.string().min(1, 'Valor é obrigatório')
+})
+
+// Validator para atualização de configuração
+export const updateConfiguracaoSchema = z.object({
+  chave: z.string().min(1, 'Chave é obrigatória').optional(),
+  valor: z.string().min(1, 'Valor é obrigatório').optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+export type CreateConfiguracaoInput = z.infer<typeof createConfiguracaoSchema>
+export type UpdateConfiguracaoInput = z.infer<typeof updateConfiguracaoSchema>
