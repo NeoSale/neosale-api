@@ -364,9 +364,9 @@ export class LeadService {
     // Atualizar mensagem_status
     const updateData: any = {}
     updateData[`${data.tipo_mensagem}_enviada`] = true
-    // Usar fuso horário do Brasil para registrar data/hora
+    // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
     const agora = new Date()
-    const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"}).replace(' ', 'T') + '.000Z'
+    const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z'
     updateData[`${data.tipo_mensagem}_data`] = brasilTime
     
     const { data: mensagemStatus, error: mensagemError } = await supabase!
@@ -411,9 +411,9 @@ export class LeadService {
     if (data.data) {
       updateData[`${data.tipo_mensagem}_data`] = data.data
     } else if (data.enviada) {
-      // Usar fuso horário do Brasil para registrar data/hora
+      // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
       const agora = new Date()
-      const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"}).replace(' ', 'T') + '.000Z'
+      const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z'
       updateData[`${data.tipo_mensagem}_data`] = brasilTime
     } else {
       // Se enviada for false e não há data específica, limpar a data
@@ -505,6 +505,39 @@ export class LeadService {
     }
     
     console.log('✅ Lead encontrado:', id)
+    return lead
+  }
+
+  // Buscar lead por telefone
+  static async buscarPorTelefone(telefone: string) {
+    LeadService.checkSupabaseConnection();
+    console.log('🔄 Buscando lead por telefone:', telefone)
+    
+    const { data: lead, error } = await supabase!
+      .from('leads')
+      .select(`
+        *,
+        mensagem_status:mensagem_status_id(*),
+        origem:origem_id(*),
+        etapa_funil:etapa_funil_id(*),
+        status_negociacao:status_negociacao_id(*),
+        qualificacao:qualificacao_id(*)
+      `)
+      .eq('telefone', telefone)
+      .eq('deletado', false)
+      .single()
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        const badRequestError = new Error('Lead não encontrado com este telefone')
+        ;(badRequestError as any).statusCode = 400
+        throw badRequestError
+      }
+      console.error('❌ Erro ao buscar lead por telefone:', error)
+      throw error
+    }
+    
+    console.log('✅ Lead encontrado por telefone:', telefone)
     return lead
   }
   
@@ -643,7 +676,7 @@ export class LeadService {
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('deletado', false)
-        .gte('created_at', sevenDaysAgo.toISOString())
+        .gte('created_at', sevenDaysAgo.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z')
       
       if (newError) throw newError
       

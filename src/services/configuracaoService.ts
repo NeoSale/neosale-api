@@ -79,7 +79,7 @@ export class ConfiguracaoService {
       .insert({
         chave: input.chave,
         valor: input.valor,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
       })
       .select()
       .single();
@@ -100,7 +100,7 @@ export class ConfiguracaoService {
       .from('configuracoes')
       .update({
         ...input,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
       })
       .eq('id', id)
       .select()

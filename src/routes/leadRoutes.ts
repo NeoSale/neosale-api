@@ -698,6 +698,43 @@ router.put('/:id/mensagem', LeadController.atualizarMensagem)
 
 /**
  * @swagger
+ * /api/leads/telefone/{telefone}:
+ *   get:
+ *     summary: Busca um lead específico por telefone
+ *     tags: [Leads]
+ *     parameters:
+ *       - in: path
+ *         name: telefone
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Telefone do lead no formato 5599999999999
+ *         example: "5511999999999"
+ *     responses:
+ *       200:
+ *         description: Lead encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Lead'
+ *       400:
+ *         description: Telefone não fornecido
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/telefone/:telefone', LeadController.buscarPorTelefone)
+
+/**
+ * @swagger
  * /api/leads/{id}:
  *   get:
  *     summary: Busca um lead específico por ID

@@ -35,6 +35,14 @@ export class LeadController {
       })
     }
     
+    // Verificar se o erro tem statusCode customizado
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        message: error.message
+      })
+    }
+    
     if (error.code === 'PGRST116') {
       return res.status(404).json({
         success: false,
@@ -175,7 +183,7 @@ export class LeadController {
       usage: {
         method: 'POST',
         body: {
-          agendado_em: 'string (ISO datetime) - opcional'
+          agendado_em: 'string (datetime pt-BR) - opcional'
         }
       }
     })
@@ -295,6 +303,30 @@ export class LeadController {
       idParamSchema.parse({ id })
       
       const lead = await LeadService.buscarPorId(id)
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Lead encontrado',
+        data: lead
+      })
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
+
+  // GET /api/leads/telefone/[telefone] - Buscar lead por telefone
+  static async buscarPorTelefone(req: Request, res: Response) {
+    try {
+      const { telefone } = req.params
+      
+      if (!telefone) {
+        return res.status(400).json({
+          success: false,
+          message: 'Telefone é obrigatório'
+        })
+      }
+      
+      const lead = await LeadService.buscarPorTelefone(telefone)
       
       return res.status(200).json({
         success: true,

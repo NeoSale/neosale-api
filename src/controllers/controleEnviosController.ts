@@ -153,10 +153,10 @@ export class ControleEnviosController {
   // GET /api/controle-envios/hoje - Buscar controle de hoje
   static async getControleEnvioHoje(req: Request, res: Response) {
     try {
-      // Obter data atual no fuso horário do Brasil (UTC-3)
+      // Obter data atual no fuso horário do Brasil (formato pt-BR)
       const agora = new Date()
-      const brasilTime = agora.toLocaleString("sv-SE", {timeZone: "America/Sao_Paulo"})
-      const hoje = brasilTime.split(' ')[0] // YYYY-MM-DD
+      const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit'})
+      const hoje = brasilTime.split('/').reverse().join('-') // YYYY-MM-DD
       
       console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje (Brasil):', hoje)
       
