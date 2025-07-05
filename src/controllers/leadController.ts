@@ -326,13 +326,27 @@ export class LeadController {
         })
       }
       
-      const lead = await LeadService.buscarPorTelefone(telefone)
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Lead encontrado',
-        data: lead
-      })
+      try {
+        const lead = await LeadService.buscarPorTelefone(telefone)
+        
+        // Se encontrou o lead, retorna 200 com resultado vazio
+        return res.status(200).json({
+          success: true,
+          message: 'Lead encontrado',
+          data: {}
+        })
+      } catch (serviceError: any) {
+        // Se o erro é de lead não encontrado (400), retorna os dados do lead
+        if (serviceError.statusCode === 400) {
+          return res.status(200).json({
+            success: false,
+            message: 'Lead não encontrado com este telefone',
+            data: null
+          })
+        }
+        // Para outros erros, relança
+        throw serviceError
+      }
     } catch (error) {
       return LeadController.handleError(res, error)
     }
