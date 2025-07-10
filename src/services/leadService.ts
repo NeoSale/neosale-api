@@ -413,7 +413,8 @@ export class LeadService {
     } else if (data.enviada) {
       // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
       const agora = new Date()
-      const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z'
+      // CORREÇÃO: Gerar timestamp ISO válido para o fuso horário do Brasil
+      const brasilTime = new Date(agora.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"})).toISOString()
       updateData[`${data.tipo_mensagem}_data`] = brasilTime
     } else {
       // Se enviada for false e não há data específica, limpar a data
