@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { ConfiguracaoService } from './configuracaoService'
 
 export interface ControleEnvio {
   id: string
@@ -66,8 +67,21 @@ export class ControleEnviosService {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Criando novo controle de envio para data:', data)
     
-    // Pegar o limite diário padrão das variáveis de ambiente
-    const limiteDiarioPadrao = parseInt(process.env.LIMITE_DIARIO_PADRAO || '30')
+    // Pegar o limite diário padrão do endpoint de configurações
+    let limiteDiarioPadrao; // valor padrão caso não encontre a configuração
+    
+    try {
+      const configuracaoLimite = await ConfiguracaoService.getByChave('LIMITE_DIARIO_PADRAO');
+      if (configuracaoLimite && configuracaoLimite.valor) {
+        limiteDiarioPadrao = parseInt(configuracaoLimite.valor);
+        console.log('✅ Limite diário obtido das configurações:', limiteDiarioPadrao);
+      } else {
+        console.log('⚠️ Configuração LIMITE_DIARIO_PADRAO não encontrada, usando valor padrão:', limiteDiarioPadrao);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar configuração LIMITE_DIARIO_PADRAO:', error);
+      console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
+    }
     
     const { data: novoControleEnvio, error } = await supabase!
       .from('controle_envios_diarios')
