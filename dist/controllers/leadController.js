@@ -20,6 +20,13 @@ class LeadController {
                 errors: error.errors
             });
         }
+        // Verificar se o erro tem statusCode customizado
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                success: false,
+                message: error.message
+            });
+        }
         if (error.code === 'PGRST116') {
             return res.status(404).json({
                 success: false,
@@ -145,7 +152,7 @@ class LeadController {
             usage: {
                 method: 'POST',
                 body: {
-                    agendado_em: 'string (ISO datetime) - opcional'
+                    agendado_em: 'string (datetime pt-BR) - opcional'
                 }
             }
         });
@@ -249,6 +256,27 @@ class LeadController {
             const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
             const lead = await leadService_1.LeadService.buscarPorId(id);
+            return res.status(200).json({
+                success: true,
+                message: 'Lead encontrado',
+                data: lead
+            });
+        }
+        catch (error) {
+            return LeadController.handleError(res, error);
+        }
+    }
+    // GET /api/leads/telefone/[telefone] - Buscar lead por telefone
+    static async buscarPorTelefone(req, res) {
+        try {
+            const { telefone } = req.params;
+            if (!telefone) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Telefone é obrigatório'
+                });
+            }
+            const lead = await leadService_1.LeadService.buscarPorTelefone(telefone);
             return res.status(200).json({
                 success: true,
                 message: 'Lead encontrado',

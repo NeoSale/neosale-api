@@ -15,6 +15,7 @@ export declare class LeadController {
     static atualizarStatus(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getStatusInfo(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static buscarLead(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static buscarPorTelefone(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static listarLeads(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static listarLeadsPaginados(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static obterEstatisticas(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;

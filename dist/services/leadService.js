@@ -68,8 +68,16 @@ class LeadService {
                 email: data.email || null,
                 empresa: data.empresa || null,
                 cargo: data.cargo || null,
+                contador: data.contador || null,
+                escritorio: data.escritorio || null,
+                responsavel: data.responsavel || null,
+                cnpj: data.cnpj || null,
+                observacao: data.observacao || null,
+                segmento: data.segmento || null,
+                erp_atual: data.erp_atual || null,
                 origem_id: origemId,
                 mensagem_status_id: mensagemStatus.id,
+                qualificacao_id: data.qualificacao_id || null,
                 deletado: false
             })
                 .select(`
@@ -77,7 +85,8 @@ class LeadService {
           mensagem_status:mensagem_status_id(*),
           origem:origem_id(*),
           etapa_funil:etapa_funil_id(*),
-          status_negociacao:status_negociacao_id(*)
+          status_negociacao:status_negociacao_id(*),
+          qualificacao:qualificacao_id(*)
         `)
                 .single();
             if (error) {
@@ -306,9 +315,9 @@ class LeadService {
         // Atualizar mensagem_status
         const updateData = {};
         updateData[`${data.tipo_mensagem}_enviada`] = true;
-        // Usar fuso horário do Brasil para registrar data/hora
+        // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
         const agora = new Date();
-        const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(' ', 'T') + '.000Z';
+        const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z';
         updateData[`${data.tipo_mensagem}_data`] = brasilTime;
         const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
             .from('mensagem_status')
@@ -346,9 +355,10 @@ class LeadService {
             updateData[`${data.tipo_mensagem}_data`] = data.data;
         }
         else if (data.enviada) {
-            // Usar fuso horário do Brasil para registrar data/hora
+            // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
             const agora = new Date();
-            const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" }).replace(' ', 'T') + '.000Z';
+            // CORREÇÃO: Gerar timestamp ISO válido para o fuso horário do Brasil
+            const brasilTime = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).toISOString();
             updateData[`${data.tipo_mensagem}_data`] = brasilTime;
         }
         else {
@@ -426,6 +436,35 @@ class LeadService {
             throw error;
         }
         console.log('✅ Lead encontrado:', id);
+        return lead;
+    }
+    // Buscar lead por telefone
+    static async buscarPorTelefone(telefone) {
+        LeadService.checkSupabaseConnection();
+        console.log('🔄 Buscando lead por telefone:', telefone);
+        const { data: lead, error } = await supabase_1.supabase
+            .from('leads')
+            .select(`
+        *,
+        mensagem_status:mensagem_status_id(*),
+        origem:origem_id(*),
+        etapa_funil:etapa_funil_id(*),
+        status_negociacao:status_negociacao_id(*),
+        qualificacao:qualificacao_id(*)
+      `)
+            .eq('telefone', telefone)
+            .eq('deletado', false)
+            .single();
+        if (error) {
+            if (error.code === 'PGRST116') {
+                const badRequestError = new Error('Lead não encontrado com este telefone');
+                badRequestError.statusCode = 400;
+                throw badRequestError;
+            }
+            console.error('❌ Erro ao buscar lead por telefone:', error);
+            throw error;
+        }
+        console.log('✅ Lead encontrado por telefone:', telefone);
         return lead;
     }
     // Listar todos os leads
@@ -542,7 +581,7 @@ class LeadService {
                 .from('leads')
                 .select('*', { count: 'exact', head: true })
                 .eq('deletado', false)
-                .gte('created_at', sevenDaysAgo.toISOString());
+                .gte('created_at', sevenDaysAgo.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z');
             if (newError)
                 throw newError;
             // Leads por status de negociação

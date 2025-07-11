@@ -31,6 +31,7 @@ export declare class LeadService {
     static atualizarEtapa(id: string, data: EtapaInput): Promise<any>;
     static atualizarStatus(id: string, data: StatusInput): Promise<any>;
     static buscarPorId(id: string): Promise<any>;
+    static buscarPorTelefone(telefone: string): Promise<any>;
     static listarTodos(): Promise<any[]>;
     static listarComPaginacao(params: PaginationInput): Promise<{
         data: any[];

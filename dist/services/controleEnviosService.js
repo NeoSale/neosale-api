@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControleEnviosService = void 0;
 const supabase_1 = require("../lib/supabase");
+const configuracaoService_1 = require("./configuracaoService");
 class ControleEnviosService {
     // Verificar se Supabase está configurado
     static checkSupabaseConnection() {
@@ -49,8 +50,22 @@ class ControleEnviosService {
     static async createControleEnvio(data) {
         ControleEnviosService.checkSupabaseConnection();
         console.log('🔄 Criando novo controle de envio para data:', data);
-        // Pegar o limite diário padrão das variáveis de ambiente
-        const limiteDiarioPadrao = parseInt(process.env.LIMITE_DIARIO_PADRAO || '30');
+        // Pegar o limite diário padrão do endpoint de configurações
+        let limiteDiarioPadrao = 0; // valor padrão caso não encontre a configuração
+        try {
+            const configuracaoLimite = await configuracaoService_1.ConfiguracaoService.getByChave('quantidade_diaria_maxima');
+            if (configuracaoLimite && configuracaoLimite.valor) {
+                limiteDiarioPadrao = parseInt(configuracaoLimite.valor);
+                console.log('✅ Limite diário obtido das configurações:', limiteDiarioPadrao);
+            }
+            else {
+                console.log('⚠️ Configuração quantidade_diaria_maxima não encontrada, usando valor padrão:', limiteDiarioPadrao);
+            }
+        }
+        catch (error) {
+            console.error('❌ Erro ao buscar configuração quantidade_diaria_maxima:', error);
+            console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
+        }
         const { data: novoControleEnvio, error } = await supabase_1.supabase
             .from('controle_envios_diarios')
             .insert({
@@ -108,6 +123,50 @@ class ControleEnviosService {
             limite: controleEnvio.limite_diario,
             enviadas: controleEnvio.quantidade_enviada
         };
+    }
+    // Alterar quantidade enviada para uma data específica
+    static async alterarQuantidadeEnviada(data, novaQuantidade) {
+        ControleEnviosService.checkSupabaseConnection();
+        console.log('🔄 Alterando quantidade enviada para data:', data, 'nova quantidade:', novaQuantidade);
+        // Validar se a quantidade é válida
+        if (novaQuantidade < 0) {
+            throw new Error('A quantidade enviada não pode ser negativa');
+        }
+        // Buscar ou criar o registro para a data
+        await this.getControleEnvioByDate(data);
+        // Atualizar a quantidade
+        return await this.updateQuantidadeEnviada(data, novaQuantidade);
+    }
+    // Alterar limite diário para hoje
+    static async alterarLimiteDiario(novoLimite) {
+        ControleEnviosService.checkSupabaseConnection();
+        console.log('🔄 Alterando limite diário para:', novoLimite);
+        // Validar se o limite é válido
+        if (novoLimite < 0) {
+            throw new Error('O limite diário não pode ser negativo');
+        }
+        // Obter data atual no fuso horário do Brasil
+        const agora = new Date();
+        const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit' });
+        const hoje = brasilTime.split('/').reverse().join('-'); // YYYY-MM-DD
+        console.log('📅 Data de hoje (Brasil):', hoje);
+        // Buscar ou criar o registro para hoje
+        const controleAtual = await this.getControleEnvioByDate(hoje);
+        // Atualizar apenas o limite diário, mantendo a quantidade enviada atual
+        const { data: controleAtualizado, error } = await supabase_1.supabase
+            .from('controle_envios_diarios')
+            .update({
+            limite_diario: novoLimite
+        })
+            .eq('data', hoje)
+            .select()
+            .single();
+        if (error) {
+            console.error('❌ Erro ao atualizar limite diário:', error);
+            throw error;
+        }
+        console.log('✅ Limite diário atualizado com sucesso');
+        return controleAtualizado;
     }
 }
 exports.ControleEnviosService = ControleEnviosService;

@@ -18,5 +18,7 @@ export declare class ControleEnviosService {
         limite: number;
         enviadas: number;
     }>;
+    static alterarQuantidadeEnviada(data: string, novaQuantidade: number): Promise<ControleEnvio>;
+    static alterarLimiteDiario(novoLimite: number): Promise<ControleEnvio>;
 }
 //# sourceMappingURL=controleEnviosService.d.ts.map

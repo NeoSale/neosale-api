@@ -133,16 +133,66 @@ class ControleEnviosController {
     // GET /api/controle-envios/hoje - Buscar controle de hoje
     static async getControleEnvioHoje(req, res) {
         try {
-            // Obter data atual no fuso horário do Brasil (UTC-3)
+            // Obter data atual no fuso horário do Brasil (formato pt-BR)
             const agora = new Date();
-            const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
-            const hoje = brasilTime.split(' ')[0]; // YYYY-MM-DD
+            const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit' });
+            const hoje = brasilTime.split('/').reverse().join('-'); // YYYY-MM-DD
             console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje (Brasil):', hoje);
             const controleEnvio = await controleEnviosService_1.ControleEnviosService.getControleEnvioByDate(hoje);
             return res.json({
                 success: true,
                 data: controleEnvio,
                 message: 'Controle de envio de hoje encontrado com sucesso'
+            });
+        }
+        catch (error) {
+            return ControleEnviosController.handleError(res, error);
+        }
+    }
+    // PUT /api/controle-envios/hoje/quantidade - Alterar quantidade enviada de hoje
+    static async alterarQuantidadeEnviadaHoje(req, res) {
+        try {
+            const { quantidade } = req.body;
+            console.log('📋 PUT /api/controle-envios/hoje/quantidade - Alterando quantidade para:', quantidade);
+            // Validar quantidade
+            if (typeof quantidade !== 'number' || quantidade < 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'A quantidade deve ser um número não negativo'
+                });
+            }
+            // Obter data atual no fuso horário do Brasil
+            const agora = new Date();
+            const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit' });
+            const hoje = brasilTime.split('/').reverse().join('-'); // YYYY-MM-DD
+            const controleAtualizado = await controleEnviosService_1.ControleEnviosService.alterarQuantidadeEnviada(hoje, quantidade);
+            return res.json({
+                success: true,
+                data: controleAtualizado,
+                message: 'Quantidade enviada de hoje alterada com sucesso'
+            });
+        }
+        catch (error) {
+            return ControleEnviosController.handleError(res, error);
+        }
+    }
+    // PUT /api/controle-envios/limite-diario - Alterar limite diário de hoje
+    static async alterarLimiteDiario(req, res) {
+        try {
+            const { limite } = req.body;
+            console.log('📋 PUT /api/controle-envios/limite-diario - Alterando limite para:', limite);
+            // Validar limite
+            if (typeof limite !== 'number' || limite < 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'O limite deve ser um número não negativo'
+                });
+            }
+            const controleAtualizado = await controleEnviosService_1.ControleEnviosService.alterarLimiteDiario(limite);
+            return res.json({
+                success: true,
+                data: controleAtualizado,
+                message: 'Limite diário alterado com sucesso'
             });
         }
         catch (error) {

@@ -132,10 +132,18 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
     empresa: z.ZodOptional<z.ZodString>;
     cargo: z.ZodOptional<z.ZodString>;
+    contador: z.ZodOptional<z.ZodString>;
+    escritorio: z.ZodOptional<z.ZodString>;
+    responsavel: z.ZodOptional<z.ZodString>;
+    cnpj: z.ZodOptional<z.ZodString>;
+    observacao: z.ZodOptional<z.ZodString>;
+    segmento: z.ZodOptional<z.ZodString>;
+    erp_atual: z.ZodOptional<z.ZodString>;
     origem_id: z.ZodOptional<z.ZodString>;
     status_agendamento: z.ZodOptional<z.ZodBoolean>;
     etapa_funil_id: z.ZodOptional<z.ZodString>;
     status_negociacao_id: z.ZodOptional<z.ZodString>;
+    qualificacao_id: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     email?: string | undefined;
     nome?: string | undefined;
@@ -145,7 +153,15 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     status_negociacao_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
     status_agendamento?: boolean | undefined;
+    qualificacao_id?: string | undefined;
 }, {
     email?: string | undefined;
     nome?: string | undefined;
@@ -155,7 +171,15 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     status_negociacao_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
     status_agendamento?: boolean | undefined;
+    qualificacao_id?: string | undefined;
 }>, {
     email?: string | undefined;
     nome?: string | undefined;
@@ -165,7 +189,15 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     status_negociacao_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
     status_agendamento?: boolean | undefined;
+    qualificacao_id?: string | undefined;
 }, {
     email?: string | undefined;
     nome?: string | undefined;
@@ -175,7 +207,15 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     status_negociacao_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
     status_agendamento?: boolean | undefined;
+    qualificacao_id?: string | undefined;
 }>;
 export declare const atualizarMensagemSchema: z.ZodObject<{
     tipo_mensagem: z.ZodEnum<["mensagem_1", "mensagem_2", "mensagem_3"]>;
@@ -196,7 +236,15 @@ export declare const createLeadSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodString>;
     empresa: z.ZodOptional<z.ZodString>;
     cargo: z.ZodOptional<z.ZodString>;
+    contador: z.ZodOptional<z.ZodString>;
+    escritorio: z.ZodOptional<z.ZodString>;
+    responsavel: z.ZodOptional<z.ZodString>;
+    cnpj: z.ZodOptional<z.ZodString>;
+    observacao: z.ZodOptional<z.ZodString>;
+    segmento: z.ZodOptional<z.ZodString>;
+    erp_atual: z.ZodOptional<z.ZodString>;
     origem_id: z.ZodOptional<z.ZodString>;
+    qualificacao_id: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     nome: string;
     telefone: string;
@@ -204,6 +252,14 @@ export declare const createLeadSchema: z.ZodObject<{
     origem_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
+    qualificacao_id?: string | undefined;
 }, {
     nome: string;
     telefone: string;
@@ -211,6 +267,14 @@ export declare const createLeadSchema: z.ZodObject<{
     origem_id?: string | undefined;
     empresa?: string | undefined;
     cargo?: string | undefined;
+    contador?: string | undefined;
+    escritorio?: string | undefined;
+    responsavel?: string | undefined;
+    cnpj?: string | undefined;
+    observacao?: string | undefined;
+    segmento?: string | undefined;
+    erp_atual?: string | undefined;
+    qualificacao_id?: string | undefined;
 }>;
 export type ImportLeadsInput = z.infer<typeof importLeadsSchema>;
 export type BulkLeadsInput = z.infer<typeof bulkLeadsSchema>;
@@ -223,4 +287,32 @@ export type PaginationInput = z.infer<typeof paginationSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>;
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+export declare const createConfiguracaoSchema: z.ZodObject<{
+    chave: z.ZodString;
+    valor: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    chave: string;
+    valor: string;
+}, {
+    chave: string;
+    valor: string;
+}>;
+export declare const updateConfiguracaoSchema: z.ZodEffects<z.ZodObject<{
+    chave: z.ZodOptional<z.ZodString>;
+    valor: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    chave?: string | undefined;
+    valor?: string | undefined;
+}, {
+    chave?: string | undefined;
+    valor?: string | undefined;
+}>, {
+    chave?: string | undefined;
+    valor?: string | undefined;
+}, {
+    chave?: string | undefined;
+    valor?: string | undefined;
+}>;
+export type CreateConfiguracaoInput = z.infer<typeof createConfiguracaoSchema>;
+export type UpdateConfiguracaoInput = z.infer<typeof updateConfiguracaoSchema>;
 //# sourceMappingURL=validators.d.ts.map

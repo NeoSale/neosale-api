@@ -15,10 +15,25 @@ const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_1 = require("./lib/swagger");
 const leadRoutes_1 = require("./routes/leadRoutes");
 const controleEnviosRoutes_1 = require("./routes/controleEnviosRoutes");
+const referenciaRoutes_1 = __importDefault(require("./routes/referenciaRoutes"));
+const configuracaoRoutes_1 = __importDefault(require("./routes/configuracaoRoutes"));
 const errorHandler_1 = require("./middleware/errorHandler");
+const package_json_1 = __importDefault(require("../package.json"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+// Detectar automaticamente a URL base
+let BASE_URL = process.env.API_BASE_URL;
+if (!BASE_URL) {
+    // Se não estiver explicitamente em desenvolvimento local, usar URL de produção
+    const isLocalDev = process.env.NODE_ENV === 'development' ||
+        process.env.npm_lifecycle_event === 'dev';
+    if (isLocalDev) {
+        BASE_URL = `http://localhost:${PORT}`;
+    }
+    else {
+        BASE_URL = 'https://evolution-api-neosale-api.mrzt3w.easypanel.host';
+    }
+}
 // Middleware de segurança
 app.use((0, helmet_1.default)());
 // CORS
@@ -37,12 +52,14 @@ app.get('/', (req, res) => {
     res.json({
         success: true,
         message: 'Bem-vindo à NeoSale API! 🚀',
-        version: '1.0.0',
+        version: package_json_1.default.version,
         endpoints: {
             documentation: `${BASE_URL}/api-docs`,
             health: `${BASE_URL}/health`,
             leads: `${BASE_URL}/api/leads`,
-            controleEnvios: `${BASE_URL}/api/controle-envios`
+            controleEnvios: `${BASE_URL}/api/controle-envios`,
+            referencias: `${BASE_URL}/api/referencias`,
+            configuracoes: `${BASE_URL}/api/configuracoes`
         },
         description: 'API para gerenciamento de leads do sistema NeoSale'
     });
@@ -50,12 +67,14 @@ app.get('/', (req, res) => {
 // Rotas
 app.use('/api/leads', leadRoutes_1.leadRoutes);
 app.use('/api/controle-envios', controleEnviosRoutes_1.controleEnviosRoutes);
+app.use('/api/referencias', referenciaRoutes_1.default);
+app.use('/api/configuracoes', configuracaoRoutes_1.default);
 app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));
 // Rota de health check
 app.get('/health', (req, res) => {
-    // Usar fuso horário do Brasil para timestamp
+    // Usar fuso horário do Brasil para timestamp (formato pt-BR)
     const agora = new Date();
-    const brasilTime = agora.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
+    const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
     res.json({
         status: 'OK',
         timestamp: brasilTime,

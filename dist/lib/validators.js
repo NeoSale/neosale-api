@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createLeadSchema = exports.atualizarMensagemSchema = exports.updateLeadSchema = exports.paginationSchema = exports.idParamSchema = exports.statusSchema = exports.etapaSchema = exports.mensagemSchema = exports.agendamentoSchema = exports.bulkLeadsSchema = exports.importLeadsSchema = void 0;
+exports.updateConfiguracaoSchema = exports.createConfiguracaoSchema = exports.createLeadSchema = exports.atualizarMensagemSchema = exports.updateLeadSchema = exports.paginationSchema = exports.idParamSchema = exports.statusSchema = exports.etapaSchema = exports.mensagemSchema = exports.agendamentoSchema = exports.bulkLeadsSchema = exports.importLeadsSchema = void 0;
 const zod_1 = require("zod");
 // Validator para importação de leads
 exports.importLeadsSchema = zod_1.z.object({
@@ -61,13 +61,21 @@ exports.paginationSchema = zod_1.z.object({
 exports.updateLeadSchema = zod_1.z.object({
     nome: zod_1.z.string().min(1, 'Nome é obrigatório').optional(),
     telefone: zod_1.z.string().min(1, 'Telefone é obrigatório').optional(),
-    email: zod_1.z.string().email('Email inválido').optional(),
+    email: zod_1.z.string().optional(),
     empresa: zod_1.z.string().optional(),
     cargo: zod_1.z.string().optional(),
+    contador: zod_1.z.string().optional(),
+    escritorio: zod_1.z.string().optional(),
+    responsavel: zod_1.z.string().optional(),
+    cnpj: zod_1.z.string().optional(),
+    observacao: zod_1.z.string().optional(),
+    segmento: zod_1.z.string().optional(),
+    erp_atual: zod_1.z.string().optional(),
     origem_id: zod_1.z.string().uuid('origem_id deve ser um UUID válido').optional(),
     status_agendamento: zod_1.z.boolean().optional(),
     etapa_funil_id: zod_1.z.string().uuid('etapa_funil_id deve ser um UUID válido').optional(),
-    status_negociacao_id: zod_1.z.string().uuid('status_negociacao_id deve ser um UUID válido').optional()
+    status_negociacao_id: zod_1.z.string().uuid('status_negociacao_id deve ser um UUID válido').optional(),
+    qualificacao_id: zod_1.z.string().uuid('qualificacao_id deve ser um UUID válido').optional()
 }).refine(data => Object.keys(data).length > 0, {
     message: 'Pelo menos um campo deve ser fornecido para atualização'
 });
@@ -87,6 +95,26 @@ exports.createLeadSchema = zod_1.z.object({
     email: zod_1.z.string().optional(),
     empresa: zod_1.z.string().optional(),
     cargo: zod_1.z.string().optional(),
-    origem_id: zod_1.z.string().uuid('origem_id deve ser um UUID válido').optional()
+    contador: zod_1.z.string().optional(),
+    escritorio: zod_1.z.string().optional(),
+    responsavel: zod_1.z.string().optional(),
+    cnpj: zod_1.z.string().optional(),
+    observacao: zod_1.z.string().optional(),
+    segmento: zod_1.z.string().optional(),
+    erp_atual: zod_1.z.string().optional(),
+    origem_id: zod_1.z.string().uuid('origem_id deve ser um UUID válido').optional(),
+    qualificacao_id: zod_1.z.string().uuid('qualificacao_id deve ser um UUID válido').optional()
+});
+// Validator para criação de configuração
+exports.createConfiguracaoSchema = zod_1.z.object({
+    chave: zod_1.z.string().min(1, 'Chave é obrigatória'),
+    valor: zod_1.z.string().min(1, 'Valor é obrigatório')
+});
+// Validator para atualização de configuração
+exports.updateConfiguracaoSchema = zod_1.z.object({
+    chave: zod_1.z.string().min(1, 'Chave é obrigatória').optional(),
+    valor: zod_1.z.string().min(1, 'Valor é obrigatório').optional()
+}).refine(data => Object.keys(data).length > 0, {
+    message: 'Pelo menos um campo deve ser fornecido para atualização'
 });
 //# sourceMappingURL=validators.js.map

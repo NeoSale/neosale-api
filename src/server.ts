@@ -15,10 +15,24 @@ import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import referenciaRoutes from './routes/referenciaRoutes'
 import configuracaoRoutes from './routes/configuracaoRoutes'
 import { errorHandler } from './middleware/errorHandler'
+import packageJson from '../package.json'
 
 const app = express()
 const PORT = process.env.PORT || 3000
-const BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`
+
+// Detectar automaticamente a URL base
+let BASE_URL = process.env.API_BASE_URL
+if (!BASE_URL) {
+  // Se não estiver explicitamente em desenvolvimento local, usar URL de produção
+  const isLocalDev = process.env.NODE_ENV === 'development' || 
+                     process.env.npm_lifecycle_event === 'dev'
+  
+  if (isLocalDev) {
+    BASE_URL = `http://localhost:${PORT}`
+  } else {
+    BASE_URL = 'https://evolution-api-neosale-api.mrzt3w.easypanel.host'
+  }
+}
 
 // Middleware de segurança
 app.use(helmet())
@@ -43,7 +57,7 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'Bem-vindo à NeoSale API! 🚀',
-    version: '1.0.0',
+    version: packageJson.version,
     endpoints: {
       documentation: `${BASE_URL}/api-docs`,
       health: `${BASE_URL}/health`,

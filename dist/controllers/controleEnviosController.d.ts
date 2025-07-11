@@ -6,5 +6,7 @@ export declare class ControleEnviosController {
     static getStatusEnvio(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static incrementarQuantidade(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getControleEnvioHoje(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static alterarQuantidadeEnviadaHoje(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static alterarLimiteDiario(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=controleEnviosController.d.ts.map
