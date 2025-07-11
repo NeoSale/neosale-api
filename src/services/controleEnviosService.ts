@@ -68,18 +68,18 @@ export class ControleEnviosService {
     console.log('🔄 Criando novo controle de envio para data:', data)
     
     // Pegar o limite diário padrão do endpoint de configurações
-    let limiteDiarioPadrao; // valor padrão caso não encontre a configuração
+    let limiteDiarioPadrao = 0; // valor padrão caso não encontre a configuração
     
     try {
-      const configuracaoLimite = await ConfiguracaoService.getByChave('LIMITE_DIARIO_PADRAO');
+      const configuracaoLimite = await ConfiguracaoService.getByChave('quantidade_diaria_maxima');
       if (configuracaoLimite && configuracaoLimite.valor) {
         limiteDiarioPadrao = parseInt(configuracaoLimite.valor);
         console.log('✅ Limite diário obtido das configurações:', limiteDiarioPadrao);
       } else {
-        console.log('⚠️ Configuração LIMITE_DIARIO_PADRAO não encontrada, usando valor padrão:', limiteDiarioPadrao);
+        console.log('⚠️ Configuração quantidade_diaria_maxima não encontrada, usando valor padrão:', limiteDiarioPadrao);
       }
     } catch (error) {
-      console.error('❌ Erro ao buscar configuração LIMITE_DIARIO_PADRAO:', error);
+      console.error('❌ Erro ao buscar configuração quantidade_diaria_maxima:', error);
       console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
     }
     
