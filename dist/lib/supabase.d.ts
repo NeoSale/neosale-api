@@ -12,17 +12,18 @@ export interface Lead {
     mensagem_status_id: string;
     etapa_funil_id?: string;
     status_negociacao_id?: string;
+    qualificacao_id?: string;
     deletado: boolean;
     created_at: string;
 }
 export interface MensagemStatus {
     id: string;
-    mensagem_1_enviada: boolean;
-    mensagem_1_data?: string;
-    mensagem_2_enviada: boolean;
-    mensagem_2_data?: string;
-    mensagem_3_enviada: boolean;
-    mensagem_3_data?: string;
+    id_mensagem: string;
+    status: 'sucesso' | 'erro';
+    erro?: string;
+    mensagem_enviada: string;
+    created_at?: string;
+    updated_at?: string;
 }
 export interface OrigemLead {
     id: string;

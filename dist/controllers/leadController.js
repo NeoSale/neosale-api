@@ -166,7 +166,7 @@ class LeadController {
             const mensagemStatus = await leadService_1.LeadService.enviarMensagem(id, validatedData);
             return res.status(200).json({
                 success: true,
-                message: `${validatedData.tipo_mensagem} enviada com sucesso`,
+                message: 'Mensagem enviada com sucesso',
                 data: mensagemStatus
             });
         }
@@ -401,7 +401,7 @@ class LeadController {
             const mensagemStatus = await leadService_1.LeadService.atualizarMensagem(id, validatedData);
             return res.status(200).json({
                 success: true,
-                message: `Status da ${validatedData.tipo_mensagem} atualizado com sucesso`,
+                message: 'Status da mensagem atualizado com sucesso',
                 data: mensagemStatus
             });
         }

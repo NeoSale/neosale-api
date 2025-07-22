@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
+import * as dotenv from 'dotenv'
 
 // Carregar variáveis de ambiente
 dotenv.config()
@@ -44,21 +44,24 @@ export interface Lead {
   origem_id: string
   status_agendamento: boolean
   agendado_em?: string
-  mensagem_status_id: string
+  followup_id: string
   etapa_funil_id?: string
   status_negociacao_id?: string
+  qualificacao_id?: string
   deletado: boolean
   created_at: string
 }
 
-export interface MensagemStatus {
+export interface Followup {
   id: string
-  mensagem_1_enviada: boolean
-  mensagem_1_data?: string
-  mensagem_2_enviada: boolean
-  mensagem_2_data?: string
-  mensagem_3_enviada: boolean
-  mensagem_3_data?: string
+  id_mensagem: string // UUID da mensagem da tabela mensagens
+  id_lead: string // UUID do lead que recebeu a mensagem
+  status: 'sucesso' | 'erro'
+  erro?: string // mensagem de erro quando status = 'erro'
+  mensagem_enviada: string // texto da mensagem enviada
+  embedding?: number[] // embedding para LLM
+  created_at?: string
+  updated_at?: string
 }
 
 export interface OrigemLead {

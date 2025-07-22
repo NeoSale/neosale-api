@@ -86,11 +86,11 @@ export declare const agendamentoSchema: z.ZodObject<{
     agendado_em?: string | undefined;
 }>;
 export declare const mensagemSchema: z.ZodObject<{
-    tipo_mensagem: z.ZodEnum<["mensagem_1", "mensagem_2", "mensagem_3"]>;
+    mensagem_id: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    tipo_mensagem: "mensagem_1" | "mensagem_2" | "mensagem_3";
+    mensagem_id: string;
 }, {
-    tipo_mensagem: "mensagem_1" | "mensagem_2" | "mensagem_3";
+    mensagem_id: string;
 }>;
 export declare const etapaSchema: z.ZodObject<{
     etapa_funil_id: z.ZodString;
@@ -217,18 +217,31 @@ export declare const updateLeadSchema: z.ZodEffects<z.ZodObject<{
     status_agendamento?: boolean | undefined;
     qualificacao_id?: string | undefined;
 }>;
-export declare const atualizarMensagemSchema: z.ZodObject<{
-    tipo_mensagem: z.ZodEnum<["mensagem_1", "mensagem_2", "mensagem_3"]>;
-    enviada: z.ZodBoolean;
-    data: z.ZodOptional<z.ZodString>;
+export declare const atualizarMensagemSchema: z.ZodEffects<z.ZodObject<{
+    id_mensagem: z.ZodOptional<z.ZodString>;
+    status: z.ZodOptional<z.ZodEnum<["sucesso", "erro"]>>;
+    erro: z.ZodOptional<z.ZodString>;
+    mensagem_enviada: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    tipo_mensagem: "mensagem_1" | "mensagem_2" | "mensagem_3";
-    enviada: boolean;
-    data?: string | undefined;
+    erro?: string | undefined;
+    status?: "sucesso" | "erro" | undefined;
+    id_mensagem?: string | undefined;
+    mensagem_enviada?: string | undefined;
 }, {
-    tipo_mensagem: "mensagem_1" | "mensagem_2" | "mensagem_3";
-    enviada: boolean;
-    data?: string | undefined;
+    erro?: string | undefined;
+    status?: "sucesso" | "erro" | undefined;
+    id_mensagem?: string | undefined;
+    mensagem_enviada?: string | undefined;
+}>, {
+    erro?: string | undefined;
+    status?: "sucesso" | "erro" | undefined;
+    id_mensagem?: string | undefined;
+    mensagem_enviada?: string | undefined;
+}, {
+    erro?: string | undefined;
+    status?: "sucesso" | "erro" | undefined;
+    id_mensagem?: string | undefined;
+    mensagem_enviada?: string | undefined;
 }>;
 export declare const createLeadSchema: z.ZodObject<{
     nome: z.ZodString;

@@ -17,6 +17,7 @@ const leadRoutes_1 = require("./routes/leadRoutes");
 const controleEnviosRoutes_1 = require("./routes/controleEnviosRoutes");
 const referenciaRoutes_1 = __importDefault(require("./routes/referenciaRoutes"));
 const configuracaoRoutes_1 = __importDefault(require("./routes/configuracaoRoutes"));
+const mensagemRoutes_1 = __importDefault(require("./routes/mensagemRoutes"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const package_json_1 = __importDefault(require("../package.json"));
 const app = (0, express_1.default)();
@@ -59,7 +60,8 @@ app.get('/', (req, res) => {
             leads: `${BASE_URL}/api/leads`,
             controleEnvios: `${BASE_URL}/api/controle-envios`,
             referencias: `${BASE_URL}/api/referencias`,
-            configuracoes: `${BASE_URL}/api/configuracoes`
+            configuracoes: `${BASE_URL}/api/configuracoes`,
+            mensagens: `${BASE_URL}/api/mensagens`
         },
         description: 'API para gerenciamento de leads do sistema NeoSale'
     });
@@ -69,6 +71,7 @@ app.use('/api/leads', leadRoutes_1.leadRoutes);
 app.use('/api/controle-envios', controleEnviosRoutes_1.controleEnviosRoutes);
 app.use('/api/referencias', referenciaRoutes_1.default);
 app.use('/api/configuracoes', configuracaoRoutes_1.default);
+app.use('/api/mensagens', mensagemRoutes_1.default);
 app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));
 // Rota de health check
 app.get('/health', (req, res) => {

@@ -14,6 +14,8 @@ import { leadRoutes } from './routes/leadRoutes'
 import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import referenciaRoutes from './routes/referenciaRoutes'
 import configuracaoRoutes from './routes/configuracaoRoutes'
+import mensagemRoutes from './routes/mensagemRoutes'
+import followupRoutes from './routes/followupRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import packageJson from '../package.json'
 
@@ -64,7 +66,9 @@ app.get('/', (req, res) => {
       leads: `${BASE_URL}/api/leads`,
       controleEnvios: `${BASE_URL}/api/controle-envios`,
       referencias: `${BASE_URL}/api/referencias`,
-      configuracoes: `${BASE_URL}/api/configuracoes`
+      configuracoes: `${BASE_URL}/api/configuracoes`,
+      mensagens: `${BASE_URL}/api/mensagens`,
+      followups: `${BASE_URL}/api/followups`
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
   })
@@ -75,6 +79,8 @@ app.use('/api/leads', leadRoutes)
 app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api/referencias', referenciaRoutes)
 app.use('/api/configuracoes', configuracaoRoutes)
+app.use('/api/mensagens', mensagemRoutes)
+app.use('/api/followups', followupRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // Rota de health check

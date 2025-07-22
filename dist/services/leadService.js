@@ -49,10 +49,14 @@ class LeadService {
                 }
                 origemId = origens.id;
             }
-            // Criar mensagem_status primeiro
+            // Criar mensagem_status primeiro com valores padrão
             const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
                 .from('mensagem_status')
-                .insert({})
+                .insert({
+                id_mensagem: (await supabase_1.supabase.from('mensagens').select('id').limit(1).single()).data?.id || null,
+                status: 'sucesso',
+                mensagem_enviada: 'Mensagem padrão - aguardando envio'
+            })
                 .select()
                 .single();
             if (mensagemError) {
@@ -143,10 +147,14 @@ class LeadService {
                         continue;
                     }
                 }
-                // Criar mensagem_status primeiro
+                // Criar mensagem_status primeiro com valores padrão
                 const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
                     .from('mensagem_status')
-                    .insert({})
+                    .insert({
+                    id_mensagem: (await supabase_1.supabase.from('mensagens').select('id').limit(1).single()).data?.id || null,
+                    status: 'sucesso',
+                    mensagem_enviada: 'Mensagem padrão - aguardando envio'
+                })
                     .select()
                     .single();
                 if (mensagemError) {
@@ -300,8 +308,8 @@ class LeadService {
     // Enviar mensagem
     static async enviarMensagem(id, data) {
         LeadService.checkSupabaseConnection();
-        console.log('🔄 Enviando mensagem para lead:', id, 'tipo:', data.tipo_mensagem);
-        // Buscar o lead para obter o mensagem_status_id
+        console.log('🔄 Enviando mensagem para lead:', id, 'mensagem_id:', data.mensagem_id);
+        // Buscar o lead para obter informações necessárias
         const { data: lead, error: leadError } = await supabase_1.supabase
             .from('leads')
             .select('mensagem_status_id')
@@ -312,30 +320,40 @@ class LeadService {
             console.error('❌ Erro ao buscar lead:', leadError);
             throw leadError;
         }
-        // Atualizar mensagem_status
-        const updateData = {};
-        updateData[`${data.tipo_mensagem}_enviada`] = true;
-        // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
-        const agora = new Date();
-        const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z';
-        updateData[`${data.tipo_mensagem}_data`] = brasilTime;
-        const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
+        // Buscar o texto da mensagem
+        const { data: mensagem, error: mensagemError } = await supabase_1.supabase
+            .from('mensagens')
+            .select('texto_mensagem')
+            .eq('id', data.mensagem_id)
+            .single();
+        if (mensagemError) {
+            console.error('❌ Erro ao buscar mensagem:', mensagemError);
+            throw mensagemError;
+        }
+        // Atualizar mensagem_status com nova estrutura
+        const { data: mensagemStatus, error: updateError } = await supabase_1.supabase
             .from('mensagem_status')
-            .update(updateData)
+            .update({
+            id_mensagem: data.mensagem_id,
+            status: 'sucesso',
+            erro: null,
+            mensagem_enviada: mensagem.texto_mensagem,
+            updated_at: new Date().toISOString()
+        })
             .eq('id', lead.mensagem_status_id)
             .select()
             .single();
-        if (mensagemError) {
-            console.error('❌ Erro ao atualizar mensagem_status:', mensagemError);
-            throw mensagemError;
+        if (updateError) {
+            console.error('❌ Erro ao atualizar mensagem_status:', updateError);
+            throw updateError;
         }
-        console.log('✅ Mensagem enviada com sucesso:', data.tipo_mensagem);
+        console.log('✅ Mensagem enviada com sucesso para lead:', id);
         return mensagemStatus;
     }
     // Atualizar status de mensagem enviada
     static async atualizarMensagem(id, data) {
         LeadService.checkSupabaseConnection();
-        console.log('🔄 Atualizando status de mensagem do lead:', id, 'tipo:', data.tipo_mensagem);
+        console.log('🔄 Atualizando status de mensagem do lead:', id);
         // Buscar o lead para obter o mensagem_status_id
         const { data: lead, error: leadError } = await supabase_1.supabase
             .from('leads')
@@ -347,23 +365,21 @@ class LeadService {
             console.error('❌ Erro ao buscar lead:', leadError);
             throw leadError;
         }
-        // Preparar dados para atualização
-        const updateData = {};
-        updateData[`${data.tipo_mensagem}_enviada`] = data.enviada;
-        // Se data foi fornecida, usar ela; senão usar data atual se enviada for true
-        if (data.data) {
-            updateData[`${data.tipo_mensagem}_data`] = data.data;
+        // Preparar dados para atualização com nova estrutura
+        const updateData = {
+            status: data.status || 'sucesso',
+            updated_at: new Date().toISOString()
+        };
+        // Adicionar campos opcionais se fornecidos
+        if (data.id_mensagem) {
+            updateData.id_mensagem = data.id_mensagem;
         }
-        else if (data.enviada) {
-            // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
-            const agora = new Date();
-            // CORREÇÃO: Gerar timestamp ISO válido para o fuso horário do Brasil
-            const brasilTime = new Date(agora.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).toISOString();
-            updateData[`${data.tipo_mensagem}_data`] = brasilTime;
+        if (data.erro) {
+            updateData.erro = data.erro;
+            updateData.status = 'erro';
         }
-        else {
-            // Se enviada for false e não há data específica, limpar a data
-            updateData[`${data.tipo_mensagem}_data`] = null;
+        if (data.mensagem_enviada) {
+            updateData.mensagem_enviada = data.mensagem_enviada;
         }
         // Atualizar mensagem_status
         const { data: mensagemStatus, error: mensagemError } = await supabase_1.supabase
@@ -376,7 +392,7 @@ class LeadService {
             console.error('❌ Erro ao atualizar status de mensagem:', mensagemError);
             throw mensagemError;
         }
-        console.log('✅ Status de mensagem atualizado com sucesso:', data.tipo_mensagem);
+        console.log('✅ Status de mensagem atualizado com sucesso para lead:', id);
         return mensagemStatus;
     }
     // Atualizar etapa do funil

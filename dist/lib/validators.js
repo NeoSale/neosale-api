@@ -29,9 +29,7 @@ exports.agendamentoSchema = zod_1.z.object({
 });
 // Validator para mensagens
 exports.mensagemSchema = zod_1.z.object({
-    tipo_mensagem: zod_1.z.enum(['mensagem_1', 'mensagem_2', 'mensagem_3'], {
-        errorMap: () => ({ message: 'Tipo de mensagem deve ser mensagem_1, mensagem_2 ou mensagem_3' })
-    })
+    mensagem_id: zod_1.z.string().uuid('mensagem_id deve ser um UUID válido')
 });
 // Validator para atualização de etapa
 exports.etapaSchema = zod_1.z.object({
@@ -80,13 +78,14 @@ exports.updateLeadSchema = zod_1.z.object({
     message: 'Pelo menos um campo deve ser fornecido para atualização'
 });
 exports.atualizarMensagemSchema = zod_1.z.object({
-    tipo_mensagem: zod_1.z.enum(['mensagem_1', 'mensagem_2', 'mensagem_3'], {
-        errorMap: () => ({ message: 'Tipo de mensagem deve ser mensagem_1, mensagem_2 ou mensagem_3' })
-    }),
-    enviada: zod_1.z.boolean({
-        errorMap: () => ({ message: 'Campo enviada deve ser um valor booleano' })
-    }),
-    data: zod_1.z.string().datetime().optional()
+    id_mensagem: zod_1.z.string().uuid('id_mensagem deve ser um UUID válido').optional(),
+    status: zod_1.z.enum(['sucesso', 'erro'], {
+        errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
+    }).optional(),
+    erro: zod_1.z.string().optional(),
+    mensagem_enviada: zod_1.z.string().min(1, 'Mensagem enviada é obrigatória').optional()
+}).refine(data => Object.keys(data).length > 0, {
+    message: 'Pelo menos um campo deve ser fornecido para atualização'
 });
 // Validator para criação de um único lead
 exports.createLeadSchema = zod_1.z.object({

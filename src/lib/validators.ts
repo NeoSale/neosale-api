@@ -34,9 +34,7 @@ export const agendamentoSchema = z.object({
 
 // Validator para mensagens
 export const mensagemSchema = z.object({
-  tipo_mensagem: z.enum(['mensagem_1', 'mensagem_2', 'mensagem_3'], {
-    errorMap: () => ({ message: 'Tipo de mensagem deve ser mensagem_1, mensagem_2 ou mensagem_3' })
-  })
+  mensagem_id: z.string().uuid('mensagem_id deve ser um UUID válido')
 })
 
 // Validator para atualização de etapa
@@ -90,14 +88,30 @@ export const updateLeadSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-export const atualizarMensagemSchema = z.object({
-  tipo_mensagem: z.enum(['mensagem_1', 'mensagem_2', 'mensagem_3'], {
-    errorMap: () => ({ message: 'Tipo de mensagem deve ser mensagem_1, mensagem_2 ou mensagem_3' })
+// Validator para criação de followup
+export const createFollowupSchema = z.object({
+  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido'),
+  id_lead: z.string().uuid('id_lead deve ser um UUID válido'),
+  status: z.enum(['sucesso', 'erro'], {
+    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
   }),
-  enviada: z.boolean({
-    errorMap: () => ({ message: 'Campo enviada deve ser um valor booleano' })
-  }),
-  data: z.string().datetime().optional()
+  erro: z.string().optional(),
+  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória'),
+  embedding: z.array(z.number()).optional()
+})
+
+// Validator para atualização de followup
+export const updateFollowupSchema = z.object({
+  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido').optional(),
+  id_lead: z.string().uuid('id_lead deve ser um UUID válido').optional(),
+  status: z.enum(['sucesso', 'erro'], {
+    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
+  }).optional(),
+  erro: z.string().optional(),
+  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória').optional(),
+  embedding: z.array(z.number()).optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
 // Validator para criação de um único lead
@@ -127,7 +141,8 @@ export type StatusInput = z.infer<typeof statusSchema>
 export type IdParam = z.infer<typeof idParamSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
-export type AtualizarMensagemInput = z.infer<typeof atualizarMensagemSchema>
+export type CreateFollowupInput = z.infer<typeof createFollowupSchema>
+export type UpdateFollowupInput = z.infer<typeof updateFollowupSchema>
 export type CreateLeadInput = z.infer<typeof createLeadSchema>
 
 // Validator para criação de configuração

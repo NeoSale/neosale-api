@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, AtualizarMensagemInput, CreateLeadInput } from '../lib/validators'
+import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
 export class LeadService {
   // Verificar se Supabase está configurado
   private static checkSupabaseConnection() {
@@ -56,16 +56,20 @@ export class LeadService {
         origemId = origens.id
       }
       
-      // Criar mensagem_status primeiro
-      const { data: mensagemStatus, error: mensagemError } = await supabase!
-        .from('mensagem_status')
-        .insert({})
+      // Criar followup primeiro com valores padrão
+      const { data: followup, error: followupError } = await supabase!
+        .from('followup')
+        .insert({
+          id_mensagem: (await supabase!.from('mensagens').select('id').limit(1).single()).data?.id || null,
+          status: 'sucesso',
+          mensagem_enviada: 'Mensagem padrão - aguardando envio'
+        })
         .select()
         .single()
       
-      if (mensagemError) {
-        console.error('❌ Erro ao criar mensagem_status:', mensagemError)
-        throw mensagemError
+      if (followupError) {
+        console.error('❌ Erro ao criar followup:', followupError)
+        throw followupError
       }
       
       // Criar o lead
@@ -85,13 +89,13 @@ export class LeadService {
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
           origem_id: origemId,
-          mensagem_status_id: mensagemStatus.id,
+          followup_id: followup.id,
           qualificacao_id: data.qualificacao_id || null,
           deletado: false
         })
         .select(`
           *,
-          mensagem_status:mensagem_status_id(*),
+          followup:followup_id(*),
           origem:origem_id(*),
           etapa_funil:etapa_funil_id(*),
           status_negociacao:status_negociacao_id(*),
@@ -163,16 +167,20 @@ export class LeadService {
           }
         }
         
-        // Criar mensagem_status primeiro
-        const { data: mensagemStatus, error: mensagemError } = await supabase!
-          .from('mensagem_status')
-          .insert({})
+        // Criar followup primeiro com valores padrão
+        const { data: followup, error: followupError } = await supabase!
+          .from('followup')
+          .insert({
+            id_mensagem: (await supabase!.from('mensagens').select('id').limit(1).single()).data?.id || null,
+            status: 'sucesso',
+            mensagem_enviada: 'Mensagem padrão - aguardando envio'
+          })
           .select()
           .single()
         
-        if (mensagemError) {
-          console.error('❌ Erro ao criar mensagem_status:', mensagemError)
-          throw mensagemError
+        if (followupError) {
+          console.error('❌ Erro ao criar followup:', followupError)
+          throw followupError
         }
         
         // Criar lead com referência ao mensagem_status
@@ -185,7 +193,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             origem_id: leadData.origem_id,
-            mensagem_status_id: mensagemStatus.id
+            followup_id: followup.id
           })
           .select()
           .single()
@@ -269,19 +277,19 @@ export class LeadService {
           }
         }
         
-        // Criar mensagem_status primeiro
-        const { data: mensagemStatus, error: mensagemError } = await supabase!
-          .from('mensagem_status')
+        // Criar followup primeiro
+        const { data: followup, error: followupError } = await supabase!
+          .from('followup')
           .insert({})
           .select()
           .single()
         
-        if (mensagemError) {
-          console.error('❌ Erro ao criar mensagem_status:', mensagemError)
-          throw mensagemError
+        if (followupError) {
+          console.error('❌ Erro ao criar followup:', followupError)
+          throw followupError
         }
         
-        // Criar lead com referência ao mensagem_status e origem outbound
+        // Criar lead com referência ao followup e origem outbound
         const { data: lead, error: leadError } = await supabase!
           .from('leads')
           .insert({
@@ -291,7 +299,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             origem_id: origemOutbound,
-            mensagem_status_id: mensagemStatus.id
+            followup_id: followup.id
           })
           .select()
           .single()
@@ -346,12 +354,12 @@ export class LeadService {
   // Enviar mensagem
   static async enviarMensagem(id: string, data: MensagemInput) {
     LeadService.checkSupabaseConnection();
-    console.log('🔄 Enviando mensagem para lead:', id, 'tipo:', data.tipo_mensagem)
+    console.log('🔄 Enviando mensagem para lead:', id, 'mensagem_id:', data.mensagem_id)
     
-    // Buscar o lead para obter o mensagem_status_id
+    // Buscar o lead para obter informações necessárias
     const { data: lead, error: leadError } = await supabase!
       .from('leads')
-      .select('mensagem_status_id')
+      .select('followup_id')
       .eq('id', id)
       .eq('deletado', false)
       .single()
@@ -361,39 +369,51 @@ export class LeadService {
       throw leadError
     }
     
-    // Atualizar mensagem_status
-    const updateData: any = {}
-    updateData[`${data.tipo_mensagem}_enviada`] = true
-    // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
-    const agora = new Date()
-    const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z'
-    updateData[`${data.tipo_mensagem}_data`] = brasilTime
-    
-    const { data: mensagemStatus, error: mensagemError } = await supabase!
-      .from('mensagem_status')
-      .update(updateData)
-      .eq('id', lead.mensagem_status_id)
-      .select()
+    // Buscar o texto da mensagem
+    const { data: mensagem, error: mensagemError } = await supabase!
+      .from('mensagens')
+      .select('texto_mensagem')
+      .eq('id', data.mensagem_id)
       .single()
     
     if (mensagemError) {
-      console.error('❌ Erro ao atualizar mensagem_status:', mensagemError)
+      console.error('❌ Erro ao buscar mensagem:', mensagemError)
       throw mensagemError
     }
     
-    console.log('✅ Mensagem enviada com sucesso:', data.tipo_mensagem)
-    return mensagemStatus
+    // Atualizar followup com nova estrutura
+    const { data: followup, error: updateError } = await supabase!
+      .from('followup')
+      .update({
+        id_mensagem: data.mensagem_id,
+        id_lead: id,
+        status: 'sucesso',
+        erro: null,
+        mensagem_enviada: mensagem.texto_mensagem,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', lead.followup_id)
+      .select()
+      .single()
+    
+    if (updateError) {
+      console.error('❌ Erro ao atualizar followup:', updateError)
+      throw updateError
+    }
+    
+    console.log('✅ Mensagem enviada com sucesso para lead:', id)
+    return followup
   }
 
   // Atualizar status de mensagem enviada
-  static async atualizarMensagem(id: string, data: AtualizarMensagemInput) {
+  static async atualizarMensagem(id: string, data: UpdateFollowupInput) {
     LeadService.checkSupabaseConnection();
-    console.log('🔄 Atualizando status de mensagem do lead:', id, 'tipo:', data.tipo_mensagem)
+    console.log('🔄 Atualizando status de mensagem do lead:', id)
     
-    // Buscar o lead para obter o mensagem_status_id
+    // Buscar o lead para obter o followup_id
     const { data: lead, error: leadError } = await supabase!
       .from('leads')
-      .select('mensagem_status_id')
+      .select('followup_id')
       .eq('id', id)
       .eq('deletado', false)
       .single()
@@ -403,39 +423,45 @@ export class LeadService {
       throw leadError
     }
     
-    // Preparar dados para atualização
-    const updateData: any = {}
-    updateData[`${data.tipo_mensagem}_enviada`] = data.enviada
-    
-    // Se data foi fornecida, usar ela; senão usar data atual se enviada for true
-    if (data.data) {
-      updateData[`${data.tipo_mensagem}_data`] = data.data
-    } else if (data.enviada) {
-      // Usar fuso horário do Brasil para registrar data/hora (formato pt-BR)
-      const agora = new Date()
-      // CORREÇÃO: Gerar timestamp ISO válido para o fuso horário do Brasil
-      const brasilTime = new Date(agora.toLocaleString("en-US", {timeZone: "America/Sao_Paulo"})).toISOString()
-      updateData[`${data.tipo_mensagem}_data`] = brasilTime
-    } else {
-      // Se enviada for false e não há data específica, limpar a data
-      updateData[`${data.tipo_mensagem}_data`] = null
+    // Preparar dados para atualização com nova estrutura
+    const updateData: any = {
+      status: data.status || 'sucesso',
+      updated_at: new Date().toISOString()
     }
     
-    // Atualizar mensagem_status
-    const { data: mensagemStatus, error: mensagemError } = await supabase!
-      .from('mensagem_status')
+    // Adicionar campos opcionais se fornecidos
+    if (data.id_mensagem) {
+      updateData.id_mensagem = data.id_mensagem
+    }
+    
+    if (data.id_lead) {
+      updateData.id_lead = data.id_lead
+    }
+    
+    if (data.erro) {
+      updateData.erro = data.erro
+      updateData.status = 'erro'
+    }
+    
+    if (data.mensagem_enviada) {
+      updateData.mensagem_enviada = data.mensagem_enviada
+    }
+    
+    // Atualizar followup
+    const { data: followup, error: followupError } = await supabase!
+      .from('followup')
       .update(updateData)
-      .eq('id', lead.mensagem_status_id)
+      .eq('id', lead.followup_id)
       .select()
       .single()
     
-    if (mensagemError) {
-      console.error('❌ Erro ao atualizar status de mensagem:', mensagemError)
-      throw mensagemError
+    if (followupError) {
+      console.error('❌ Erro ao atualizar status de mensagem:', followupError)
+      throw followupError
     }
     
-    console.log('✅ Status de mensagem atualizado com sucesso:', data.tipo_mensagem)
-    return mensagemStatus
+    console.log('✅ Status de mensagem atualizado com sucesso para lead:', id)
+    return followup
   }
   
   // Atualizar etapa do funil
@@ -491,7 +517,7 @@ export class LeadService {
       .from('leads')
       .select(`
         *,
-        mensagem_status:mensagem_status_id(*),
+        followup:followup_id(*),
         origem:origem_id(*),
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*)
@@ -518,7 +544,7 @@ export class LeadService {
       .from('leads')
       .select(`
         *,
-        mensagem_status:mensagem_status_id(*),
+        followup:followup_id(*),
         origem:origem_id(*),
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*),
@@ -551,7 +577,7 @@ export class LeadService {
       .from('leads')
       .select(`
         *,
-        mensagem_status:mensagem_status_id(*),
+        followup:followup_id(*),
         origem:origem_id(*),
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*)
@@ -580,7 +606,7 @@ export class LeadService {
       .from('leads')
       .select(`
         *,
-        mensagem_status:mensagem_status_id(*),
+        followup:followup_id(*),
         origem:origem_id(*),
         etapa_funil:etapa_funil_id(*),
         status_negociacao:status_negociacao_id(*)
