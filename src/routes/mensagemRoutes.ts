@@ -177,11 +177,12 @@ router.post('/',
  * @swagger
  * /api/mensagens:
  *   get:
- *     summary: Listar todas as mensagens
+ *     summary: Listar todas as mensagens (incluindo inativas)
  *     tags: [Mensagens]
+ *     description: Retorna todas as mensagens cadastradas, incluindo as ativas e inativas, ordenadas por status (ativas primeiro) e depois por ordem
  *     responses:
  *       200:
- *         description: Lista de mensagens
+ *         description: Lista de todas as mensagens (ativas e inativas)
  *         content:
  *           application/json:
  *             schema:

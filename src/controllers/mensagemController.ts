@@ -20,10 +20,10 @@ export const mensagemController = {
     }
   },
 
-  // Listar todas as mensagens ativas
+  // Listar todas as mensagens (incluindo inativas)
   async listarTodas(req: Request, res: Response): Promise<void> {
     try {
-      const mensagens = await mensagemService.listarTodas();
+      const mensagens = await mensagemService.listarTodasIncluindoInativas();
       res.json(mensagens);
     } catch (error) {
       console.error('Erro ao listar mensagens:', error);
@@ -31,15 +31,10 @@ export const mensagemController = {
     }
   },
 
-  // Listar todas as mensagens (incluindo inativas)
+  // Listar todas as mensagens (incluindo inativas) - mantido para compatibilidade
   async listarTodasIncluindoInativas(req: Request, res: Response): Promise<void> {
-    try {
-      const mensagens = await mensagemService.listarTodasIncluindoInativas();
-      res.json(mensagens);
-    } catch (error) {
-      console.error('Erro ao listar todas as mensagens:', error);
-      res.status(500).json({ error: 'Erro interno do servidor' });
-    }
+    // Redireciona para o método principal que agora inclui inativas
+    return this.listarTodas(req, res);
   },
 
   // Ativar/Desativar mensagem
