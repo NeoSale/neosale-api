@@ -20,13 +20,52 @@ export const mensagemController = {
     }
   },
 
-  // Listar todas as mensagens
+  // Listar todas as mensagens ativas
   async listarTodas(req: Request, res: Response): Promise<void> {
     try {
       const mensagens = await mensagemService.listarTodas();
       res.json(mensagens);
     } catch (error) {
       console.error('Erro ao listar mensagens:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  },
+
+  // Listar todas as mensagens (incluindo inativas)
+  async listarTodasIncluindoInativas(req: Request, res: Response): Promise<void> {
+    try {
+      const mensagens = await mensagemService.listarTodasIncluindoInativas();
+      res.json(mensagens);
+    } catch (error) {
+      console.error('Erro ao listar todas as mensagens:', error);
+      res.status(500).json({ error: 'Erro interno do servidor' });
+    }
+  },
+
+  // Ativar/Desativar mensagem
+  async ativarDesativar(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { ativo } = req.body;
+      
+      if (typeof ativo !== 'boolean') {
+        res.status(400).json({ error: 'Campo ativo deve ser um valor booleano' });
+        return;
+      }
+      
+      const mensagem = await mensagemService.ativarDesativar(id, ativo);
+      
+      if (!mensagem) {
+        res.status(404).json({ error: 'Mensagem não encontrada' });
+        return;
+      }
+      
+      res.json({
+        message: `Mensagem ${ativo ? 'ativada' : 'desativada'} com sucesso`,
+        mensagem
+      });
+    } catch (error) {
+      console.error('Erro ao ativar/desativar mensagem:', error);
       res.status(500).json({ error: 'Erro interno do servidor' });
     }
   },

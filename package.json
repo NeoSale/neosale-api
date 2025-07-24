@@ -1,12 +1,13 @@
 {
   "name": "neosale-api",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "set PORT=3000 && nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src/**/*.ts",
+    "migrate": "ts-node src/scripts/run-migrations.ts",
     "deploy": "bash build-and-push.sh",
     "deploy:patch": "echo '1' | bash build-and-push.sh",
     "deploy:minor": "echo '2' | bash build-and-push.sh",

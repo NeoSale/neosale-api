@@ -6,6 +6,8 @@ export interface Mensagem {
   intervalo_numero: number;
   intervalo_tipo: 'minutos' | 'horas' | 'dias';
   texto_mensagem: string;
+  ordem?: number;
+  ativo?: boolean;
   embedding?: number[];
   created_at?: string;
   updated_at?: string;
@@ -16,6 +18,8 @@ export interface CriarMensagemData {
   intervalo_numero: number;
   intervalo_tipo: 'minutos' | 'horas' | 'dias';
   texto_mensagem: string;
+  ordem?: number;
+  ativo?: boolean;
 }
 
 export interface AtualizarMensagemData {
@@ -23,6 +27,8 @@ export interface AtualizarMensagemData {
   intervalo_numero?: number;
   intervalo_tipo?: 'minutos' | 'horas' | 'dias';
   texto_mensagem?: string;
+  ordem?: number;
+  ativo?: boolean;
 }
 
 export const mensagemService = {
@@ -31,13 +37,28 @@ export const mensagemService = {
       throw new Error('Supabase não configurado');
     }
     
+    // Se ordem não foi fornecida, buscar a próxima ordem disponível
+    let ordem = data.ordem;
+    if (ordem === undefined) {
+      const { data: ultimaMensagem } = await supabase
+        .from('mensagens')
+        .select('ordem')
+        .order('ordem', { ascending: false })
+        .limit(1)
+        .single();
+      
+      ordem = ultimaMensagem?.ordem ? ultimaMensagem.ordem + 1 : 1;
+    }
+    
     const { data: mensagem, error } = await supabase
       .from('mensagens')
       .insert({
         nome: data.nome,
         intervalo_numero: data.intervalo_numero,
         intervalo_tipo: data.intervalo_tipo,
-        texto_mensagem: data.texto_mensagem
+        texto_mensagem: data.texto_mensagem,
+        ordem: ordem,
+        ativo: data.ativo !== undefined ? data.ativo : true
       })
       .select()
       .single();
@@ -57,13 +78,57 @@ export const mensagemService = {
     const { data: mensagens, error } = await supabase
       .from('mensagens')
       .select('*')
-      .order('created_at', { ascending: false });
+      .eq('ativo', true)
+      .order('ordem', { ascending: true });
 
     if (error) {
       throw new Error(`Erro ao listar mensagens: ${error.message}`);
     }
 
     return mensagens || [];
+  },
+
+  async listarTodasIncluindoInativas(): Promise<Mensagem[]> {
+    if (!supabase) {
+      throw new Error('Supabase não configurado');
+    }
+    
+    const { data: mensagens, error } = await supabase
+      .from('mensagens')
+      .select('*')
+      .order('ativo', { ascending: false })
+      .order('ordem', { ascending: true });
+
+    if (error) {
+      throw new Error(`Erro ao listar todas as mensagens: ${error.message}`);
+    }
+
+    return mensagens || [];
+  },
+
+  async ativarDesativar(id: string, ativo: boolean): Promise<Mensagem | null> {
+    if (!supabase) {
+      throw new Error('Supabase não configurado');
+    }
+    
+    const { data: mensagem, error } = await supabase
+      .from('mensagens')
+      .update({ 
+        ativo: ativo,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // Não encontrado
+      }
+      throw new Error(`Erro ao ${ativo ? 'ativar' : 'desativar'} mensagem: ${error.message}`);
+    }
+
+    return mensagem;
   },
 
   async buscarPorId(id: string): Promise<Mensagem | null> {
@@ -152,6 +217,7 @@ export const mensagemService = {
     const { data: mensagens, error } = await supabase
       .from('mensagens')
       .select('*')
+      .eq('ativo', true)
       .or(`texto_mensagem.ilike.%${texto}%,nome.ilike.%${texto}%`)
       .order('created_at', { ascending: false });
 
@@ -184,6 +250,7 @@ export const mensagemService = {
       intervalo_numero: mensagemOriginal.intervalo_numero,
       intervalo_tipo: mensagemOriginal.intervalo_tipo,
       texto_mensagem: mensagemOriginal.texto_mensagem
+      // ordem será automaticamente definida pelo método criar
     };
     
     return await this.criar(dadosDuplicacao);

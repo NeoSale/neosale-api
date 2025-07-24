@@ -38,19 +38,28 @@ const router = Router();
  *           type: string
  *           description: Texto da mensagem a ser enviada
  *           example: "Olá! Obrigado pelo seu interesse em nossos serviços."
- *         embedding:
- *           type: array
- *           items:
- *             type: number
- *           description: Vetor de embedding para busca semântica
- *         created_at:
- *           type: string
- *           format: date-time
- *           description: Data de criação
- *         updated_at:
- *           type: string
- *           format: date-time
- *           description: Data da última atualização
+ *         ordem:
+           type: integer
+           minimum: 1
+           description: Ordem de exibição da mensagem
+           example: 1
+         ativo:
+           type: boolean
+           description: Status da mensagem (ativa/inativa)
+           example: true
+         embedding:
+           type: array
+           items:
+             type: number
+           description: Vetor de embedding para busca semântica
+         created_at:
+           type: string
+           format: date-time
+           description: Data de criação
+         updated_at:
+           type: string
+           format: date-time
+           description: Data da última atualização
  *     CriarMensagem:
  *       type: object
  *       required:
@@ -77,6 +86,15 @@ const router = Router();
  *           minLength: 1
  *           description: Texto da mensagem a ser enviada
  *           example: "Olá! Obrigado pelo seu interesse em nossos serviços."
+ *         ordem:
+           type: integer
+           minimum: 1
+           description: Ordem de exibição da mensagem (opcional, será auto-incrementada se não fornecida)
+           example: 1
+         ativo:
+           type: boolean
+           description: Status da mensagem (ativa/inativa) - padrão true
+           example: true
  *     AtualizarMensagem:
  *       type: object
  *       properties:
@@ -95,6 +113,10 @@ const router = Router();
  *           type: string
  *           minLength: 1
  *           description: Texto da mensagem a ser enviada
+ *         ordem:
+ *           type: integer
+ *           minimum: 1
+ *           description: Ordem de exibição da mensagem
 
  */
 
@@ -138,7 +160,15 @@ router.post('/',
       .notEmpty()
       .withMessage('Texto da mensagem é obrigatório')
       .isLength({ min: 1, max: 1000 })
-      .withMessage('Texto da mensagem deve ter entre 1 e 1000 caracteres')
+      .withMessage('Texto da mensagem deve ter entre 1 e 1000 caracteres'),
+    body('ordem')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Ordem deve ser um número inteiro maior que 0'),
+    body('ativo')
+      .optional()
+      .isBoolean()
+      .withMessage('Ativo deve ser um valor booleano')
   ],
   mensagemController.criar
 );
@@ -162,6 +192,26 @@ router.post('/',
  *         description: Erro interno do servidor
  */
 router.get('/', mensagemController.listarTodas);
+
+/**
+ * @swagger
+ * /api/mensagens/todas:
+ *   get:
+ *     summary: Listar todas as mensagens (incluindo inativas)
+ *     tags: [Mensagens]
+ *     responses:
+ *       200:
+ *         description: Lista de todas as mensagens
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Mensagem'
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/todas', mensagemController.listarTodasIncluindoInativas);
 
 /**
  * @swagger
@@ -288,7 +338,15 @@ router.put('/:id',
     body('texto_mensagem')
       .optional()
       .isLength({ min: 1, max: 1000 })
-      .withMessage('Texto da mensagem deve ter entre 1 e 1000 caracteres')
+      .withMessage('Texto da mensagem deve ter entre 1 e 1000 caracteres'),
+    body('ordem')
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage('Ordem deve ser um número inteiro maior que 0'),
+    body('ativo')
+      .optional()
+      .isBoolean()
+      .withMessage('Ativo deve ser um valor booleano')
   ],
   mensagemController.atualizar
 );
@@ -357,6 +415,65 @@ router.post('/:id/duplicar',
       .withMessage('ID deve ser um UUID válido')
   ],
   mensagemController.duplicar
+);
+
+/**
+ * @swagger
+ * /api/mensagens/{id}/ativar-desativar:
+ *   patch:
+ *     summary: Ativar ou desativar uma mensagem
+ *     tags: [Mensagens]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da mensagem
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ativo
+ *             properties:
+ *               ativo:
+ *                 type: boolean
+ *                 description: Status desejado (true para ativar, false para desativar)
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Status da mensagem alterado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem ativada com sucesso"
+ *                 mensagem:
+ *                   $ref: '#/components/schemas/Mensagem'
+ *       400:
+ *         description: Campo ativo deve ser um valor booleano
+ *       404:
+ *         description: Mensagem não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.patch('/:id/ativar-desativar',
+  [
+    param('id')
+      .isUUID()
+      .withMessage('ID deve ser um UUID válido'),
+    body('ativo')
+      .isBoolean()
+      .withMessage('Campo ativo deve ser um valor booleano')
+  ],
+  mensagemController.ativarDesativar
 );
 
 export default router;

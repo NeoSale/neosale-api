@@ -17,6 +17,7 @@ import configuracaoRoutes from './routes/configuracaoRoutes'
 import mensagemRoutes from './routes/mensagemRoutes'
 import followupRoutes from './routes/followupRoutes'
 import { errorHandler } from './middleware/errorHandler'
+import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
@@ -109,11 +110,27 @@ app.use('*', (req, res) => {
   })
 })
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`)
-  console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
-  console.log(`❤️  Health check em ${BASE_URL}/health`)
-})
+// Função para inicializar o servidor com migrations
+async function startServer() {
+  try {
+    // Executar migrations automaticamente no startup
+    console.log('🔄 Executando migrations...')
+    await migrationRunner.runMigrations()
+    await migrationRunner.markMigrationsAsExecuted()
+    
+    // Iniciar servidor
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor rodando na porta ${PORT}`)
+      console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
+      console.log(`❤️  Health check em ${BASE_URL}/health`)
+    })
+  } catch (error) {
+    console.error('❌ Erro ao inicializar servidor:', error)
+    process.exit(1)
+  }
+}
+
+// Inicializar servidor
+startServer()
 
 export default app
