@@ -164,7 +164,7 @@ export class ClienteService {
         telefone: input.telefone,
         status: input.status ?? 'ativo',
         revendedor_id: input.revendedor_id,
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
+        updated_at: new Date().toISOString()
       })
       .select(`
         *,
@@ -192,7 +192,7 @@ export class ClienteService {
       .from('clientes')
       .update({
         ...input,
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
+        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select(`

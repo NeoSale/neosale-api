@@ -189,9 +189,38 @@ export class EvolutionInstancesService {
    */
   async getQRCode(instanceName: string): Promise<EvolutionApiResponse<QRCodeResponse>> {
     try {
+      console.log(`🔍 [DEBUG] Iniciando getQRCode para instância: ${instanceName}`);
+      
+      // Primeiro, verificar se a instância está conectada
+      const statusResponse = await this.api.get(`/instance/fetchInstances`);
+      const instances = statusResponse.data;
+      console.log(`🔍 [DEBUG] Status response:`, JSON.stringify(instances, null, 2));
+      
+      const instance = instances.find((inst: any) => inst.instance?.instanceName === instanceName);
+      console.log(`🔍 [DEBUG] Instance found:`, JSON.stringify(instance, null, 2));
+      
+      // Se a instância estiver conectada (status 'open'), precisamos desconectar primeiro
+      if (instance?.instance?.state === 'open') {
+        console.log(`🔍 [DEBUG] Instância ${instanceName} está conectada. Desconectando para gerar novo QR Code...`);
+        
+        try {
+          const logoutResponse = await this.api.delete(`/instance/logout/${instanceName}`);
+          console.log(`🔍 [DEBUG] Logout response:`, JSON.stringify(logoutResponse.data, null, 2));
+          // Aguardar um pouco para a desconexão ser processada
+          console.log(`🔍 [DEBUG] Aguardando 2 segundos...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (disconnectError: any) {
+          console.warn(`❌ [DEBUG] Aviso: Erro ao desconectar instância ${instanceName}:`, disconnectError.response?.data || disconnectError.message);
+        }
+      }
+      
+      // Agora tentar obter o QR Code
+      console.log(`🔍 [DEBUG] Tentando obter QR Code...`);
       const response = await this.api.get(`/instance/connect/${instanceName}`);
+      console.log(`🔍 [DEBUG] QR Code response:`, JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (error: any) {
+      console.error(`❌ [DEBUG] Erro ao obter QR Code:`, error);
       throw new Error(`Erro ao obter QR Code: ${error.response?.data?.message || error.message}`);
     }
   }
@@ -229,6 +258,9 @@ export class EvolutionInstancesService {
       throw new Error('Supabase client não está inicializado');
     }
 
+    // Extrair configurações específicas do Evolution API do settings
+    const settings = data.settings || {};
+    
     const instanceData = {
       id: crypto.randomUUID(),
       cliente_id: data.cliente_id,
@@ -236,7 +268,15 @@ export class EvolutionInstancesService {
       status: 'disconnected' as const,
       is_connected: false,
       webhook_url: data.webhook_url,
-      settings: data.settings || {},
+      settings: settings,
+      // Evolution API specific settings
+      always_online: settings.alwaysOnline || false,
+      groups_ignore: settings.groupsIgnore || false,
+      msg_call: settings.msgCall || null,
+      read_messages: settings.readMessages || false,
+      read_status: settings.readStatus || false,
+      reject_call: settings.rejectCall || false,
+      sync_full_history: settings.syncFullHistory || false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -252,6 +292,26 @@ export class EvolutionInstancesService {
     }
 
     return result;
+  }
+
+  /**
+   * Listar todas as instâncias do banco de dados
+   */
+  async getAllInstancesDB(): Promise<EvolutionInstanceDB[]> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    const { data, error } = await supabase
+      .from('evolution_instances')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Erro ao buscar instâncias: ${error.message}`);
+    }
+
+    return data || [];
   }
 
   /**
@@ -312,6 +372,18 @@ export class EvolutionInstancesService {
       ...updates,
       updated_at: new Date().toISOString()
     };
+
+    // Se há configurações no settings, extrair campos específicos
+    if (updates.settings) {
+      const settings = updates.settings;
+      updateData.always_online = settings.alwaysOnline ?? updateData.always_online;
+      updateData.groups_ignore = settings.groupsIgnore ?? updateData.groups_ignore;
+      updateData.msg_call = settings.msgCall ?? updateData.msg_call;
+      updateData.read_messages = settings.readMessages ?? updateData.read_messages;
+      updateData.read_status = settings.readStatus ?? updateData.read_status;
+      updateData.reject_call = settings.rejectCall ?? updateData.reject_call;
+      updateData.sync_full_history = settings.syncFullHistory ?? updateData.sync_full_history;
+    }
 
     // Remove campos que não devem ser atualizados
     delete updateData.id;

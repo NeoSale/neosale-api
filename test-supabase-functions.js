@@ -63,7 +63,7 @@ async function testSupabaseFunctions() {
     // 3. Testar função table_exists
     console.log('\n3. 📋 Testando função table_exists...');
     const { data: tableTest, error: tableError } = await supabase
-      .rpc('table_exists', { table_name: 'migrations' });
+      .rpc('table_exists', { target_table: 'migrations' });
     
     if (tableError) {
       if (tableError.code === 'PGRST202') {
@@ -78,7 +78,7 @@ async function testSupabaseFunctions() {
     // 4. Testar função column_exists
     console.log('\n4. 📝 Testando função column_exists...');
     const { data: columnTest, error: columnError } = await supabase
-      .rpc('column_exists', { table_name: 'migrations', column_name: 'filename' });
+      .rpc('column_exists', { target_table: 'migrations', target_column: 'filename' });
     
     if (columnError) {
       if (columnError.code === 'PGRST202') {

@@ -205,16 +205,23 @@ const evolutionController = new EvolutionInstancesController();
  *     QRCodeResponse:
  *       type: object
  *       properties:
- *         pairingCode:
- *           type: string
- *         code:
- *           type: string
- *         count:
- *           type: number
- *         qrcode:
- *           type: string
  *         base64:
  *           type: string
+ *           description: QR Code em formato base64
+ *           example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAVw..."
+ *         code:
+ *           type: string
+ *           description: Código do QR Code
+ *           example: "2@nI20KyyVmbrHmXaK0Hcgni+J/UO2HbC8ZvENB/IU9qhWqHl5gS6Mrz+DKGm+CYJ8XZFnTjBGTI56VwHpu4aMyS2ElvEA98HKXXM=,ab8vCO5UU2bGCkPnEoY2LLPpdNYpyP/xSxEVrPo+kGc=,Y1J+YvWI3WhFTQVpEV+002AasO/Bm0aYh24fGl02HWs=,HjsV2De00IZXqGBSF6DiCxzA6CjLSsE2S1+I5psQ9eg="
+ *         count:
+ *           type: number
+ *           description: Contador de tentativas
+ *           example: 2
+ *         pairingCode:
+ *           type: string
+ *           nullable: true
+ *           description: Código de pareamento
+ *           example: null
  */
 
 // ========================================
@@ -569,7 +576,7 @@ router.get('/health', evolutionController.checkApiHealth.bind(evolutionControlle
  * @swagger
  * /api/evolution-instances/instances:
  *   get:
- *     summary: Listar todas as instâncias
+ *     summary: Listar todas as instâncias do banco de dados
  *     tags: [Evolution API - Direct]
  *     responses:
  *       200:
@@ -586,7 +593,93 @@ router.get('/health', evolutionController.checkApiHealth.bind(evolutionControlle
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/EvolutionInstance'
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         description: ID único da instância
+ *                       clienteId:
+ *                         type: string
+ *                         format: uuid
+ *                         description: ID do cliente proprietário
+ *                       instanceName:
+ *                         type: string
+ *                         description: Nome da instância
+ *                       instanceId:
+ *                         type: string
+ *                         description: ID da instância na Evolution API
+ *                       status:
+ *                         type: string
+ *                         enum: [open, close, connecting, disconnected]
+ *                         description: Status da conexão
+ *                       qrCode:
+ *                         type: string
+ *                         description: QR Code para conexão
+ *                       webhookUrl:
+ *                         type: string
+ *                         description: URL do webhook
+ *                       phoneNumber:
+ *                         type: string
+ *                         description: Número do telefone conectado
+ *                       profileName:
+ *                         type: string
+ *                         description: Nome do perfil
+ *                       profilePictureUrl:
+ *                         type: string
+ *                         description: URL da foto do perfil
+ *                       isConnected:
+ *                         type: boolean
+ *                         description: Se a instância está conectada
+ *                       lastConnection:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Última conexão
+ *                       apiKey:
+ *                         type: string
+ *                         description: Chave da API
+ *                       settings:
+ *                         type: object
+ *                         description: Configurações da instância
+ *                       alwaysOnline:
+ *                         type: boolean
+ *                         description: Manter sempre online
+ *                         example: true
+ *                       groupsIgnore:
+ *                         type: boolean
+ *                         description: Ignorar grupos
+ *                         example: false
+ *                       msgCall:
+ *                         type: string
+ *                         description: Mensagem para chamadas
+ *                         example: "texto"
+ *                       readMessages:
+ *                         type: boolean
+ *                         description: Marcar mensagens como lidas
+ *                         example: true
+ *                       readStatus:
+ *                         type: boolean
+ *                         description: Mostrar status de leitura
+ *                         example: true
+ *                       rejectCall:
+ *                         type: boolean
+ *                         description: Rejeitar chamadas
+ *                         example: false
+ *                       syncFullHistory:
+ *                         type: boolean
+ *                         description: Sincronizar histórico completo
+ *                         example: true
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Data de criação
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Data de atualização
+ *                 total:
+ *                   type: number
+ *                   description: Total de instâncias
  */
 router.get('/instances', evolutionController.fetchInstances.bind(evolutionController));
 

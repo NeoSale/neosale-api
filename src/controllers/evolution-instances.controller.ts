@@ -45,12 +45,41 @@ export class EvolutionInstancesController {
    */
   async fetchInstances(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.evolutionService.fetchInstances();
+      const instances = await this.evolutionService.getAllInstancesDB();
+      
+      // Mapear dados do banco para o formato esperado com campos camelCase
+      const formattedInstances = instances.map(instance => ({
+        id: instance.id,
+        clienteId: instance.cliente_id,
+        instanceName: instance.instance_name,
+        instanceId: instance.instance_id,
+        status: instance.status,
+        qrCode: instance.qr_code,
+        webhookUrl: instance.webhook_url,
+        phoneNumber: instance.phone_number,
+        profileName: instance.profile_name,
+        profilePictureUrl: instance.profile_picture_url,
+        isConnected: instance.is_connected,
+        lastConnection: instance.last_connection,
+        apiKey: instance.api_key,
+        settings: instance.settings,
+        // Campos de configuração da Evolution API em camelCase
+        alwaysOnline: instance.always_online,
+        groupsIgnore: instance.groups_ignore,
+        msgCall: instance.msg_call,
+        readMessages: instance.read_messages,
+        readStatus: instance.read_status,
+        rejectCall: instance.reject_call,
+        syncFullHistory: instance.sync_full_history,
+        createdAt: instance.created_at,
+        updatedAt: instance.updated_at
+      }));
       
       res.status(200).json({
         success: true,
         message: 'Instâncias obtidas com sucesso',
-        data: result.response
+        data: formattedInstances,
+        total: formattedInstances.length
       });
     } catch (error: any) {
       res.status(500).json({
@@ -111,10 +140,23 @@ export class EvolutionInstancesController {
         number as string
       );
       
+      // Mapear resposta para o formato esperado
+      console.log('🔍 [DEBUG CONTROLLER] Result from service:', JSON.stringify(result, null, 2));
+      
+      const qrData = result.response;
+      const formattedResponse = {
+        base64: qrData?.base64 || qrData?.qrcode || null,
+        code: qrData?.code || null,
+        count: qrData?.count || null,
+        pairingCode: qrData?.pairingCode || null
+      };
+      
+      console.log('🔍 [DEBUG CONTROLLER] Formatted response:', JSON.stringify(formattedResponse, null, 2));
+      
       res.status(200).json({
         success: true,
         message: 'Instância conectada com sucesso',
-        data: result
+        data: formattedResponse
       });
     } catch (error: any) {
       res.status(500).json({
@@ -141,10 +183,23 @@ export class EvolutionInstancesController {
 
       const result = await this.evolutionService.getQRCode(instanceName);
       
+      // Mapear resposta para o formato esperado
+      console.log('🔍 [DEBUG CONTROLLER] Result from service:', JSON.stringify(result, null, 2));
+      
+      const qrData = result.response;
+      const formattedResponse = {
+        base64: qrData?.base64 || qrData?.qrcode || null,
+        code: qrData?.code || null,
+        count: qrData?.count || null,
+        pairingCode: qrData?.pairingCode || null
+      };
+      
+      console.log('🔍 [DEBUG CONTROLLER] Formatted response:', JSON.stringify(formattedResponse, null, 2));
+      
       res.status(200).json({
         success: true,
         message: 'QR Code obtido com sucesso',
-        data: result
+        data: formattedResponse
       });
     } catch (error: any) {
       res.status(500).json({
@@ -555,17 +610,25 @@ export class EvolutionInstancesController {
       );
 
       // Atualizar QR Code no banco
-      if (qrResponse.response?.qrcode) {
+      if (qrResponse.response?.qrcode || qrResponse.response?.base64) {
         await this.evolutionService.updateInstanceDB(clienteId, instanceId, {
-          qr_code: qrResponse.response.qrcode,
+          qr_code: qrResponse.response.qrcode || qrResponse.response.base64,
           status: 'connecting'
         });
       }
 
+      // Mapear resposta para o formato esperado
+      const formattedResponse = {
+        base64: qrResponse.response?.base64 || qrResponse.response?.qrcode || null,
+        code: qrResponse.response?.code || null,
+        count: qrResponse.response?.count || null,
+        pairingCode: qrResponse.response?.pairingCode || null
+      };
+
       res.status(200).json({
         success: true,
         message: 'Instância conectada, QR Code gerado',
-        data: qrResponse
+        data: formattedResponse
       });
     } catch (error: any) {
       res.status(500).json({

@@ -14,6 +14,14 @@ export interface EvolutionInstanceDB {
   last_connection?: Date | undefined;
   api_key?: string | undefined;
   settings?: Record<string, any> | undefined;
+  // Evolution API specific settings
+  always_online?: boolean;
+  groups_ignore?: boolean;
+  msg_call?: string | undefined;
+  read_messages?: boolean;
+  read_status?: boolean;
+  reject_call?: boolean;
+  sync_full_history?: boolean;
   created_at: Date;
   updated_at: Date;
 }

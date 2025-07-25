@@ -7,7 +7,7 @@ export interface EvolutionConfig {
 }
 
 export const evolutionConfig: EvolutionConfig = {
-  baseUrl: process.env.EVOLUTION_API_BASE_URL || 'http://localhost:8080',
+  baseUrl: process.env.EVOLUTION_API_BASE_URL || '',
   apiKey: process.env.EVOLUTION_API_KEY || '',
   timeout: parseInt(process.env.EVOLUTION_API_TIMEOUT || '30000'),
   retryAttempts: parseInt(process.env.EVOLUTION_API_RETRY_ATTEMPTS || '3'),
