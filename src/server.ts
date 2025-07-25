@@ -16,12 +16,19 @@ import referenciaRoutes from './routes/referenciaRoutes'
 import configuracaoRoutes from './routes/configuracaoRoutes'
 import mensagemRoutes from './routes/mensagemRoutes'
 import followupRoutes from './routes/followupRoutes'
+import configuracaoFollowupRoutes from './routes/configuracaoFollowupRoutes'
+import provedorRoutes from './routes/provedorRoutes'
+import tipoAcessoRoutes from './routes/tipoAcessoRoutes'
+import revendedorRoutes from './routes/revendedorRoutes'
+import clienteRoutes from './routes/clienteRoutes'
+import usuarioRoutes from './routes/usuarioRoutes'
+import evolutionInstancesRoutes from './routes/evolution-instances.routes'
 import { errorHandler } from './middleware/errorHandler'
 import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 8080
 
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.API_BASE_URL
@@ -69,7 +76,14 @@ app.get('/', (req, res) => {
       referencias: `${BASE_URL}/api/referencias`,
       configuracoes: `${BASE_URL}/api/configuracoes`,
       mensagens: `${BASE_URL}/api/mensagens`,
-      followups: `${BASE_URL}/api/followups`
+      followups: `${BASE_URL}/api/followups`,
+      configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
+      provedores: `${BASE_URL}/api/provedores`,
+      tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
+      revendedores: `${BASE_URL}/api/revendedores`,
+      clientes: `${BASE_URL}/api/clientes`,
+      usuarios: `${BASE_URL}/api/usuarios`,
+      evolutionInstances: `${BASE_URL}/api/evolution-instances`
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
   })
@@ -82,6 +96,13 @@ app.use('/api/referencias', referenciaRoutes)
 app.use('/api/configuracoes', configuracaoRoutes)
 app.use('/api/mensagens', mensagemRoutes)
 app.use('/api/followups', followupRoutes)
+app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
+app.use('/api/provedores', provedorRoutes)
+app.use('/api/tipos-acesso', tipoAcessoRoutes)
+app.use('/api/revendedores', revendedorRoutes)
+app.use('/api/clientes', clienteRoutes)
+app.use('/api/usuarios', usuarioRoutes)
+app.use('/api/evolution-instances', evolutionInstancesRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // Rota de health check

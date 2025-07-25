@@ -397,7 +397,7 @@ class LeadController {
         try {
             const id = LeadController.extractIdFromUrl(req);
             validators_1.idParamSchema.parse({ id });
-            const validatedData = validators_1.atualizarMensagemSchema.parse(req.body);
+            const validatedData = validators_1.updateFollowupSchema.parse(req.body);
             const mensagemStatus = await leadService_1.LeadService.atualizarMensagem(id, validatedData);
             return res.status(200).json({
                 success: true,

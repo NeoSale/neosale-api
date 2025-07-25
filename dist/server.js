@@ -18,10 +18,19 @@ const controleEnviosRoutes_1 = require("./routes/controleEnviosRoutes");
 const referenciaRoutes_1 = __importDefault(require("./routes/referenciaRoutes"));
 const configuracaoRoutes_1 = __importDefault(require("./routes/configuracaoRoutes"));
 const mensagemRoutes_1 = __importDefault(require("./routes/mensagemRoutes"));
+const followupRoutes_1 = __importDefault(require("./routes/followupRoutes"));
+const configuracaoFollowupRoutes_1 = __importDefault(require("./routes/configuracaoFollowupRoutes"));
+const provedorRoutes_1 = __importDefault(require("./routes/provedorRoutes"));
+const tipoAcessoRoutes_1 = __importDefault(require("./routes/tipoAcessoRoutes"));
+const revendedorRoutes_1 = __importDefault(require("./routes/revendedorRoutes"));
+const clienteRoutes_1 = __importDefault(require("./routes/clienteRoutes"));
+const usuarioRoutes_1 = __importDefault(require("./routes/usuarioRoutes"));
+const evolution_instances_routes_1 = __importDefault(require("./routes/evolution-instances.routes"));
 const errorHandler_1 = require("./middleware/errorHandler");
+const migrations_1 = require("./lib/migrations");
 const package_json_1 = __importDefault(require("../package.json"));
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.API_BASE_URL;
 if (!BASE_URL) {
@@ -61,7 +70,15 @@ app.get('/', (req, res) => {
             controleEnvios: `${BASE_URL}/api/controle-envios`,
             referencias: `${BASE_URL}/api/referencias`,
             configuracoes: `${BASE_URL}/api/configuracoes`,
-            mensagens: `${BASE_URL}/api/mensagens`
+            mensagens: `${BASE_URL}/api/mensagens`,
+            followups: `${BASE_URL}/api/followups`,
+            configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
+            provedores: `${BASE_URL}/api/provedores`,
+            tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
+            revendedores: `${BASE_URL}/api/revendedores`,
+            clientes: `${BASE_URL}/api/clientes`,
+            usuarios: `${BASE_URL}/api/usuarios`,
+            evolutionInstances: `${BASE_URL}/api/evolution-instances`
         },
         description: 'API para gerenciamento de leads do sistema NeoSale'
     });
@@ -72,6 +89,14 @@ app.use('/api/controle-envios', controleEnviosRoutes_1.controleEnviosRoutes);
 app.use('/api/referencias', referenciaRoutes_1.default);
 app.use('/api/configuracoes', configuracaoRoutes_1.default);
 app.use('/api/mensagens', mensagemRoutes_1.default);
+app.use('/api/followups', followupRoutes_1.default);
+app.use('/api/configuracoes-followup', configuracaoFollowupRoutes_1.default);
+app.use('/api/provedores', provedorRoutes_1.default);
+app.use('/api/tipos-acesso', tipoAcessoRoutes_1.default);
+app.use('/api/revendedores', revendedorRoutes_1.default);
+app.use('/api/clientes', clienteRoutes_1.default);
+app.use('/api/usuarios', usuarioRoutes_1.default);
+app.use('/api/evolution-instances', evolution_instances_routes_1.default);
 app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swagger_1.swaggerSpec));
 // Rota de health check
 app.get('/health', (req, res) => {
@@ -95,11 +120,26 @@ app.use('*', (req, res) => {
         path: req.originalUrl
     });
 });
-// Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`);
-    console.log(`❤️  Health check em ${BASE_URL}/health`);
-});
+// Função para inicializar o servidor com migrations
+async function startServer() {
+    try {
+        // Executar migrations automaticamente no startup
+        console.log('🔄 Executando migrations...');
+        await migrations_1.migrationRunner.runMigrations();
+        await migrations_1.migrationRunner.markMigrationsAsExecuted();
+        // Iniciar servidor
+        app.listen(PORT, () => {
+            console.log(`🚀 Servidor rodando na porta ${PORT}`);
+            console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`);
+            console.log(`❤️  Health check em ${BASE_URL}/health`);
+        });
+    }
+    catch (error) {
+        console.error('❌ Erro ao inicializar servidor:', error);
+        process.exit(1);
+    }
+}
+// Inicializar servidor
+startServer();
 exports.default = app;
 //# sourceMappingURL=server.js.map

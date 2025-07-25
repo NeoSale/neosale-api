@@ -39,27 +39,27 @@ const router = Router();
  *           description: Texto da mensagem a ser enviada
  *           example: "Olá! Obrigado pelo seu interesse em nossos serviços."
  *         ordem:
-           type: integer
-           minimum: 1
-           description: Ordem de exibição da mensagem
-           example: 1
-         ativo:
-           type: boolean
-           description: Status da mensagem (ativa/inativa)
-           example: true
-         embedding:
-           type: array
-           items:
-             type: number
-           description: Vetor de embedding para busca semântica
-         created_at:
-           type: string
-           format: date-time
-           description: Data de criação
-         updated_at:
-           type: string
-           format: date-time
-           description: Data da última atualização
+ *           type: integer
+ *           minimum: 1
+ *           description: Ordem de exibição da mensagem
+ *           example: 1
+ *         ativo:
+ *           type: boolean
+ *           description: Status da mensagem (ativa/inativa)
+ *           example: true
+ *         embedding:
+ *           type: array
+ *           items:
+ *             type: number
+ *           description: Vetor de embedding para busca semântica
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data de criação
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data da última atualização
  *     CriarMensagem:
  *       type: object
  *       required:
@@ -87,14 +87,14 @@ const router = Router();
  *           description: Texto da mensagem a ser enviada
  *           example: "Olá! Obrigado pelo seu interesse em nossos serviços."
  *         ordem:
-           type: integer
-           minimum: 1
-           description: Ordem de exibição da mensagem (opcional, será auto-incrementada se não fornecida)
-           example: 1
-         ativo:
-           type: boolean
-           description: Status da mensagem (ativa/inativa) - padrão true
-           example: true
+ *           type: integer
+ *           minimum: 1
+ *           description: Ordem de exibição da mensagem (opcional, será auto-incrementada se não fornecida)
+ *           example: 1
+ *         ativo:
+ *           type: boolean
+ *           description: Status da mensagem (ativa/inativa) - padrão true
+ *           example: true
  *     AtualizarMensagem:
  *       type: object
  *       properties:

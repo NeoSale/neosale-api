@@ -1,6 +1,6 @@
 {
   "name": "neosale-api",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "private": true,
   "scripts": {
     "dev": "set PORT=3000 && nodemon src/server.ts",
@@ -14,6 +14,8 @@
     "docker:check": "node scripts/check-docker.js",
     "docker:start": "powershell -ExecutionPolicy Bypass -File scripts/start-docker.ps1",
     "docker:auto": "node scripts/start-docker.js",
+    "supabase:test": "node test-supabase-functions.js",
+    "supabase:setup": "echo 'Execute o arquivo setup_supabase_functions.sql no Supabase SQL Editor'",
     "deploy": "bash build-and-push.sh",
     "deploy:patch": "echo '1' | bash build-and-push.sh",
     "deploy:minor": "echo '2' | bash build-and-push.sh",
@@ -22,6 +24,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.4",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.18.2",

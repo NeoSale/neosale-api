@@ -1,4 +1,4 @@
-import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, AtualizarMensagemInput, CreateLeadInput } from '../lib/validators';
+import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators';
 export declare class LeadService {
     private static checkSupabaseConnection;
     static criarLead(data: CreateLeadInput): Promise<any>;
@@ -27,7 +27,7 @@ export declare class LeadService {
     }>;
     static agendarLead(id: string, data: AgendamentoInput): Promise<any>;
     static enviarMensagem(id: string, data: MensagemInput): Promise<any>;
-    static atualizarMensagem(id: string, data: AtualizarMensagemInput): Promise<any>;
+    static atualizarMensagem(id: string, data: UpdateFollowupInput): Promise<any>;
     static atualizarEtapa(id: string, data: EtapaInput): Promise<any>;
     static atualizarStatus(id: string, data: StatusInput): Promise<any>;
     static buscarPorId(id: string): Promise<any>;

@@ -55,12 +55,21 @@ export class MigrationRunner {
    */
   private async tableExists(tableName: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      // Try using the RPC function first
+      const { data, error } = await supabase
+        .rpc('table_exists', { table_name: tableName });
+      
+      if (!error && data !== null) {
+        return data;
+      }
+      
+      // Fallback to direct query method
+      const { error: queryError } = await supabase
         .from(tableName)
         .select('*')
         .limit(1);
       
-      return !error || !error.message.includes('does not exist');
+      return !queryError || !queryError.message.includes('does not exist');
     } catch (error) {
       return false;
     }
@@ -73,19 +82,27 @@ export class MigrationRunner {
    */
   private async columnExists(tableName: string, columnName: string): Promise<boolean> {
     try {
-      // Try to select the column from the table
-      const { error } = await supabase
+      // Try using the RPC function first
+      const { data, error } = await supabase
+        .rpc('column_exists', { table_name: tableName, column_name: columnName });
+      
+      if (!error && data !== null) {
+        return data;
+      }
+      
+      // Fallback to direct query method
+      const { error: queryError } = await supabase
         .from(tableName)
         .select(columnName)
         .limit(1);
       
       // If no error, column exists
-      if (!error) {
+      if (!queryError) {
         return true;
       }
       
       // Check if error is about column not existing
-      if (error.message && error.message.includes('column') && error.message.includes('does not exist')) {
+      if (queryError.message && queryError.message.includes('column') && queryError.message.includes('does not exist')) {
         return false;
       }
       
@@ -101,15 +118,16 @@ export class MigrationRunner {
    */
   private async indexExists(indexName: string): Promise<boolean> {
     try {
+      // Try using the RPC function first
       const { data, error } = await supabase
-        .rpc('get_indexes', { index_name: indexName });
+        .rpc('index_exists', { index_name: indexName });
       
-      if (error) {
-        // Fallback: assume index doesn't exist if we can't check
-        return false;
+      if (!error && data !== null) {
+        return data;
       }
       
-      return data && data.length > 0;
+      // Fallback: assume index doesn't exist if we can't check
+      return false;
     } catch (error) {
       return false;
     }
