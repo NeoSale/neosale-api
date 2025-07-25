@@ -1,6 +1,6 @@
 {
   "name": "neosale-api",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "private": true,
   "scripts": {
     "dev": "set PORT=3000 && nodemon src/server.ts",
