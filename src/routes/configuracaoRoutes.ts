@@ -80,6 +80,8 @@ const router = Router();
  *   get:
  *     summary: Buscar todas as configurações
  *     tags: [Configurações]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
  *         description: Lista de configurações retornada com sucesso
@@ -184,6 +186,8 @@ router.get('/chave/:chave', ConfiguracaoController.getByChave);
  *   post:
  *     summary: Criar nova configuração
  *     tags: [Configurações]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     requestBody:
  *       required: true
  *       content:

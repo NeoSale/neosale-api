@@ -5,7 +5,16 @@ import { createRevendedorSchema, updateRevendedorSchema } from '../lib/validator
 export class RevendedorController {
   static async getAll(req: Request, res: Response) {
     try {
-      const revendedores = await RevendedorService.getAll();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      const revendedores = await RevendedorService.getAll(cliente_id);
       return res.json({
         success: true,
         data: revendedores,
@@ -23,7 +32,7 @@ export class RevendedorController {
 
   static async getById(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id, cliente_id } = req.params;
       
       if (!id) {
         return res.status(400).json({
@@ -31,8 +40,15 @@ export class RevendedorController {
           message: 'ID é obrigatório'
         });
       }
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
 
-      const revendedor = await RevendedorService.getById(id);
+      const revendedor = await RevendedorService.getById(id, cliente_id);
       
       if (!revendedor) {
         return res.status(404).json({
@@ -57,7 +73,7 @@ export class RevendedorController {
 
   static async getByEmail(req: Request, res: Response) {
     try {
-      const { email } = req.params;
+      const { email, cliente_id } = req.params;
       
       if (!email) {
         return res.status(400).json({
@@ -65,8 +81,15 @@ export class RevendedorController {
           message: 'Email é obrigatório'
         });
       }
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
 
-      const revendedor = await RevendedorService.getByEmail(email);
+      const revendedor = await RevendedorService.getByEmail(email, cliente_id);
       
       if (!revendedor) {
         return res.status(404).json({
@@ -91,7 +114,7 @@ export class RevendedorController {
 
   static async getByStatus(req: Request, res: Response) {
     try {
-      const { status } = req.params;
+      const { status, cliente_id } = req.params;
       
       if (!status) {
         return res.status(400).json({
@@ -99,8 +122,15 @@ export class RevendedorController {
           message: 'Status é obrigatório'
         });
       }
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
 
-      const revendedores = await RevendedorService.getByStatus(status);
+      const revendedores = await RevendedorService.getByStatus(status, cliente_id);
       
       return res.json({
         success: true,

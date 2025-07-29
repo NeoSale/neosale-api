@@ -20,10 +20,17 @@ export const mensagemController = {
     }
   },
 
-  // Listar todas as mensagens (incluindo inativas)
+  // Listar todas as mensagens (incluindo inativas) por cliente
   async listarTodas(req: Request, res: Response): Promise<void> {
     try {
-      const mensagens = await mensagemService.listarTodasIncluindoInativas();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        res.status(400).json({ error: 'cliente_id é obrigatório' });
+        return;
+      }
+      
+      const mensagens = await mensagemService.listarTodasIncluindoInativas(cliente_id);
       res.json(mensagens);
     } catch (error) {
       console.error('Erro ao listar mensagens:', error);
@@ -65,11 +72,17 @@ export const mensagemController = {
     }
   },
 
-  // Buscar mensagem por ID
+  // Buscar mensagem por ID e cliente
   async buscarPorId(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const mensagem = await mensagemService.buscarPorId(id);
+      const { id, cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        res.status(400).json({ error: 'cliente_id é obrigatório' });
+        return;
+      }
+      
+      const mensagem = await mensagemService.buscarPorId(id, cliente_id);
       
       if (!mensagem) {
         res.status(404).json({ error: 'Mensagem não encontrada' });
@@ -125,17 +138,23 @@ export const mensagemController = {
     }
   },
 
-  // Buscar mensagens por texto (busca semântica)
+  // Buscar mensagens por texto (busca semântica) e cliente
   async buscarPorTexto(req: Request, res: Response): Promise<void> {
     try {
       const { texto } = req.query;
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        res.status(400).json({ error: 'cliente_id é obrigatório' });
+        return;
+      }
       
       if (!texto || typeof texto !== 'string') {
         res.status(400).json({ error: 'Parâmetro texto é obrigatório' });
         return;
       }
       
-      const mensagens = await mensagemService.buscarPorTexto(texto);
+      const mensagens = await mensagemService.buscarPorTexto(texto, cliente_id);
       res.json(mensagens);
     } catch (error) {
       console.error('Erro ao buscar mensagens por texto:', error);

@@ -3,6 +3,7 @@ import { ConfiguracaoService } from './configuracaoService'
 
 export interface ControleEnvio {
   id: string
+  cliente_id: string
   data: string
   quantidade_enviada: number
   limite_diario: number
@@ -18,14 +19,19 @@ export class ControleEnviosService {
   }
 
   // Buscar todos os registros de controle de envios
-  static async getAllControleEnvios(): Promise<ControleEnvio[]> {
+  static async getAllControleEnvios(clienteId?: string): Promise<ControleEnvio[]> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Buscando todos os registros de controle de envios')
     
-    const { data, error } = await supabase!
+    let query = supabase!
       .from('controle_envios_diarios')
-      .select('*')
-      .order('data', { ascending: false })
+      .select('*');
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.order('data', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar controle de envios:', error)
@@ -37,15 +43,20 @@ export class ControleEnviosService {
   }
   
   // Buscar controle de envio por data específica
-  static async getControleEnvioByDate(data: string): Promise<ControleEnvio> {
+  static async getControleEnvioByDate(data: string, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Buscando controle de envio para data:', data)
     
-    const { data: controleEnvio, error } = await supabase!
+    let query = supabase!
       .from('controle_envios_diarios')
       .select('*')
-      .eq('data', data)
-      .single()
+      .eq('data', data);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: controleEnvio, error } = await query.single();
     
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.error('❌ Erro ao buscar controle de envio:', error)
@@ -55,7 +66,7 @@ export class ControleEnviosService {
     // Se não encontrou o registro, criar um novo
     if (!controleEnvio) {
       console.log('📝 Registro não encontrado, criando novo para data:', data)
-      return await this.createControleEnvio(data)
+      return await this.createControleEnvio(data, clienteId)
     }
     
     console.log('✅ Controle de envio encontrado:', controleEnvio.id)
@@ -63,7 +74,7 @@ export class ControleEnviosService {
   }
   
   // Criar novo registro de controle de envio
-  static async createControleEnvio(data: string): Promise<ControleEnvio> {
+  static async createControleEnvio(data: string, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Criando novo controle de envio para data:', data)
     
@@ -83,13 +94,19 @@ export class ControleEnviosService {
       console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
     }
     
+    const insertData: any = {
+      data: data,
+      quantidade_enviada: 0,
+      limite_diario: limiteDiarioPadrao
+    };
+
+    if (clienteId) {
+      insertData.cliente_id = clienteId;
+    }
+    
     const { data: novoControleEnvio, error } = await supabase!
       .from('controle_envios_diarios')
-      .insert({
-        data: data,
-        quantidade_enviada: 0,
-        limite_diario: limiteDiarioPadrao
-      })
+      .insert(insertData)
       .select()
       .single()
     
@@ -103,16 +120,22 @@ export class ControleEnviosService {
   }
   
   // Atualizar quantidade enviada
-  static async updateQuantidadeEnviada(data: string, novaQuantidade: number): Promise<ControleEnvio> {
+  static async updateQuantidadeEnviada(data: string, novaQuantidade: number, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Atualizando quantidade enviada para data:', data, 'nova quantidade:', novaQuantidade)
     
-    const { data: controleAtualizado, error } = await supabase!
+    let query = supabase!
       .from('controle_envios_diarios')
       .update({ quantidade_enviada: novaQuantidade })
-      .eq('data', data)
+      .eq('data', data);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: controleAtualizado, error } = await query
       .select()
-      .single()
+      .single();
     
     if (error) {
       console.error('❌ Erro ao atualizar quantidade enviada:', error)
@@ -124,25 +147,25 @@ export class ControleEnviosService {
   }
   
   // Incrementar quantidade enviada
-  static async incrementarQuantidadeEnviada(data: string, incremento: number = 1): Promise<ControleEnvio> {
+  static async incrementarQuantidadeEnviada(data: string, incremento: number = 1, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Incrementando quantidade enviada para data:', data, 'incremento:', incremento)
     
     // Primeiro buscar o registro atual
-    const controleAtual = await this.getControleEnvioByDate(data)
+    const controleAtual = await this.getControleEnvioByDate(data, clienteId)
     
     // Incrementar a quantidade
     const novaQuantidade = controleAtual.quantidade_enviada + incremento
     
-    return await this.updateQuantidadeEnviada(data, novaQuantidade)
+    return await this.updateQuantidadeEnviada(data, novaQuantidade, clienteId)
   }
   
   // Verificar se pode enviar mensagem (não excedeu limite diário)
-  static async podeEnviarMensagem(data: string): Promise<{ podeEnviar: boolean; quantidadeRestante: number; limite: number; enviadas: number }> {
+  static async podeEnviarMensagem(data: string, clienteId?: string): Promise<{ podeEnviar: boolean; quantidadeRestante: number; limite: number; enviadas: number }> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Verificando se pode enviar mensagem para data:', data)
     
-    const controleEnvio = await this.getControleEnvioByDate(data)
+    const controleEnvio = await this.getControleEnvioByDate(data, clienteId)
     
     const podeEnviar = controleEnvio.quantidade_enviada < controleEnvio.limite_diario
     const quantidadeRestante = controleEnvio.limite_diario - controleEnvio.quantidade_enviada
@@ -158,7 +181,7 @@ export class ControleEnviosService {
   }
 
   // Alterar quantidade enviada para uma data específica
-  static async alterarQuantidadeEnviada(data: string, novaQuantidade: number): Promise<ControleEnvio> {
+  static async alterarQuantidadeEnviada(data: string, novaQuantidade: number, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Alterando quantidade enviada para data:', data, 'nova quantidade:', novaQuantidade)
     
@@ -168,14 +191,14 @@ export class ControleEnviosService {
     }
     
     // Buscar ou criar o registro para a data
-    await this.getControleEnvioByDate(data)
+    await this.getControleEnvioByDate(data, clienteId)
     
     // Atualizar a quantidade
-    return await this.updateQuantidadeEnviada(data, novaQuantidade)
+    return await this.updateQuantidadeEnviada(data, novaQuantidade, clienteId)
   }
 
   // Alterar limite diário para hoje
-  static async alterarLimiteDiario(novoLimite: number): Promise<ControleEnvio> {
+  static async alterarLimiteDiario(novoLimite: number, clienteId?: string): Promise<ControleEnvio> {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Alterando limite diário para:', novoLimite)
     
@@ -192,17 +215,23 @@ export class ControleEnviosService {
     console.log('📅 Data de hoje (Brasil):', hoje)
     
     // Buscar ou criar o registro para hoje
-    const controleAtual = await this.getControleEnvioByDate(hoje)
+    const controleAtual = await this.getControleEnvioByDate(hoje, clienteId)
     
     // Atualizar apenas o limite diário, mantendo a quantidade enviada atual
-    const { data: controleAtualizado, error } = await supabase!
+    let query = supabase!
       .from('controle_envios_diarios')
       .update({ 
         limite_diario: novoLimite
       })
-      .eq('data', hoje)
+      .eq('data', hoje);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: controleAtualizado, error } = await query
       .select()
-      .single()
+      .single();
     
     if (error) {
       console.error('❌ Erro ao atualizar limite diário:', error)

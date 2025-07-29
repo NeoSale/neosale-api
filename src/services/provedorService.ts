@@ -11,15 +11,21 @@ export interface Provedor {
 }
 
 export class ProvedorService {
-  static async getAll(): Promise<Provedor[]> {
+  static async getAll(clienteId?: string): Promise<Provedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('provedores')
       .select('*')
       .order('nome', { ascending: true });
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Erro ao buscar provedores: ${error.message}`);
@@ -28,16 +34,21 @@ export class ProvedorService {
     return data || [];
   }
 
-  static async getById(id: string): Promise<Provedor | null> {
+  static async getById(id: string, clienteId?: string): Promise<Provedor | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('provedores')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -49,16 +60,21 @@ export class ProvedorService {
     return data;
   }
 
-  static async getByNome(nome: string): Promise<Provedor | null> {
+  static async getByNome(nome: string, clienteId?: string): Promise<Provedor | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('provedores')
       .select('*')
-      .eq('nome', nome)
-      .single();
+      .eq('nome', nome);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {

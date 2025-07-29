@@ -5,7 +5,16 @@ import { createConfiguracaoFollowupSchema, updateConfiguracaoFollowupSchema } fr
 export class ConfiguracaoFollowupController {
   static async getAll(req: Request, res: Response) {
     try {
-      const configuracoes = await ConfiguracaoFollowupService.getAll();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      const configuracoes = await ConfiguracaoFollowupService.getAll(cliente_id);
       return res.json({
         success: true,
         data: configuracoes,

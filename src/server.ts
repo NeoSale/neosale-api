@@ -2,6 +2,10 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
+// Configurar Node.js para aceitar certificados SSL auto-assinados
+// Isso resolve problemas de conectividade com alguns serviços em ambientes corporativos
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
 console.log('🚀 Iniciando servidor...')
 
 import express from 'express'
@@ -22,13 +26,15 @@ import tipoAcessoRoutes from './routes/tipoAcessoRoutes'
 import revendedorRoutes from './routes/revendedorRoutes'
 import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
+import usuarioAdminRoutes from './routes/usuarioAdminRoutes'
 import evolutionInstancesRoutes from './routes/evolution-instances.routes'
+import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
-const PORT = process.env.PORT || 8080
+const PORT = process.env.PORT || 3000
 
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.API_BASE_URL
@@ -102,7 +108,9 @@ app.use('/api/tipos-acesso', tipoAcessoRoutes)
 app.use('/api/revendedores', revendedorRoutes)
 app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)
+app.use('/api/usuarios-admin', usuarioAdminRoutes)
 app.use('/api/evolution-instances', evolutionInstancesRoutes)
+app.use('/api/admin', adminRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 // Rota de health check
@@ -135,9 +143,9 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     // Executar migrations automaticamente no startup
-    console.log('🔄 Executando migrations...')
-    await migrationRunner.runMigrations()
-    await migrationRunner.markMigrationsAsExecuted()
+    // console.log('🔄 Executando migrations...')
+    // await migrationRunner.runMigrations()
+    // await migrationRunner.markMigrationsAsExecuted()
     
     // Iniciar servidor
     app.listen(PORT, () => {

@@ -10,11 +10,11 @@ export class FollowupService {
   }
 
   // Listar todos os followups com paginação
-  static async listarTodos(params: PaginationInput) {
+  static async listarTodos(params: PaginationInput & { clienteId?: string }) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Listando followups com paginação:', params)
     
-    const { page, limit, search } = params
+    const { page, limit, search, clienteId } = params
     const offset = (page - 1) * limit
     
     let query = supabase!
@@ -25,6 +25,10 @@ export class FollowupService {
         lead:id_lead(*)
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
     
     if (search) {
       query = query.or(`mensagem_enviada.ilike.%${search}%,status.ilike.%${search}%`)
@@ -53,19 +57,24 @@ export class FollowupService {
   }
 
   // Buscar followup por ID
-  static async buscarPorId(id: string) {
+  static async buscarPorId(id: string, clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Buscando followup:', id)
     
-    const { data: followup, error } = await supabase!
+    let query = supabase!
       .from('followup')
       .select(`
         *,
         mensagem:id_mensagem(*),
         lead:id_lead(*)
       `)
-      .eq('id', id)
-      .single()
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: followup, error } = await query.single();
     
     if (error) {
       console.error('❌ Erro ao buscar followup:', error)
@@ -77,18 +86,24 @@ export class FollowupService {
   }
 
   // Buscar followups por lead
-  static async buscarPorLead(leadId: string) {
+  static async buscarPorLead(leadId: string, clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Buscando followups do lead:', leadId)
     
-    const { data: followups, error } = await supabase!
+    let query = supabase!
       .from('followup')
       .select(`
         *,
         mensagem:id_mensagem(*)
       `)
-      .eq('id_lead', leadId)
-      .order('created_at', { ascending: false })
+      .eq('id_lead', leadId);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: followups, error } = await query
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar followups do lead:', error)
@@ -100,20 +115,26 @@ export class FollowupService {
   }
 
   // Criar novo followup
-  static async criar(data: CreateFollowupInput) {
+  static async criar(data: CreateFollowupInput & { cliente_id?: string }) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Criando followup:', data)
     
+    const insertData: any = {
+      id_mensagem: data.id_mensagem,
+      id_lead: data.id_lead,
+      status: data.status,
+      erro: data.erro,
+      mensagem_enviada: data.mensagem_enviada,
+      embedding: data.embedding
+    };
+
+    if (data.cliente_id) {
+      insertData.cliente_id = data.cliente_id;
+    }
+
     const { data: followup, error } = await supabase!
       .from('followup')
-      .insert({
-        id_mensagem: data.id_mensagem,
-        id_lead: data.id_lead,
-        status: data.status,
-        erro: data.erro,
-        mensagem_enviada: data.mensagem_enviada,
-        embedding: data.embedding
-      })
+      .insert(insertData)
       .select(`
         *,
         mensagem:id_mensagem(*),
@@ -131,7 +152,7 @@ export class FollowupService {
   }
 
   // Atualizar followup
-  static async atualizar(id: string, data: UpdateFollowupInput) {
+  static async atualizar(id: string, data: UpdateFollowupInput, clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Atualizando followup:', id, data)
     
@@ -147,10 +168,16 @@ export class FollowupService {
     if (data.mensagem_enviada) updateData.mensagem_enviada = data.mensagem_enviada
     if (data.embedding) updateData.embedding = data.embedding
     
-    const { data: followup, error } = await supabase!
+    let query = supabase!
       .from('followup')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: followup, error } = await query
       .select(`
         *,
         mensagem:id_mensagem(*),
@@ -168,14 +195,20 @@ export class FollowupService {
   }
 
   // Deletar followup
-  static async deletar(id: string) {
+  static async deletar(id: string, clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Deletando followup:', id)
     
-    const { error } = await supabase!
+    let query = supabase!
       .from('followup')
       .delete()
-      .eq('id', id)
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { error } = await query;
     
     if (error) {
       console.error('❌ Erro ao deletar followup:', error)
@@ -187,19 +220,25 @@ export class FollowupService {
   }
 
   // Buscar followups por status
-  static async buscarPorStatus(status: 'sucesso' | 'erro') {
+  static async buscarPorStatus(status: 'sucesso' | 'erro', clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Buscando followups por status:', status)
     
-    const { data: followups, error } = await supabase!
+    let query = supabase!
       .from('followup')
       .select(`
         *,
         mensagem:id_mensagem(*),
         lead:id_lead(*)
       `)
-      .eq('status', status)
-      .order('created_at', { ascending: false })
+      .eq('status', status);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: followups, error } = await query
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('❌ Erro ao buscar followups por status:', error)
@@ -211,17 +250,23 @@ export class FollowupService {
   }
 
   // Buscar followups com embedding
-  static async buscarComEmbedding() {
+  static async buscarComEmbedding(clienteId?: string) {
     FollowupService.checkSupabaseConnection();
     console.log('🔄 Buscando followups com embedding')
     
-    const { data: followups, error } = await supabase!
+    let query = supabase!
       .from('followup')
       .select(`
         *,
         mensagem:id_mensagem(*),
         lead:id_lead(*)
-      `)
+      `);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data: followups, error } = await query
       .not('embedding', 'is', null)
       .order('created_at', { ascending: false })
     

@@ -5,7 +5,16 @@ import { createProvedorSchema, updateProvedorSchema } from '../lib/validators';
 export class ProvedorController {
   static async getAll(req: Request, res: Response) {
     try {
-      const provedores = await ProvedorService.getAll();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      const provedores = await ProvedorService.getAll(cliente_id);
       return res.json({
         success: true,
         data: provedores,
@@ -23,7 +32,7 @@ export class ProvedorController {
 
   static async getById(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const { id, cliente_id } = req.params;
       
       if (!id) {
         return res.status(400).json({
@@ -31,8 +40,16 @@ export class ProvedorController {
           message: 'ID é obrigatório'
         });
       }
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
 
-      const provedor = await ProvedorService.getById(id);
+      const provedor = await ProvedorService.getById(id, cliente_id);
       
       if (!provedor) {
         return res.status(404).json({
@@ -57,16 +74,25 @@ export class ProvedorController {
 
   static async getByNome(req: Request, res: Response) {
     try {
-      const { nome } = req.params;
+      const { nome, cliente_id } = req.params;
       
       if (!nome) {
         return res.status(400).json({
           success: false,
           message: 'Nome é obrigatório'
         });
+        return;
+      }
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
       }
 
-      const provedor = await ProvedorService.getByNome(nome);
+      const provedor = await ProvedorService.getByNome(nome, cliente_id);
       
       if (!provedor) {
         return res.status(404).json({

@@ -3,6 +3,7 @@ import { CreateConfiguracaoFollowupInput, UpdateConfiguracaoFollowupInput } from
 
 export interface ConfiguracaoFollowup {
   id: string;
+  cliente_id: string;
   horario_inicio: string;
   horario_fim: string;
   qtd_envio_diario: number;
@@ -12,15 +13,20 @@ export interface ConfiguracaoFollowup {
 }
 
 export class ConfiguracaoFollowupService {
-  static async getAll(): Promise<ConfiguracaoFollowup[]> {
+  static async getAll(clienteId?: string): Promise<ConfiguracaoFollowup[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('configuracoes_followup')
-      .select('*')
-      .order('created_at', { ascending: true });
+      .select('*');
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: true });
 
     if (error) {
       throw new Error(`Erro ao buscar configurações de followup: ${error.message}`);
@@ -29,16 +35,21 @@ export class ConfiguracaoFollowupService {
     return data || [];
   }
 
-  static async getById(id: string): Promise<ConfiguracaoFollowup | null> {
+  static async getById(id: string, clienteId?: string): Promise<ConfiguracaoFollowup | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('configuracoes_followup')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -50,7 +61,7 @@ export class ConfiguracaoFollowupService {
     return data;
   }
 
-  static async create(input: CreateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
+  static async create(input: CreateConfiguracaoFollowupInput & { cliente_id: string }): Promise<ConfiguracaoFollowup> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
@@ -58,6 +69,7 @@ export class ConfiguracaoFollowupService {
     const { data, error } = await supabase
       .from('configuracoes_followup')
       .insert({
+        cliente_id: input.cliente_id,
         horario_inicio: input.horario_inicio,
         horario_fim: input.horario_fim,
         qtd_envio_diario: input.qtd_envio_diario,
@@ -74,18 +86,24 @@ export class ConfiguracaoFollowupService {
     return data;
   }
 
-  static async update(id: string, input: UpdateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
+  static async update(id: string, input: UpdateConfiguracaoFollowupInput, clienteId?: string): Promise<ConfiguracaoFollowup> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('configuracoes_followup')
       .update({
         ...input,
         updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
       })
-      .eq('id', id)
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query
       .select()
       .single();
 
@@ -96,15 +114,21 @@ export class ConfiguracaoFollowupService {
     return data;
   }
 
-  static async delete(id: string): Promise<void> {
+  static async delete(id: string, clienteId?: string): Promise<void> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { error } = await supabase
+    let query = supabase
       .from('configuracoes_followup')
       .delete()
       .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { error } = await query;
 
     if (error) {
       throw new Error(`Erro ao deletar configuração de followup: ${error.message}`);

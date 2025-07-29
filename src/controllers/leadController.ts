@@ -314,10 +314,10 @@ export class LeadController {
     }
   }
 
-  // GET /api/leads/telefone/[telefone] - Buscar lead por telefone
+  // GET /api/leads/telefone/[telefone]/cliente/[cliente_id] - Buscar lead por telefone e cliente
   static async buscarPorTelefone(req: Request, res: Response) {
     try {
-      const { telefone } = req.params
+      const { telefone, cliente_id } = req.params
       
       if (!telefone) {
         return res.status(400).json({
@@ -326,7 +326,14 @@ export class LeadController {
         })
       }
       
-      const lead = await LeadService.buscarPorTelefone(telefone)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        })
+      }
+      
+      const lead = await LeadService.buscarPorTelefone(telefone, cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -338,13 +345,24 @@ export class LeadController {
     }
   }
   
-  // Listar todos os leads
+  // Listar todos os leads por cliente
   static async listarLeads(req: Request, res: Response) {
     
     try {
-      console.log('📋 Listando todos os leads')
+      const cliente_id = req.headers['cliente_id'] as string;
+
+      console.log('🧪 Teste - cliente_id:', cliente_id)
       
-      const leads = await LeadService.listarTodos()
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 Listando todos os leads para cliente:', cliente_id)
+      
+      const leads = await LeadService.listarTodos(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -362,15 +380,24 @@ export class LeadController {
     }
   }
   
-  // Listar leads com paginação
+  // Listar leads com paginação por cliente
   static async listarLeadsPaginados(req: Request, res: Response) {
     try {
-      console.log('📋 Listando leads com paginação')
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 Listando leads com paginação para cliente:', cliente_id)
       
       // Validar parâmetros de paginação
       const params = paginationSchema.parse(req.query)
       
-      const result = await LeadService.listarComPaginacao(params)
+      const result = await LeadService.listarComPaginacao(params, cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -397,12 +424,21 @@ export class LeadController {
     }
   }
 
-  // Obter estatísticas dos leads
+  // Obter estatísticas dos leads por cliente
   static async obterEstatisticas(req: Request, res: Response) {
     try {
-      console.log('📊 Solicitação de estatísticas recebida')
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      const stats = await LeadService.obterEstatisticas()
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📊 Solicitação de estatísticas recebida para cliente:', cliente_id)
+      
+      const stats = await LeadService.obterEstatisticas(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -478,6 +514,39 @@ export class LeadController {
       })
     } catch (error) {
       return LeadController.handleError(res, error)
+    }
+  }
+
+  // Método de teste para verificar se cliente_id está sendo recebido
+  static async testeClienteId(req: Request, res: Response) {
+    try {
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('🧪 Teste - cliente_id recebido:', cliente_id)
+      
+      return res.status(200).json({
+        success: true,
+        message: 'cliente_id recebido com sucesso',
+        data: {
+          cliente_id: cliente_id,
+          timestamp: new Date().toISOString()
+        }
+      })
+    } catch (error) {
+      console.error('❌ Erro no teste:', error)
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
     }
   }
 }

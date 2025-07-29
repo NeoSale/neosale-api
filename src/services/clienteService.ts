@@ -21,12 +21,12 @@ export interface ClienteWithRevendedor extends Cliente {
 }
 
 export class ClienteService {
-  static async getAll(): Promise<ClienteWithRevendedor[]> {
+  static async getAll(clienteId?: string): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('clientes')
       .select(`
         *,
@@ -35,8 +35,13 @@ export class ClienteService {
           nome,
           email
         )
-      `)
-      .order('nome', { ascending: true });
+      `);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.order('nome', { ascending: true });
 
     if (error) {
       throw new Error(`Erro ao buscar clientes: ${error.message}`);
@@ -45,12 +50,12 @@ export class ClienteService {
     return data || [];
   }
 
-  static async getById(id: string): Promise<ClienteWithRevendedor | null> {
+  static async getById(id: string, clienteId?: string): Promise<ClienteWithRevendedor | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('clientes')
       .select(`
         *,
@@ -60,8 +65,13 @@ export class ClienteService {
           email
         )
       `)
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -73,12 +83,12 @@ export class ClienteService {
     return data;
   }
 
-  static async getByEmail(email: string): Promise<ClienteWithRevendedor | null> {
+  static async getByEmail(email: string, clienteId?: string): Promise<ClienteWithRevendedor | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('clientes')
       .select(`
         *,
@@ -88,8 +98,13 @@ export class ClienteService {
           email
         )
       `)
-      .eq('email', email)
-      .single();
+      .eq('email', email);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -126,12 +141,12 @@ export class ClienteService {
     return data || [];
   }
 
-  static async getByStatus(status: string): Promise<ClienteWithRevendedor[]> {
+  static async getByStatus(status: string, clienteId?: string): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('clientes')
       .select(`
         *,
@@ -141,8 +156,13 @@ export class ClienteService {
           email
         )
       `)
-      .eq('status', status)
-      .order('nome', { ascending: true });
+      .eq('status', status);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.order('nome', { ascending: true });
 
     if (error) {
       throw new Error(`Erro ao buscar clientes por status: ${error.message}`);

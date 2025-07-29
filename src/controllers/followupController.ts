@@ -3,11 +3,20 @@ import { FollowupService } from '../services/followupService'
 import { createFollowupSchema, updateFollowupSchema, idParamSchema, paginationSchema } from '../lib/validators'
 
 export class FollowupController {
-  // Listar followups com paginação
+  // Listar followups com paginação por cliente
   static async listar(req: Request, res: Response): Promise<Response> {
     try {
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'cliente_id é obrigatório'
+        });
+      }
+      
       const params = paginationSchema.parse(req.query)
-      const result = await FollowupService.listarTodos(params)
+      const result = await FollowupService.listarTodos({ ...params, clienteId: cliente_id })
       
       return res.json({
         success: true,
@@ -42,11 +51,19 @@ export class FollowupController {
     }
   }
 
-  // Buscar followups por lead
+  // Buscar followups por lead e cliente
   static async buscarPorLead(req: Request, res: Response): Promise<Response> {
     try {
-      const { leadId } = req.params
-      const followups = await FollowupService.buscarPorLead(leadId)
+      const { leadId, cliente_id } = req.params
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'cliente_id é obrigatório'
+        });
+      }
+      
+      const followups = await FollowupService.buscarPorLead(leadId, cliente_id)
       
       return res.json({
         success: true,

@@ -75,8 +75,17 @@ export class EvolutionInstancesService {
   /**
    * Obter detalhes de uma instância específica
    */
-  async getInstance(instanceName: string): Promise<EvolutionApiResponse<EvolutionInstance>> {
+  async getInstance(instanceName: string, clienteId?: string): Promise<EvolutionApiResponse<EvolutionInstance>> {
     try {
+      // Se clienteId for fornecido, verificar se a instância pertence ao cliente
+      if (clienteId) {
+        const instanceDB = await this.getInstancesByClienteId(clienteId);
+        const hasAccess = instanceDB.some(inst => inst.instance_name === instanceName);
+        if (!hasAccess) {
+          throw new Error('Instância não encontrada ou acesso negado');
+        }
+      }
+      
       const response = await this.api.get(`/instance/connect/${instanceName}`);
       return response.data;
     } catch (error: any) {
@@ -103,8 +112,17 @@ export class EvolutionInstancesService {
   /**
    * Obter status de conexão da instância
    */
-  async getConnectionStatus(instanceName: string): Promise<EvolutionApiResponse<InstanceConnectionStatus>> {
+  async getConnectionStatus(instanceName: string, clienteId?: string): Promise<EvolutionApiResponse<InstanceConnectionStatus>> {
     try {
+      // Se clienteId for fornecido, verificar se a instância pertence ao cliente
+      if (clienteId) {
+        const instanceDB = await this.getInstancesByClienteId(clienteId);
+        const hasAccess = instanceDB.some(inst => inst.instance_name === instanceName);
+        if (!hasAccess) {
+          throw new Error('Instância não encontrada ou acesso negado');
+        }
+      }
+      
       const response = await this.api.get(`/instance/connectionState/${instanceName}`);
       return response.data;
     } catch (error: any) {
@@ -163,8 +181,17 @@ export class EvolutionInstancesService {
   /**
    * Obter informações do perfil da instância
    */
-  async getProfileInfo(instanceName: string): Promise<EvolutionApiResponse<any>> {
+  async getProfileInfo(instanceName: string, clienteId?: string): Promise<EvolutionApiResponse<any>> {
     try {
+      // Se clienteId for fornecido, verificar se a instância pertence ao cliente
+      if (clienteId) {
+        const instanceDB = await this.getInstancesByClienteId(clienteId);
+        const hasAccess = instanceDB.some(inst => inst.instance_name === instanceName);
+        if (!hasAccess) {
+          throw new Error('Instância não encontrada ou acesso negado');
+        }
+      }
+      
       const response = await this.api.get(`/chat/whatsappProfile/${instanceName}`);
       return response.data;
     } catch (error: any) {
@@ -187,9 +214,18 @@ export class EvolutionInstancesService {
   /**
    * Obter QR Code de uma instância específica
    */
-  async getQRCode(instanceName: string): Promise<EvolutionApiResponse<QRCodeResponse>> {
+  async getQRCode(instanceName: string, clienteId?: string): Promise<EvolutionApiResponse<QRCodeResponse>> {
     try {
       console.log(`🔍 [DEBUG] Iniciando getQRCode para instância: ${instanceName}`);
+      
+      // Se clienteId for fornecido, verificar se a instância pertence ao cliente
+      if (clienteId) {
+        const instanceDB = await this.getInstancesByClienteId(clienteId);
+        const hasAccess = instanceDB.some(inst => inst.instance_name === instanceName);
+        if (!hasAccess) {
+          throw new Error('Instância não encontrada ou acesso negado');
+        }
+      }
       
       // Primeiro, verificar se a instância está conectada
       const statusResponse = await this.api.get(`/instance/fetchInstances`);
@@ -297,15 +333,20 @@ export class EvolutionInstancesService {
   /**
    * Listar todas as instâncias do banco de dados
    */
-  async getAllInstancesDB(): Promise<EvolutionInstanceDB[]> {
+  async getAllInstancesDB(clienteId?: string): Promise<EvolutionInstanceDB[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('evolution_instances')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Erro ao buscar instâncias: ${error.message}`);

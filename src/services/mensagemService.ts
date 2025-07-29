@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { generateMensagemEmbedding } from '../lib/embedding';
 
 export interface Mensagem {
   id?: string;
@@ -9,6 +10,7 @@ export interface Mensagem {
   ordem?: number;
   ativo?: boolean;
   embedding?: number[];
+  cliente_id?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -20,6 +22,8 @@ export interface CriarMensagemData {
   texto_mensagem: string;
   ordem?: number;
   ativo?: boolean;
+  embedding?: number[];
+  cliente_id?: string;
 }
 
 export interface AtualizarMensagemData {
@@ -29,6 +33,8 @@ export interface AtualizarMensagemData {
   texto_mensagem?: string;
   ordem?: number;
   ativo?: boolean;
+  embedding?: number[];
+  cliente_id?: string;
 }
 
 export const mensagemService = {
@@ -50,6 +56,9 @@ export const mensagemService = {
       ordem = ultimaMensagem?.ordem ? ultimaMensagem.ordem + 1 : 1;
     }
     
+    // Gerar embedding para a mensagem
+    const embedding = data.embedding || await generateMensagemEmbedding(data);
+    
     const { data: mensagem, error } = await supabase
       .from('mensagens')
       .insert({
@@ -58,7 +67,9 @@ export const mensagemService = {
         intervalo_tipo: data.intervalo_tipo,
         texto_mensagem: data.texto_mensagem,
         ordem: ordem,
-        ativo: data.ativo !== undefined ? data.ativo : true
+        ativo: data.ativo !== undefined ? data.ativo : true,
+        cliente_id: data.cliente_id || null,
+        embedding: embedding
       })
       .select()
       .single();
@@ -70,16 +81,21 @@ export const mensagemService = {
     return mensagem;
   },
 
-  async listarTodas(): Promise<Mensagem[]> {
+  async listarTodas(clienteId?: string): Promise<Mensagem[]> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
     
-    const { data: mensagens, error } = await supabase
+    let query = supabase
       .from('mensagens')
       .select('*')
       .eq('ativo', true)
-      .order('ordem', { ascending: true });
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+    
+    const { data: mensagens, error } = await query.order('ordem', { ascending: true });
 
     if (error) {
       throw new Error(`Erro ao listar mensagens: ${error.message}`);
@@ -88,14 +104,20 @@ export const mensagemService = {
     return mensagens || [];
   },
 
-  async listarTodasIncluindoInativas(): Promise<Mensagem[]> {
+  async listarTodasIncluindoInativas(clienteId?: string): Promise<Mensagem[]> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
     
-    const { data: mensagens, error } = await supabase
+    let query = supabase
       .from('mensagens')
       .select('*')
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+    
+    const { data: mensagens, error } = await query
       .order('ativo', { ascending: false })
       .order('ordem', { ascending: true });
 
@@ -131,16 +153,21 @@ export const mensagemService = {
     return mensagem;
   },
 
-  async buscarPorId(id: string): Promise<Mensagem | null> {
+  async buscarPorId(id: string, clienteId?: string): Promise<Mensagem | null> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
     
-    const { data: mensagem, error } = await supabase
+    let query = supabase
       .from('mensagens')
       .select('*')
-      .eq('id', id)
-      .single();
+      .eq('id', id);
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+    
+    const { data: mensagem, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -161,6 +188,21 @@ export const mensagemService = {
       ...data,
       updated_at: new Date().toISOString()
     };
+    
+    // Gerar embedding se houver mudanças no conteúdo
+    if (data.texto_mensagem || data.nome) {
+      // Buscar dados atuais da mensagem para gerar embedding completo
+      const { data: mensagemAtual } = await supabase
+        .from('mensagens')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (mensagemAtual) {
+        const dadosCompletos = { ...mensagemAtual, ...data };
+        updateData.embedding = await generateMensagemEmbedding(dadosCompletos);
+      }
+    }
 
     const { data: mensagem, error } = await supabase
       .from('mensagens')
@@ -208,18 +250,23 @@ export const mensagemService = {
     return true;
   },
 
-  async buscarPorTexto(texto: string): Promise<Mensagem[]> {
+  async buscarPorTexto(texto: string, clienteId?: string): Promise<Mensagem[]> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
     
     // Busca simples por texto (pode ser melhorada com busca semântica usando embeddings)
-    const { data: mensagens, error } = await supabase
+    let query = supabase
       .from('mensagens')
       .select('*')
       .eq('ativo', true)
-      .or(`texto_mensagem.ilike.%${texto}%,nome.ilike.%${texto}%`)
-      .order('created_at', { ascending: false });
+      .or(`texto_mensagem.ilike.%${texto}%,nome.ilike.%${texto}%`);
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+    
+    const { data: mensagens, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Erro ao buscar mensagens por texto: ${error.message}`);

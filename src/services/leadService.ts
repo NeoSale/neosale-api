@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
+import { generateLeadEmbedding } from '../lib/embedding'
 export class LeadService {
   // Verificar se Supabase está configurado
   private static checkSupabaseConnection() {
@@ -9,7 +10,7 @@ export class LeadService {
   }
 
   // Criar um único lead
-  static async criarLead(data: CreateLeadInput) {
+  static async criarLead(data: CreateLeadInput, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Criando novo lead:', data.nome)
     
@@ -72,6 +73,9 @@ export class LeadService {
         throw followupError
       }
       
+      // Gerar embedding para o lead
+      const embedding = data.embedding || await generateLeadEmbedding(data)
+      
       // Criar o lead
       const { data: novoLead, error } = await supabase!
         .from('leads')
@@ -91,6 +95,8 @@ export class LeadService {
           origem_id: origemId,
           followup_id: followup.id,
           qualificacao_id: data.qualificacao_id || null,
+          cliente_id: clienteId || null,
+          embedding: embedding,
           deletado: false
         })
         .select(`
@@ -118,7 +124,7 @@ export class LeadService {
   }
 
   // Importar leads
-  static async importLeads(data: ImportLeadsInput) {
+  static async importLeads(data: ImportLeadsInput, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação de leads:', data.leads.length, 'leads')
     
@@ -193,7 +199,8 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             origem_id: leadData.origem_id,
-            followup_id: followup.id
+            followup_id: followup.id,
+            cliente_id: clienteId || null
           })
           .select()
           .single()
@@ -216,7 +223,7 @@ export class LeadService {
   }
 
   // Importar leads em lote (bulk) sem origem_id
-  static async bulkImportLeads(data: BulkLeadsInput) {
+  static async bulkImportLeads(data: BulkLeadsInput, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads')
     
@@ -299,7 +306,8 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             origem_id: origemOutbound,
-            followup_id: followup.id
+            followup_id: followup.id,
+            cliente_id: clienteId || null
           })
           .select()
           .single()
@@ -509,11 +517,11 @@ export class LeadService {
   }
   
   // Buscar lead por ID
-  static async buscarPorId(id: string) {
+  static async buscarPorId(id: string, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Buscando lead:', id)
     
-    const { data: lead, error } = await supabase!
+    let query = supabase!
       .from('leads')
       .select(`
         *,
@@ -524,7 +532,12 @@ export class LeadService {
       `)
       .eq('id', id)
       .eq('deletado', false)
-      .single()
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+    
+    const { data: lead, error } = await query.single()
     
     if (error) {
       console.error('❌ Erro ao buscar lead:', error)
@@ -536,11 +549,11 @@ export class LeadService {
   }
 
   // Buscar lead por telefone
-  static async buscarPorTelefone(telefone: string) {
+  static async buscarPorTelefone(telefone: string, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Buscando lead por telefone:', telefone)
     
-    const { data: lead, error } = await supabase!
+    let query = supabase!
       .from('leads')
       .select(`
         *,
@@ -552,7 +565,12 @@ export class LeadService {
       `)
       .eq('telefone', telefone)
       .eq('deletado', false)
-      .single()
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+    
+    const { data: lead, error } = await query.single()
     
     if (error) {
       if (error.code === 'PGRST116') {
@@ -569,11 +587,11 @@ export class LeadService {
   }
   
   // Listar todos os leads
-  static async listarTodos() {
+  static async listarTodos(clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Listando todos os leads')
     
-    const { data: leads, error } = await supabase!
+    let query = supabase!
       .from('leads')
       .select(`
         *,
@@ -583,7 +601,12 @@ export class LeadService {
         status_negociacao:status_negociacao_id(*)
       `)
       .eq('deletado', false)
-      .order('created_at', { ascending: false })
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
+    
+    const { data: leads, error } = await query.order('created_at', { ascending: false })
     
     if (error) {
       console.error('❌ Erro ao listar leads:', error)
@@ -595,7 +618,7 @@ export class LeadService {
   }
 
   // Listar leads com paginação
-  static async listarComPaginacao(params: PaginationInput) {
+  static async listarComPaginacao(params: PaginationInput, clienteId?: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Listando leads com paginação:', params)
     
@@ -612,6 +635,10 @@ export class LeadService {
         status_negociacao:status_negociacao_id(*)
       `, { count: 'exact' })
       .eq('deletado', false)
+    
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId)
+    }
     
     // Aplicar filtro de busca se fornecido
     if (search && search.trim()) {
@@ -654,26 +681,38 @@ export class LeadService {
   }
 
   // Obter estatísticas dos leads
-  static async obterEstatisticas() {
+  static async obterEstatisticas(clienteId?: string) {
     LeadService.checkSupabaseConnection();
-    console.log('🔄 Obtendo estatísticas dos leads')
+    console.log('🔄 Obtendo estatísticas dos leads', clienteId ? `para cliente: ${clienteId}` : '')
     
     try {
       // Total de leads
-      const { count: total, error: totalError } = await supabase!
+      let totalQuery = supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('deletado', false)
       
+      if (clienteId) {
+        totalQuery = totalQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { count: total, error: totalError } = await totalQuery
+      
       if (totalError) throw totalError
       
       // Leads com email
-      const { count: withEmail, error: emailError } = await supabase!
+      let emailQuery = supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('deletado', false)
         .not('email', 'is', null)
         .neq('email', '')
+      
+      if (clienteId) {
+        emailQuery = emailQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { count: withEmail, error: emailError } = await emailQuery
       
       if (emailError) throw emailError
       
@@ -687,11 +726,17 @@ export class LeadService {
       
       const etapaIds = etapaQualificacao.map(e => e.id)
       
-      const { count: qualified, error: qualifiedError } = await supabase!
+      let qualifiedQuery = supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('deletado', false)
         .in('etapa_funil_id', etapaIds)
+      
+      if (clienteId) {
+        qualifiedQuery = qualifiedQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { count: qualified, error: qualifiedError } = await qualifiedQuery
       
       if (qualifiedError) throw qualifiedError
       
@@ -699,16 +744,22 @@ export class LeadService {
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
       
-      const { count: newLeads, error: newError } = await supabase!
+      let newLeadsQuery = supabase!
         .from('leads')
         .select('*', { count: 'exact', head: true })
         .eq('deletado', false)
         .gte('created_at', sevenDaysAgo.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).replace(/\/(\d{2})\/(\d{4})/, '$2-$1').replace(', ', 'T') + '.000Z')
       
+      if (clienteId) {
+        newLeadsQuery = newLeadsQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { count: newLeads, error: newError } = await newLeadsQuery
+      
       if (newError) throw newError
       
       // Leads por status de negociação
-      const { data: statusData, error: statusError } = await supabase!
+      let statusQuery = supabase!
         .from('leads')
         .select(`
           status_negociacao:status_negociacao_id(
@@ -716,6 +767,12 @@ export class LeadService {
           )
         `)
         .eq('deletado', false)
+      
+      if (clienteId) {
+        statusQuery = statusQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { data: statusData, error: statusError } = await statusQuery
       
       if (statusError) throw statusError
       
@@ -743,17 +800,22 @@ export class LeadService {
   }
 
   // Atualizar lead
-  static async atualizarLead(id: string, data: UpdateLeadInput) {
+  static async atualizarLead(id: string, data: UpdateLeadInput, clienteId?: string) {
     try {
       LeadService.checkSupabaseConnection();
       console.log('🔄 Atualizando lead:', id, data)
       
       // Verificar se o lead existe e não está deletado
-      const { data: leadExistente, error: errorVerificacao } = await supabase!
+      let query = supabase!
         .from('leads')
         .select('id, deletado')
         .eq('id', id)
-        .single()
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: leadExistente, error: errorVerificacao } = await query.single()
       
       if (errorVerificacao || !leadExistente) {
         throw new Error('Lead não encontrado')
@@ -763,13 +825,33 @@ export class LeadService {
         throw new Error('Não é possível atualizar um lead excluído')
       }
       
+      // Gerar embedding se houver dados para atualizar
+      const updateData = { ...data }
+      if (Object.keys(updateData).length > 0 && !updateData.embedding) {
+        // Buscar dados atuais do lead para gerar embedding completo
+        const { data: leadAtual } = await supabase!
+          .from('leads')
+          .select('*')
+          .eq('id', id)
+          .single()
+        
+        if (leadAtual) {
+          const dadosCompletos = { ...leadAtual, ...updateData }
+          updateData.embedding = await generateLeadEmbedding(dadosCompletos)
+        }
+      }
+      
       // Atualizar o lead
-      const { data: leadAtualizado, error: errorAtualizacao } = await supabase!
+      let updateQuery = supabase!
         .from('leads')
-        .update({
-          ...data
-        })
+        .update(updateData)
         .eq('id', id)
+      
+      if (clienteId) {
+        updateQuery = updateQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { data: leadAtualizado, error: errorAtualizacao } = await updateQuery
         .select(`
           *,
           origem:origem_id(nome),
@@ -793,17 +875,22 @@ export class LeadService {
   }
 
   // Excluir lead
-  static async excluirLead(id: string) {
+  static async excluirLead(id: string, clienteId?: string) {
     try {
       LeadService.checkSupabaseConnection();
       console.log('🔄 Marcando lead como deletado:', id)
       
       // Verificar se o lead existe
-      const { data: leadExistente, error: errorVerificacao } = await supabase!
+      let query = supabase!
         .from('leads')
         .select('id, deletado')
         .eq('id', id)
-        .single()
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: leadExistente, error: errorVerificacao } = await query.single()
       
       if (errorVerificacao || !leadExistente) {
         throw new Error('Lead não encontrado')
@@ -814,10 +901,16 @@ export class LeadService {
       }
       
       // Marcar o lead como deletado (soft delete)
-      const { error: errorExclusao } = await supabase!
+      let deleteQuery = supabase!
         .from('leads')
         .update({ deletado: true })
         .eq('id', id)
+      
+      if (clienteId) {
+        deleteQuery = deleteQuery.eq('cliente_id', clienteId)
+      }
+      
+      const { error: errorExclusao } = await deleteQuery
       
       if (errorExclusao) {
         console.error('❌ Erro ao marcar lead como deletado:', errorExclusao)

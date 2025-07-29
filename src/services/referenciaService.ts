@@ -9,15 +9,20 @@ export class ReferenciaService {
   }
 
   // Listar todas as qualificações
-  static async listarQualificacoes() {
+  static async listarQualificacoes(clienteId?: string) {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando qualificações')
     
     try {
-      const { data: qualificacoes, error } = await supabase!
+      let query = supabase!
         .from('qualificacao')
         .select('*')
-        .order('nome')
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: qualificacoes, error } = await query.order('nome')
       
       if (error) {
         console.error('❌ Erro ao listar qualificações:', error)
@@ -34,15 +39,20 @@ export class ReferenciaService {
   }
 
   // Listar todas as origens
-  static async listarOrigens() {
+  static async listarOrigens(clienteId?: string) {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando origens')
     
     try {
-      const { data: origens, error } = await supabase!
+      let query = supabase!
         .from('origens_leads')
         .select('*')
-        .order('nome')
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: origens, error } = await query.order('nome')
       
       if (error) {
         console.error('❌ Erro ao listar origens:', error)
@@ -59,15 +69,20 @@ export class ReferenciaService {
   }
 
   // Listar todas as etapas do funil
-  static async listarEtapasFunil() {
+  static async listarEtapasFunil(clienteId?: string) {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando etapas do funil')
     
     try {
-      const { data: etapas, error } = await supabase!
+      let query = supabase!
         .from('etapas_funil')
         .select('*')
-        .order('nome')
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: etapas, error } = await query.order('nome')
       
       if (error) {
         console.error('❌ Erro ao listar etapas do funil:', error)
@@ -84,15 +99,20 @@ export class ReferenciaService {
   }
 
   // Listar todos os status de negociação
-  static async listarStatusNegociacao() {
+  static async listarStatusNegociacao(clienteId?: string) {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando status de negociação')
     
     try {
-      const { data: status, error } = await supabase!
+      let query = supabase!
         .from('status_negociacao')
         .select('*')
-        .order('nome')
+      
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data: status, error } = await query.order('nome')
       
       if (error) {
         console.error('❌ Erro ao listar status de negociação:', error)
@@ -109,16 +129,16 @@ export class ReferenciaService {
   }
 
   // Listar todas as referências em um único endpoint
-  static async listarTodasReferencias() {
+  static async listarTodasReferencias(clienteId?: string) {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando todas as referências')
     
     try {
       const [qualificacoes, origens, etapas, status] = await Promise.all([
-        ReferenciaService.listarQualificacoes(),
-        ReferenciaService.listarOrigens(),
-        ReferenciaService.listarEtapasFunil(),
-        ReferenciaService.listarStatusNegociacao()
+        ReferenciaService.listarQualificacoes(clienteId),
+        ReferenciaService.listarOrigens(clienteId),
+        ReferenciaService.listarEtapasFunil(clienteId),
+        ReferenciaService.listarStatusNegociacao(clienteId)
       ])
       
       const referencias = {

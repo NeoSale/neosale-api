@@ -1,15 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: false
-  }
-});
+import { supabase } from './supabase';
 
 interface Migration {
   filename: string;
@@ -55,6 +46,10 @@ export class MigrationRunner {
    */
   private async tableExists(tableName: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       // Try using the RPC function first
       const { data, error } = await supabase
         .rpc('table_exists', { table_name: tableName });
@@ -82,6 +77,10 @@ export class MigrationRunner {
    */
   private async columnExists(tableName: string, columnName: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       // Try using the RPC function first
       const { data, error } = await supabase
         .rpc('column_exists', { table_name: tableName, column_name: columnName });
@@ -118,6 +117,10 @@ export class MigrationRunner {
    */
   private async indexExists(indexName: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       // Try using the RPC function first
       const { data, error } = await supabase
         .rpc('index_exists', { index_name: indexName });
@@ -255,6 +258,10 @@ export class MigrationRunner {
    */
   private async ensureMigrationsTable(): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       // Try to query the migrations table
       const { error } = await supabase
         .from('migrations')
@@ -290,6 +297,10 @@ export class MigrationRunner {
    */
   private async getExecutedMigrations(): Promise<string[]> {
     try {
+      if (!supabase) {
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('migrations')
         .select('filename');
@@ -311,6 +322,10 @@ export class MigrationRunner {
    */
   private async recordMigration(filename: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       const { error } = await supabase
         .from('migrations')
         .insert({ filename });
@@ -473,6 +488,11 @@ export class MigrationRunner {
     */
    private async executeSQL(sql: string): Promise<boolean> {
      try {
+       if (!supabase) {
+         console.error('Supabase client not initialized');
+         return false;
+       }
+       
        // Use Supabase RPC to execute raw SQL
        const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
        
@@ -582,6 +602,10 @@ export class MigrationRunner {
    */
   private async tableHasData(tableName: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
@@ -632,6 +656,10 @@ export class MigrationRunner {
    */
   private async verifyMigrationExecuted(migration: Migration): Promise<boolean> {
     try {
+      if (!supabase) {
+        return false;
+      }
+      
       // Simple verification: check if migration creates tables that now exist
       if (migration.content.includes('CREATE TABLE')) {
         const tableMatches = migration.content.match(/CREATE TABLE.*?([a-zA-Z_][a-zA-Z0-9_]*)/g);

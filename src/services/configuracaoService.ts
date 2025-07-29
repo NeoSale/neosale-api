@@ -10,15 +10,21 @@ export interface Configuracao {
 }
 
 export class ConfiguracaoService {
-  static async getAll(): Promise<Configuracao[]> {
+  static async getAll(clienteId?: string): Promise<Configuracao[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('configuracoes')
       .select('*')
       .order('created_at', { ascending: true });
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Erro ao buscar configurações: ${error.message}`);

@@ -69,6 +69,8 @@ const router = Router()
  *   get:
  *     summary: Lista todos os leads
  *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
  *         description: Lista de leads
@@ -86,6 +88,7 @@ const router = Router()
  *                 message:
  *                   type: string
  */
+// Rota original que recebe cliente_id via header
 router.get('/', LeadController.listarLeads)
 
 /**
@@ -95,6 +98,7 @@ router.get('/', LeadController.listarLeads)
  *     summary: Lista leads com paginação
  *     tags: [Leads]
  *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *       - in: query
  *         name: page
  *         schema:
@@ -140,6 +144,8 @@ router.get('/paginated', LeadController.listarLeadsPaginados)
  *   get:
  *     summary: Obter estatísticas dos leads
  *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
  *         description: Estatísticas dos leads
@@ -181,8 +187,10 @@ router.get('/stats', LeadController.obterEstatisticas)
  * @swagger
  * /api/leads:
  *   post:
- *     summary: Cria um novo lead
+ *     summary: Criar um novo lead
  *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     requestBody:
  *       required: true
  *       content:
@@ -280,6 +288,8 @@ router.post('/', LeadController.criarLead)
  *   post:
  *     summary: Importa leads
  *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     requestBody:
  *       required: true
  *       content:
@@ -310,6 +320,8 @@ router.post('/import', LeadController.importLeads)
  *   post:
  *     summary: Importa leads em lote (bulk)
  *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *     requestBody:
  *       required: true
  *       content:
@@ -735,13 +747,48 @@ router.get('/telefone/:telefone', LeadController.buscarPorTelefone)
 
 /**
  * @swagger
- * /api/leads/{id}:
+ * /api/leads/debug/cliente-id:
  *   get:
- *     summary: Busca um lead específico por ID
+ *     summary: Teste para verificar se cliente_id está sendo recebido
  *     tags: [Leads]
  *     parameters:
- *       - in: path
- *         name: id
+ *       - $ref: '#/components/parameters/ClienteId'
+ *     responses:
+ *       200:
+ *         description: cliente_id recebido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     cliente_id:
+ *                       type: string
+ *                     timestamp:
+ *                       type: string
+ *       400:
+ *         description: cliente_id é obrigatório
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/debug/cliente-id', LeadController.testeClienteId)
+
+/**
+ * @swagger
+ * /api/leads/{id}:
+ *   get:
+ *     summary: Buscar lead por ID
+ *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
+ *       - name: id
+ *         in: path
  *         required: true
  *         schema:
  *           type: string
@@ -749,7 +796,7 @@ router.get('/telefone/:telefone', LeadController.buscarPorTelefone)
  *         description: ID do lead
  *     responses:
  *       200:
- *         description: Lead encontrado
+ *         description: Lead encontrado com sucesso
  *         content:
  *           application/json:
  *             schema:

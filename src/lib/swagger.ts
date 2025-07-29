@@ -21,6 +21,26 @@ const options: swaggerJSDoc.Options = {
       }
     ],
     components: {
+      parameters: {
+        ClienteId: {
+          name: 'cliente_id',
+          in: 'header',
+          required: true,
+          schema: {
+            type: 'string',
+            format: 'uuid'
+          },
+          description: 'ID do cliente para filtrar os dados'
+        }
+      },
+      securitySchemes: {
+        ClienteAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'cliente_id',
+          description: 'ID do cliente para autenticação e filtragem de dados'
+        }
+      },
       schemas: {
         Lead: {
           type: 'object',
@@ -266,7 +286,12 @@ const options: swaggerJSDoc.Options = {
           }
         }
       }
-    }
+    },
+    security: [
+      {
+        ClienteAuth: []
+      }
+    ]
   },
   apis: [
     path.join(__dirname, '../routes/*.ts'),

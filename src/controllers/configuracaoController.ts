@@ -5,7 +5,16 @@ import { createConfiguracaoSchema, updateConfiguracaoSchema, CreateConfiguracaoI
 export class ConfiguracaoController {
   static async getAll(req: Request, res: Response) {
     try {
-      const configuracoes = await ConfiguracaoService.getAll();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      const configuracoes = await ConfiguracaoService.getAll(cliente_id);
       return res.json({
         success: true,
         data: configuracoes,
@@ -101,9 +110,9 @@ export class ConfiguracaoController {
         });
       }
 
-      const { chave, valor } = validationResult.data;
+      const { chave, valor, cliente_id } = validationResult.data;
 
-      // Verificar se já existe uma configuração com a mesma chave
+      // Verificar se já existe uma configuração com a mesma chave para este cliente
       const existingConfig = await ConfiguracaoService.getByChave(chave);
       if (existingConfig) {
         return res.status(409).json({
@@ -112,7 +121,7 @@ export class ConfiguracaoController {
         });
       }
 
-      const configuracao = await ConfiguracaoService.create({ chave, valor });
+      const configuracao = await ConfiguracaoService.create({ chave, valor, cliente_id });
       
       return res.status(201).json({
         success: true,

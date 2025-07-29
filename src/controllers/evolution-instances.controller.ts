@@ -41,11 +41,21 @@ export class EvolutionInstancesController {
   }
 
   /**
-   * Listar todas as instâncias
+   * Listar todas as instâncias por cliente
    */
   async fetchInstances(req: Request, res: Response): Promise<void> {
     try {
-      const instances = await this.evolutionService.getAllInstancesDB();
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
+      
+      const instances = await this.evolutionService.getAllInstancesDB(cliente_id);
       
       // Mapear dados do banco para o formato esperado com campos camelCase
       const formattedInstances = instances.map(instance => ({
@@ -90,11 +100,11 @@ export class EvolutionInstancesController {
   }
 
   /**
-   * Obter detalhes de uma instância específica
+   * Obter detalhes de uma instância específica por cliente
    */
   async getInstance(req: Request, res: Response): Promise<void> {
     try {
-      const { instanceName } = req.params;
+      const { instanceName, cliente_id } = req.params;
       
       if (!instanceName) {
         res.status(400).json({
@@ -103,8 +113,16 @@ export class EvolutionInstancesController {
         });
         return;
       }
+      
+      if (!cliente_id) {
+        res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
 
-      const result = await this.evolutionService.getInstance(instanceName);
+      const result = await this.evolutionService.getInstance(instanceName, cliente_id);
       
       res.status(200).json({
         success: true,
@@ -167,11 +185,11 @@ export class EvolutionInstancesController {
   }
 
   /**
-   * Obter QR Code de uma instância
+   * Obter QR Code de uma instância por cliente
    */
   async getQRCode(req: Request, res: Response): Promise<void> {
     try {
-      const { instanceName } = req.params;
+      const { instanceName, cliente_id } = req.params;
       
       if (!instanceName) {
         res.status(400).json({
@@ -180,8 +198,16 @@ export class EvolutionInstancesController {
         });
         return;
       }
+      
+      if (!cliente_id) {
+        res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
 
-      const result = await this.evolutionService.getQRCode(instanceName);
+      const result = await this.evolutionService.getQRCode(instanceName, cliente_id);
       
       // Mapear resposta para o formato esperado
       console.log('🔍 [DEBUG CONTROLLER] Result from service:', JSON.stringify(result, null, 2));
@@ -210,11 +236,11 @@ export class EvolutionInstancesController {
   }
 
   /**
-   * Obter status de conexão da instância
+   * Obter status de conexão da instância por cliente
    */
   async getConnectionStatus(req: Request, res: Response): Promise<void> {
     try {
-      const { instanceName } = req.params;
+      const { instanceName, cliente_id } = req.params;
       
       if (!instanceName) {
         res.status(400).json({
@@ -223,8 +249,16 @@ export class EvolutionInstancesController {
         });
         return;
       }
+      
+      if (!cliente_id) {
+        res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
 
-      const result = await this.evolutionService.getConnectionStatus(instanceName);
+      const result = await this.evolutionService.getConnectionStatus(instanceName, cliente_id);
       
       res.status(200).json({
         success: true,
@@ -361,11 +395,11 @@ export class EvolutionInstancesController {
   }
 
   /**
-   * Obter informações do perfil da instância
+   * Obter informações do perfil da instância por cliente
    */
   async getProfileInfo(req: Request, res: Response): Promise<void> {
     try {
-      const { instanceName } = req.params;
+      const { instanceName, cliente_id } = req.params;
       
       if (!instanceName) {
         res.status(400).json({
@@ -374,8 +408,16 @@ export class EvolutionInstancesController {
         });
         return;
       }
+      
+      if (!cliente_id) {
+        res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+        return;
+      }
 
-      const result = await this.evolutionService.getProfileInfo(instanceName);
+      const result = await this.evolutionService.getProfileInfo(instanceName, cliente_id);
       
       res.status(200).json({
         success: true,

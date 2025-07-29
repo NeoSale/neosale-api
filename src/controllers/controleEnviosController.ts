@@ -30,12 +30,21 @@ export class ControleEnviosController {
     })
   }
   
-  // GET /api/controle-envios - Buscar todos os registros
+  // GET /api/controle-envios/cliente/:cliente_id - Buscar todos os registros por cliente
   static async getAllControleEnvios(req: Request, res: Response) {
     try {
-      console.log('📋 GET /api/controle-envios - Buscando todos os registros')
+      const { cliente_id } = req.params;
       
-      const controleEnvios = await ControleEnviosService.getAllControleEnvios()
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 GET /api/controle-envios - Buscando todos os registros para cliente:', cliente_id)
+      
+      const controleEnvios = await ControleEnviosService.getAllControleEnvios(cliente_id)
       
       return res.json({
         success: true,
@@ -48,12 +57,19 @@ export class ControleEnviosController {
     }
   }
   
-  // GET /api/controle-envios/:data - Buscar por data específica
+  // GET /api/controle-envios/:data/cliente/:cliente_id - Buscar por data específica e cliente
   static async getControleEnvioByDate(req: Request, res: Response) {
     try {
-      const { data } = req.params
+      const { data, cliente_id } = req.params
       
-      console.log('📋 GET /api/controle-envios/:data - Buscando por data:', data)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 GET /api/controle-envios/:data - Buscando por data:', data, 'para cliente:', cliente_id)
       
       // Validar formato da data (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/
@@ -73,7 +89,7 @@ export class ControleEnviosController {
         })
       }
       
-      const controleEnvio = await ControleEnviosService.getControleEnvioByDate(data)
+      const controleEnvio = await ControleEnviosService.getControleEnvioByDate(data, cliente_id)
       
       return res.json({
         success: true,
@@ -85,12 +101,19 @@ export class ControleEnviosController {
     }
   }
   
-  // GET /api/controle-envios/:data/status - Verificar se pode enviar mensagem
+  // GET /api/controle-envios/:data/status/cliente/:cliente_id - Verificar se pode enviar mensagem
   static async getStatusEnvio(req: Request, res: Response) {
     try {
-      const { data } = req.params
+      const { data, cliente_id } = req.params
       
-      console.log('📋 GET /api/controle-envios/:data/status - Verificando status para data:', data)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 GET /api/controle-envios/:data/status - Verificando status para data:', data, 'cliente:', cliente_id)
       
       // Validar formato da data (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/
@@ -101,7 +124,7 @@ export class ControleEnviosController {
         })
       }
       
-      const status = await ControleEnviosService.podeEnviarMensagem(data)
+      const status = await ControleEnviosService.podeEnviarMensagem(data, cliente_id)
       
       return res.json({
         success: true,
@@ -150,17 +173,26 @@ export class ControleEnviosController {
     }
   }
   
-  // GET /api/controle-envios/hoje - Buscar controle de hoje
+  // GET /api/controle-envios/hoje/cliente/:cliente_id - Buscar controle de hoje por cliente
   static async getControleEnvioHoje(req: Request, res: Response) {
     try {
+      const { cliente_id } = req.params;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
       // Obter data atual no fuso horário do Brasil (formato pt-BR)
       const agora = new Date()
       const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit'})
       const hoje = brasilTime.split('/').reverse().join('-') // YYYY-MM-DD
       
-      console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje (Brasil):', hoje)
+      console.log('📋 GET /api/controle-envios/hoje - Buscando controle para hoje (Brasil):', hoje, 'cliente:', cliente_id)
       
-      const controleEnvio = await ControleEnviosService.getControleEnvioByDate(hoje)
+      const controleEnvio = await ControleEnviosService.getControleEnvioByDate(hoje, cliente_id)
       
       return res.json({
         success: true,
