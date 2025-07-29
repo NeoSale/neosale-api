@@ -27,7 +27,8 @@ import revendedorRoutes from './routes/revendedorRoutes'
 import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
 import usuarioAdminRoutes from './routes/usuarioAdminRoutes'
-import evolutionInstancesRoutes from './routes/evolution-instances.routes'
+import { evolutionApiRoutes } from './routes/evolution-api.routes'
+
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { migrationRunner } from './lib/migrations'
@@ -46,7 +47,7 @@ if (!BASE_URL) {
   if (isLocalDev) {
     BASE_URL = `http://localhost:${PORT}`
   } else {
-    BASE_URL = 'https://evolution-api-neosale-api.mrzt3w.easypanel.host'
+    BASE_URL = 'https://neosale-api.mrzt3w.easypanel.host'
   }
 }
 
@@ -89,7 +90,8 @@ app.get('/', (req, res) => {
       revendedores: `${BASE_URL}/api/revendedores`,
       clientes: `${BASE_URL}/api/clientes`,
       usuarios: `${BASE_URL}/api/usuarios`,
-      evolutionInstances: `${BASE_URL}/api/evolution-instances`
+      evolutionApi: `${BASE_URL}/api/evolution-api`,
+
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
   })
@@ -109,7 +111,8 @@ app.use('/api/revendedores', revendedorRoutes)
 app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/usuarios-admin', usuarioAdminRoutes)
-app.use('/api/evolution-instances', evolutionInstancesRoutes)
+app.use('/api/evolution-api', evolutionApiRoutes)
+
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 

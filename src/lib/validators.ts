@@ -351,50 +351,7 @@ export const updateUsuarioSchema = z.object({
 export type CreateUsuarioInput = z.infer<typeof createUsuarioSchema>
 export type UpdateUsuarioInput = z.infer<typeof updateUsuarioSchema>
 
-// ===== VALIDATORS PARA EVOLUTION API =====
 
-// Validator para criação de instância Evolution
-export const createEvolutionInstanceSchema = z.object({
-  instanceName: z.string().min(1, 'Nome da instância é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  token: z.string().optional(),
-  qrcode: z.boolean().optional().default(true),
-  number: z.string().optional(),
-  integration: z.string().optional(),
-  webhookUrl: z.string().url('URL do webhook deve ser válida').optional(),
-  webhookByEvents: z.boolean().optional().default(false),
-  webhookBase64: z.boolean().optional().default(false),
-  webhookEvents: z.array(z.string()).optional(),
-  embedding: z.array(z.number()).optional()
-})
-
-// Validator para atualização de instância Evolution
-export const updateEvolutionInstanceSchema = z.object({
-  instanceName: z.string().min(1, 'Nome da instância é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres').optional(),
-  token: z.string().optional(),
-  qrcode: z.boolean().optional(),
-  number: z.string().optional(),
-  integration: z.string().optional(),
-  webhookUrl: z.string().url('URL do webhook deve ser válida').optional(),
-  webhookByEvents: z.boolean().optional(),
-  webhookBase64: z.boolean().optional(),
-  webhookEvents: z.array(z.string()).optional(),
-  embedding: z.array(z.number()).optional()
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'Pelo menos um campo deve ser fornecido para atualização'
-})
-
-// Validator para configuração de webhook
-export const setWebhookSchema = z.object({
-  url: z.string().url('URL do webhook deve ser válida'),
-  enabled: z.boolean().optional().default(true),
-  events: z.array(z.string()).optional(),
-  webhook_by_events: z.boolean().optional().default(false),
-  webhook_base64: z.boolean().optional().default(false)
-})
-
-export type CreateEvolutionInstanceInput = z.infer<typeof createEvolutionInstanceSchema>
-export type UpdateEvolutionInstanceInput = z.infer<typeof updateEvolutionInstanceSchema>
-export type SetWebhookInput = z.infer<typeof setWebhookSchema>
 
 // Schemas para mensagens
 export const createMensagemSchema = z.object({
@@ -577,3 +534,47 @@ export type UpdateUsuarioRevendedorInput = z.infer<typeof updateUsuarioRevendedo
 export type UpdateUsuarioClienteInput = z.infer<typeof updateUsuarioClienteSchema>
 export type UpdateUsuarioPermissaoSistemaInput = z.infer<typeof updateUsuarioPermissaoSistemaSchema>
 export type UpdateUsuarioComRelacionamentosInput = z.infer<typeof updateUsuarioComRelacionamentosSchema>
+
+// Evolution API Validators
+export const createEvolutionApiSchema = z.object({
+  instance_name: z.string().min(1, 'Nome da instância é obrigatório').max(100, 'Nome da instância deve ter no máximo 100 caracteres'),
+  webhook_url: z.string().nullable().optional(),
+  webhook_events: z.array(z.string()).optional(),
+  settings: z.object({
+    reject_call: z.boolean().optional(),
+    msg_call: z.string().optional(),
+    groups_ignore: z.boolean().optional(),
+    always_online: z.boolean().optional(),
+    read_messages: z.boolean().optional(),
+    read_status: z.boolean().optional()
+  }).optional()
+})
+
+export const updateEvolutionApiSchema = z.object({
+  instance_name: z.string().min(1, 'Nome da instância é obrigatório').max(100, 'Nome da instância deve ter no máximo 100 caracteres').optional(),
+  webhook_url: z.string().nullable().optional(),
+  webhook_events: z.array(z.string()).optional(),
+  settings: z.object({
+    reject_call: z.boolean().optional(),
+    msg_call: z.string().optional(),
+    groups_ignore: z.boolean().optional(),
+    always_online: z.boolean().optional(),
+    read_messages: z.boolean().optional(),
+    read_status: z.boolean().optional()
+  }).optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+export const connectInstanceSchema = z.object({
+  instance_name: z.string().min(1, 'Nome da instância é obrigatório')
+})
+
+export const instanceNameParamSchema = z.object({
+  instanceName: z.string().min(1, 'Nome da instância é obrigatório')
+})
+
+export type CreateEvolutionApiInput = z.infer<typeof createEvolutionApiSchema>
+export type UpdateEvolutionApiInput = z.infer<typeof updateEvolutionApiSchema>
+export type ConnectInstanceInput = z.infer<typeof connectInstanceSchema>
+export type InstanceNameParam = z.infer<typeof instanceNameParamSchema>

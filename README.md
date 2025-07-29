@@ -46,8 +46,6 @@ Crie um arquivo `.env.local` na raiz do projeto:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
-SUPABASE_SERVICE_ROLE_KEY=sua_chave_de_servico
-FRONTEND_URL=http://localhost:3001
 PORT=3000
 ```
 

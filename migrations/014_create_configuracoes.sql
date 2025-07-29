@@ -26,6 +26,5 @@ INSERT INTO configuracoes (chave, valor) VALUES
   ('horario_fim_envios', '18:00'),
   ('intervalo_entre_mensagens', '60'),
   ('webhook_url', ''),
-  ('api_key_evolution', ''),
-  ('instancia_evolution', '')
+
 ON CONFLICT DO NOTHING;

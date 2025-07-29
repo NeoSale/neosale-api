@@ -232,6 +232,227 @@ const options: swaggerJSDoc.Options = {
               description: 'Detalhes dos erros (opcional)'
             }
           }
+        },
+        EvolutionApi: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID único da instância'
+            },
+            cliente_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID do cliente proprietário'
+            },
+            instance_name: {
+              type: 'string',
+              description: 'Nome da instância'
+            },
+            base_url: {
+              type: 'string',
+              description: 'URL base da Evolution API'
+            },
+            api_key: {
+              type: 'string',
+              description: 'Chave de API'
+            },
+            webhook_url: {
+              type: 'string',
+              nullable: true,
+              description: 'URL do webhook (opcional)'
+            },
+            webhook_events: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Eventos do webhook'
+            },
+            settings: {
+              type: 'object',
+              description: 'Configurações da instância'
+            },
+            status: {
+              type: 'string',
+              enum: ['connected', 'disconnected', 'connecting'],
+              description: 'Status da conexão'
+            },
+            qr_code: {
+              type: 'string',
+              description: 'QR Code para conexão'
+            },
+            connection_data: {
+              type: 'object',
+              description: 'Dados de conexão'
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data de criação'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data de atualização'
+            }
+          }
+        },
+        CreateEvolutionApiRequest: {
+          type: 'object',
+          required: ['instance_name'],
+          properties: {
+            instance_name: {
+              type: 'string',
+              description: 'Nome da instância'
+            },
+            webhook_url: {
+               type: 'string',
+               nullable: true,
+               description: 'URL do webhook (opcional)'
+             },
+            webhook_events: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Eventos do webhook'
+            },
+            settings: {
+              type: 'object',
+              properties: {
+                reject_call: {
+                  type: 'boolean',
+                  description: 'Rejeitar chamadas'
+                },
+                msg_call: {
+                  type: 'string',
+                  description: 'Mensagem para chamadas'
+                },
+                groups_ignore: {
+                  type: 'boolean',
+                  description: 'Ignorar grupos'
+                },
+                always_online: {
+                  type: 'boolean',
+                  description: 'Sempre online'
+                },
+                read_messages: {
+                  type: 'boolean',
+                  description: 'Ler mensagens'
+                },
+                read_status: {
+                  type: 'boolean',
+                  description: 'Status de leitura'
+                }
+              },
+              description: 'Configurações da instância'
+            }
+          }
+        },
+        UpdateEvolutionApiRequest: {
+          type: 'object',
+          properties: {
+            instance_name: {
+              type: 'string',
+              description: 'Nome da instância'
+            },
+            webhook_url: {
+              type: 'string',
+              nullable: true,
+              description: 'URL do webhook'
+            },
+            webhook_events: {
+              type: 'array',
+              items: {
+                type: 'string'
+              },
+              description: 'Eventos do webhook'
+            },
+            settings: {
+              type: 'object',
+              properties: {
+                reject_call: {
+                  type: 'boolean',
+                  description: 'Rejeitar chamadas'
+                },
+                msg_call: {
+                  type: 'string',
+                  description: 'Mensagem para chamadas'
+                },
+                groups_ignore: {
+                  type: 'boolean',
+                  description: 'Ignorar grupos'
+                },
+                always_online: {
+                  type: 'boolean',
+                  description: 'Sempre online'
+                },
+                read_messages: {
+                  type: 'boolean',
+                  description: 'Ler mensagens'
+                },
+                read_status: {
+                  type: 'boolean',
+                  description: 'Status de leitura'
+                }
+              },
+              description: 'Configurações da instância'
+            }
+          }
+        },
+        QRCodeResponse: {
+          type: 'object',
+          properties: {
+            qr_code: {
+              type: 'string',
+              description: 'QR Code para conexão'
+            },
+            instance_name: {
+              type: 'string',
+              description: 'Nome da instância'
+            },
+            status: {
+              type: 'string',
+              description: 'Status da conexão'
+            }
+          }
+        },
+        ConnectionStatus: {
+          type: 'object',
+          properties: {
+            instance_name: {
+              type: 'string',
+              description: 'Nome da instância'
+            },
+            status: {
+              type: 'string',
+              enum: ['connected', 'disconnected', 'connecting', 'error'],
+              description: 'Status da conexão'
+            },
+            phone_number: {
+              type: 'string',
+              description: 'Número do telefone conectado'
+            },
+            profile_name: {
+              type: 'string',
+              description: 'Nome do perfil'
+            },
+            profile_picture: {
+              type: 'string',
+              description: 'URL da foto do perfil'
+            },
+            last_connection: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Última conexão'
+            },
+            error_message: {
+              type: 'string',
+              description: 'Mensagem de erro (se houver)'
+            }
+          }
         }
       },
       responses: {
@@ -304,11 +525,4 @@ console.log('🔍 Swagger __dirname:', __dirname)
 console.log('🔍 Routes path:', routesPath)
 console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
 
-if (fs.existsSync(routesPath)) {
-  const files = fs.readdirSync(routesPath)
-  console.log('🔍 Files in routes:', files)
-}
-
 export const swaggerSpec = swaggerJSDoc(options)
-console.log('📚 Swagger spec generated')
-console.log('📚 Swagger spec paths:', (swaggerSpec as any).paths ? Object.keys((swaggerSpec as any).paths) : 'No paths found')
