@@ -105,7 +105,7 @@ app.use('/api/usuarios-admin', usuarioAdminRoutes)
 app.use('/api/evolution-api', evolutionApiRoutes)
 
 app.use('/api/admin', adminRoutes)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Rota de health check
 app.get('/health', (req, res) => {

@@ -16,8 +16,8 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Servidor de desenvolvimento'
+        url: process.env.API_BASE_URL || 'http://localhost:3000',
+        description: 'Servidor NeoSale'
       }
     ],
     components: {
@@ -332,10 +332,10 @@ const options: swaggerJSDoc.Options = {
               description: 'Nome da instância'
             },
             webhook_url: {
-               type: 'string',
-               nullable: true,
-               description: 'URL do webhook (opcional)'
-             },
+              type: 'string',
+              nullable: true,
+              description: 'URL do webhook (opcional)'
+            },
             webhook_events: {
               type: 'array',
               items: {
