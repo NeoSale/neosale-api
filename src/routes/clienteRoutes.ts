@@ -106,10 +106,50 @@ const router = Router();
 
 /**
  * @swagger
+ * /api/clientes/all:
+ *   get:
+ *     summary: Buscar todos os clientes sem filtros
+ *     tags: [Clientes]
+ *     responses:
+ *       200:
+ *         description: Lista de todos os clientes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Cliente'
+ *                 total:
+ *                   type: integer
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/all', ClienteController.getAllClientes);
+
+/**
+ * @swagger
  * /api/clientes:
  *   get:
  *     summary: Buscar todos os clientes
  *     tags: [Clientes]
+ *     parameters:
+ *       - in: header
+ *         name: revendedor_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do revendedor
  *     responses:
  *       200:
  *         description: Lista de clientes

@@ -247,6 +247,68 @@ const validateInstanceName = [
   handleValidationErrors
 ];
 
+const validateUpdateInstance = [
+  body('instance_name')
+    .optional()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instance_name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instance_name can only contain letters, numbers, underscores and hyphens'),
+  body('integration')
+    .optional()
+    .isIn(['WHATSAPP-BAILEYS', 'WHATSAPP-BUSINESS'])
+    .withMessage('integration must be WHATSAPP-BAILEYS or WHATSAPP-BUSINESS'),
+  body('qrcode')
+    .optional()
+    .isBoolean()
+    .withMessage('qrcode must be a boolean'),
+  body('settings')
+    .optional()
+    .isObject()
+    .withMessage('settings must be an object'),
+  body('settings.reject_call')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.reject_call must be a boolean'),
+  body('settings.msg_call')
+    .optional()
+    .isString()
+    .withMessage('settings.msg_call must be a string'),
+  body('settings.groups_ignore')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.groups_ignore must be a boolean'),
+  body('settings.always_online')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.always_online must be a boolean'),
+  body('settings.read_messages')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.read_messages must be a boolean'),
+  body('settings.read_status')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.read_status must be a boolean'),
+  body('settings.sync_full_history')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.sync_full_history must be a boolean'),
+  body('webhook_url')
+    .optional({ nullable: true })
+    .custom((value: any) => {
+      if (value !== null && value !== '' && !value.match(/^https?:\/\/.+/)) {
+        throw new Error('webhook_url must be a valid URL starting with http:// or https://');
+      }
+      return true;
+    }),
+  body('webhook_events')
+    .optional()
+    .isArray()
+    .withMessage('webhook_events must be an array'),
+  handleValidationErrors
+];
+
 // Routes
 
 /**
@@ -538,6 +600,195 @@ router.delete('/:id', validateInstanceId, evolutionApiController.deleteInstance.
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/:id/connect', validateInstanceId, evolutionApiController.connectInstance.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/disconnect/{id}:
+ *   delete:
+ *     summary: Desconectar uma instância do Evolution API
+ *     description: Desconecta uma instância específica do Evolution API chamando o endpoint logout/{instanceName}
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da instância
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *     responses:
+ *       200:
+ *         description: Instância desconectada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Instance disconnected successfully"
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Instância não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.delete('/disconnect/:id', validateInstanceId, evolutionApiController.disconnectInstance.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/restart/{id}:
+ *   put:
+ *     summary: Reiniciar uma instância do Evolution API
+ *     description: Reinicia uma instância específica do Evolution API chamando o endpoint /instance/restart
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da instância
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *     responses:
+ *       200:
+ *         description: Instância reiniciada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Instance restarted successfully"
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Instância não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/restart/:id', validateInstanceId, evolutionApiController.restartInstance.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/{id}:
+ *   put:
+ *     summary: Update Evolution API instance
+ *     description: Updates settings of a specific Evolution API instance
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID of the instance to update
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Client ID for authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               instance_name:
+ *                 type: string
+ *                 description: Name of the instance
+ *                 example: "teste3"
+ *               integration:
+ *                 type: string
+ *                 enum: [WHATSAPP-BAILEYS, WHATSAPP-BUSINESS]
+ *                 description: Integration type
+ *                 example: "WHATSAPP-BAILEYS"
+ *               qrcode:
+ *                 type: boolean
+ *                 description: Whether to generate QR code
+ *                 example: true
+ *               settings:
+ *                 type: object
+ *                 properties:
+ *                   reject_call:
+ *                     type: boolean
+ *                     example: false
+ *                   msg_call:
+ *                     type: string
+ *                     example: ""
+ *                   groups_ignore:
+ *                     type: boolean
+ *                     example: false
+ *                   always_online:
+ *                     type: boolean
+ *                     example: false
+ *                   read_messages:
+ *                     type: boolean
+ *                     example: false
+ *                   read_status:
+ *                     type: boolean
+ *                     example: false
+ *                   sync_full_history:
+ *                     type: boolean
+ *                     example: false
+ *               webhook_events:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: []
+ *               webhook_url:
+ *                 type: string
+ *                 example: ""
+ *     responses:
+ *       200:
+ *         description: Instance updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/EvolutionApiInstance'
+ *                 message:
+ *                   type: string
+ *                   example: "Instance updated successfully"
+ *       400:
+ *         description: Bad request - Validation errors
+ *       404:
+ *         description: Instance not found
+ *       500:
+ *         description: Internal server error
+ */
+router.put('/:id', validateInstanceId, validateUpdateInstance, evolutionApiController.updateInstance.bind(evolutionApiController));
 
 /**
  * @swagger

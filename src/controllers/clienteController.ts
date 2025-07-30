@@ -3,14 +3,32 @@ import { ClienteService } from '../services/clienteService';
 import { createClienteSchema, updateClienteSchema } from '../lib/validators';
 
 export class ClienteController {
+  static async getAllClientes(req: Request, res: Response) {
+    try {
+      const clientes = await ClienteService.getAllClientes();
+      return res.json({
+        success: true,
+        data: clientes,
+        total: clientes.length
+      });
+    } catch (error) {
+      console.error('Erro ao buscar todos os clientes:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
+
   static async getAll(req: Request, res: Response) {
     try {
-      const { revendedor_id } = req.params;
+      const revendedor_id = req.headers['revendedor_id'] as string;
       
       if (!revendedor_id) {
         return res.status(400).json({
           success: false,
-          message: 'revendedor_id é obrigatório'
+          message: 'Header revendedor_id é obrigatório'
         });
       }
       

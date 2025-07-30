@@ -13,6 +13,10 @@ export interface EvolutionApiFetchInstancesResponse {
     status: string;
     serverUrl: string;
     apikey: string;
+    owner?: string;
+    profileName?: string;
+    profilePictureUrl?: string;
+    profileStatus?: string;
     integration: {
       integration: string;
       token: string;

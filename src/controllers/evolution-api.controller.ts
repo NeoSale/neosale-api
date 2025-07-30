@@ -188,27 +188,113 @@ export class EvolutionApiController {
   async connectInstance(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { ClienteId } = req.query;
-
-      if (!ClienteId) {
-        return res.status(400).json({ error: 'ClienteId is required' });
+      const clienteId = req.headers['cliente_id'] as string;
+      
+      if (!clienteId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        });
       }
 
-      const result = await evolutionApiService.connectInstance(id, ClienteId as string);
-      return res.json(result);
-    } catch (error) {
-      console.error('Error connecting instance:', error);
-      return res.status(500).json({ error: 'Failed to connect instance' });
+      const result = await evolutionApiService.connectInstance(id, clienteId);
+      
+      return res.json({
+        success: true,
+        data: result,
+        message: 'Instance connection initiated successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in connectInstance:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
     }
   }
 
+  async disconnectInstance(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const clienteId = req.headers['cliente_id'] as string;
+      
+      if (!clienteId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        });
+      }
 
+      await evolutionApiService.disconnectInstance(id, clienteId);
+      
+      return res.json({
+        success: true,
+        message: 'Instance disconnected successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in disconnectInstance:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 
+  async restartInstance(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const clienteId = req.headers['cliente_id'] as string;
+      
+      if (!clienteId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        });
+      }
 
+      await evolutionApiService.restartInstance(id, clienteId);
+      
+      return res.json({
+        success: true,
+        message: 'Instance restarted successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in restartInstance:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 
+  async updateInstance(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const clienteId = req.headers['cliente_id'] as string;
+      
+      if (!clienteId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        });
+      }
 
-
-
+      const updateData = req.body;
+      const updatedInstance = await evolutionApiService.updateInstance(id, updateData, clienteId);
+      
+      return res.json({
+        success: true,
+        data: updatedInstance,
+        message: 'Instance updated successfully'
+      });
+    } catch (error: any) {
+      console.error('Error updating instance:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 }
 
 export const evolutionApiController = new EvolutionApiController();

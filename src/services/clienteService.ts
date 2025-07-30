@@ -21,6 +21,30 @@ export interface ClienteWithRevendedor extends Cliente {
 }
 
 export class ClienteService {
+  static async getAllClientes(): Promise<ClienteWithRevendedor[]> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    const { data, error } = await supabase
+      .from('clientes')
+      .select(`
+        *,
+        revendedor:revendedores(
+          id,
+          nome,
+          email
+        )
+      `)
+      .order('nome', { ascending: true });
+
+    if (error) {
+      throw new Error(`Erro ao buscar todos os clientes: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
   static async getAll(clienteId?: string): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');

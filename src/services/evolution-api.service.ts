@@ -11,7 +11,7 @@ class EvolutionApiService {
     this.baseUrl = process.env.NEXT_PUBLIC_EVOLUTION_API_BASE_URL || '';
     this.apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || '';
     this.timeout = 30000; // 30 seconds
-    
+
     console.log('Evolution API Service initialized:');
     console.log('Base URL:', this.baseUrl);
     console.log('API Key:', this.apiKey ? '[CONFIGURED]' : '[NOT CONFIGURED]');
@@ -62,7 +62,7 @@ class EvolutionApiService {
 
       const { data: localInstance, error } = await supabase
         .from('evolution_api')
-        .select('id')
+        .select('id, instance_name')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -74,7 +74,7 @@ class EvolutionApiService {
 
       // 2. Buscar dados da Evolution API
       const evolutionApiData = await this.fetchInstancesFromEvolutionApi([instanceId]);
-      
+
       return evolutionApiData.length > 0 ? evolutionApiData[0] : null;
     } catch (error: any) {
       console.error('Error in getInstanceById:', error);
@@ -89,7 +89,7 @@ class EvolutionApiService {
       // Buscar todas as instâncias do cliente e filtrar por nome
       const allInstances = await this.getAllInstances(clienteId);
       const instance = allInstances.find(inst => inst.name === instanceName);
-      
+
       return instance || null;
     } catch (error: any) {
       console.error('Error in getInstanceByName:', error);
@@ -146,6 +146,7 @@ class EvolutionApiService {
       }
 
       const instanceId = createdInstance.instance.instanceId;
+      const instanceName = createdInstance.instance.instanceName;
 
       // 2. Configurar webhook se fornecido
       if (instanceData.webhook_url && instanceData.webhook_events && instanceData.webhook_events.length > 0) {
@@ -172,7 +173,8 @@ class EvolutionApiService {
         .from('evolution_api')
         .insert({
           id: instanceId,
-          cliente_id: clienteId
+          cliente_id: clienteId,
+          instance_name: instanceName
         });
 
       if (error) {
@@ -188,23 +190,18 @@ class EvolutionApiService {
 
       // 3. Buscar dados completos da instância criada
       const fullInstanceData = await this.getInstanceById(instanceId, clienteId);
-      
+
       if (!fullInstanceData) {
         throw new Error('Failed to retrieve created instance data');
       }
 
       return fullInstanceData;
     } catch (error: any) {
-      console.error('Error creating instance:', error);
-      console.error('Error response data:', error.response?.data);
-      console.error('Error response status:', error.response?.status);
-      console.error('Error response headers:', error.response?.headers);
-      
-      const errorMessage = error.response?.data?.response?.message || 
-                          error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message;
-      
+      const errorMessage = error.response?.data?.response?.message ||
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message;
+
       throw new Error(`Failed to create instance: ${errorMessage}`);
     }
   }
@@ -244,14 +241,14 @@ class EvolutionApiService {
     try {
       console.log(`Deleting instance: ${instanceId} for client: ${clienteId}`);
 
-      // 1. Verificar se a instância pertence ao cliente
+      // 1. Verificar se a instância pertence ao cliente e buscar o instance_name
       if (!supabase) {
         throw new Error('Supabase client not initialized');
       }
 
       const { data: localInstance, error: fetchError } = await supabase
         .from('evolution_api')
-        .select('id')
+        .select('id, instance_name')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -260,10 +257,16 @@ class EvolutionApiService {
         throw new Error('Instance not found or does not belong to client');
       }
 
-      // 2. Deletar da Evolution API
+      const instanceName = localInstance.instance_name;
+      if (!instanceName) {
+        throw new Error('Instance name not found');
+      }
+
+      // 2. Deletar da Evolution API usando instanceName
       try {
+        console.log(`Calling Evolution API to delete instance: ${instanceName}`);
         await axios.delete(
-          `${this.baseUrl}/instance/delete/${instanceId}`,
+          `${this.baseUrl}/instance/delete/${instanceName}`,
           {
             headers: {
               'Content-Type': 'application/json',
@@ -272,8 +275,10 @@ class EvolutionApiService {
             timeout: this.timeout
           }
         );
+        console.log(`Instance ${instanceName} deleted from Evolution API successfully`);
       } catch (apiError: any) {
         console.warn('Error deleting from Evolution API (continuing with local deletion):', apiError.message);
+        // Continua com a exclusão local mesmo se falhar na Evolution API
       }
 
       // 3. Deletar da tabela local
@@ -288,7 +293,7 @@ class EvolutionApiService {
         throw new Error(`Failed to delete instance: ${deleteError.message}`);
       }
 
-      console.log(`Instance ${instanceId} deleted successfully`);
+      console.log(`Instance ${instanceId} (${instanceName}) deleted successfully`);
     } catch (error: any) {
       console.error('Error deleting instance:', error);
       throw new Error(`Failed to delete instance: ${error.message}`);
@@ -306,7 +311,7 @@ class EvolutionApiService {
 
       const { data: localInstance, error } = await supabase
         .from('evolution_api')
-        .select('id')
+        .select('id, instance_name')
         .eq('id', clientName)
         .eq('cliente_id', clienteId)
         .single();
@@ -317,7 +322,7 @@ class EvolutionApiService {
 
       // 2. Chamar Evolution API para conectar e obter QR Code
       const response = await axios.get(
-        `${this.baseUrl}/instance/connect/${clientName}`,
+        `${this.baseUrl}/instance/connect/${localInstance.instance_name}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -369,6 +374,187 @@ class EvolutionApiService {
     }
   }
 
+  async disconnectInstance(instanceId: string, clienteId: string): Promise<void> {
+    try {
+      console.log(`Disconnecting instance: ${instanceId} for client: ${clienteId}`);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // Verificar se a instância pertence ao cliente e buscar o instance_name
+      const { data: instanceData, error: fetchError } = await supabase
+        .from('evolution_api')
+        .select('instance_name')
+        .eq('id', instanceId)
+        .eq('cliente_id', clienteId)
+        .single();
+
+      if (fetchError || !instanceData) {
+        console.error('Error fetching instance:', fetchError);
+        throw new Error('Instance not found or does not belong to client');
+      }
+
+      const instanceName = instanceData.instance_name;
+      console.log(`Calling Evolution API logout for instance: ${instanceName}`);
+
+      // Chamar o endpoint logout/{instanceName} DELETE da Evolution API
+      try {
+        await axios.delete(
+          `${this.baseUrl}/instance/logout/${instanceName}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': this.apiKey
+            },
+            timeout: this.timeout
+          }
+        );
+        console.log(`Instance ${instanceName} disconnected successfully from Evolution API`);
+      } catch (apiError: any) {
+        console.error('Error calling Evolution API logout:', apiError.response?.data || apiError.message);
+        // Continuar mesmo se a API falhar, pois pode ser que a instância já esteja desconectada
+      }
+
+      console.log(`Instance ${instanceId} disconnect process completed`);
+    } catch (error: any) {
+      console.error('Error disconnecting instance:', error);
+      throw new Error(`Failed to disconnect instance: ${error.message}`);
+    }
+  }
+
+  async restartInstance(instanceId: string, clienteId: string): Promise<void> {
+    try {
+      console.log(`Restarting instance: ${instanceId} for client: ${clienteId}`);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // Verificar se a instância pertence ao cliente e buscar o instance_name
+      const { data: instanceData, error: fetchError } = await supabase
+        .from('evolution_api')
+        .select('instance_name')
+        .eq('id', instanceId)
+        .eq('cliente_id', clienteId)
+        .single();
+
+      if (fetchError || !instanceData) {
+        console.error('Error fetching instance:', fetchError);
+        throw new Error('Instance not found or does not belong to client');
+      }
+
+      const instanceName = instanceData.instance_name;
+      console.log(`Calling Evolution API restart for instance: ${instanceName}`);
+
+      // Chamar o endpoint /instance/restart/{instance} PUT da Evolution API
+      await axios.put(
+        `${this.baseUrl}/instance/restart/${instanceName}`,
+        {},
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.apiKey
+          },
+          timeout: this.timeout
+        }
+      );
+
+      console.log(`Instance ${instanceName} restarted successfully`);
+    } catch (error: any) {
+      console.error('Error restarting instance:', error);
+      throw new Error(`Failed to restart instance: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
+  async updateInstance(instanceId: string, updateData: any, clienteId: string): Promise<EvolutionApiInstanceData> {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
+    }
+
+    try {
+      // Buscar o instance_name no Supabase
+      const { data: instanceData, error: fetchError } = await supabase
+        .from('evolution_api')
+        .select('instance_name')
+        .eq('id', instanceId)
+        .eq('cliente_id', clienteId)
+        .single();
+
+      if (fetchError || !instanceData) {
+        console.error('Error fetching instance:', fetchError);
+        throw new Error('Instance not found or does not belong to client');
+      }
+
+      const instanceName = instanceData.instance_name;
+      console.log(`Updating Evolution API instance: ${instanceName}`);
+
+      // Primeiro, chamar o endpoint /settings/set/{instanceName} com as configurações
+      const settingsData = {
+        always_online: updateData.settings?.always_online || true,
+        groups_ignore: updateData.settings?.groups_ignore || true,
+        msg_call: updateData.settings?.msg_call || "",
+        read_messages: updateData.settings?.read_messages || false,
+        read_status: updateData.settings?.read_status || false,
+        reject_call: updateData.settings?.reject_call || false,
+        sync_full_history: updateData.settings?.sync_full_history || false
+      };
+
+      const settingsResponse = await axios.post(
+        `${this.baseUrl}/settings/set/${instanceName}`,
+        settingsData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.apiKey
+          },
+          timeout: this.timeout
+        }
+      );
+
+      console.log(`Instance ${instanceName} settings updated successfully`);
+
+      // Depois, chamar o endpoint /webhook/set/{instanceName} com as configurações de webhook
+      const webhookData = {
+        enabled: updateData.enabled,
+        events: ["MESSAGES_UPSERT"],
+        url: updateData.webhook_url,
+        webhook_base64: true
+      };
+
+      const webhookResponse = await axios.post(
+        `${this.baseUrl}/webhook/set/${instanceName}`,
+        webhookData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.apiKey
+          },
+          timeout: this.timeout
+        }
+      );
+
+      console.log(`Instance ${instanceName} webhook updated successfully`);
+
+      // Retornar os dados atualizados
+      return {
+        id: instanceId,
+        name: instanceName,
+        connectionStatus: 'updated',
+        integration: updateData.integration || 'WHATSAPP-BAILEYS',
+        token: this.apiKey,
+        clientName: '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        serverUrl: this.baseUrl,
+        webhookUrl: updateData.webhook_url || ''
+      };
+    } catch (error: any) {
+      console.error('Error updating instance:', error);
+      throw new Error(`Failed to update instance: ${error.response?.data?.message || error.message}`);
+    }
+  }
+
   private async fetchInstancesFromEvolutionApi(instanceIds: string[]): Promise<EvolutionApiInstanceData[]> {
     try {
       const response = await axios.get(
@@ -392,18 +578,19 @@ class EvolutionApiService {
       const filteredInstances = allInstances
         .filter(item => instanceIds.includes(item.instance.instanceId))
         .map(item => ({
-          id: item.instance.instanceId,
-          name: item.instance.instanceName,
-          connectionStatus: item.instance.status,
-          token: item.instance.apikey,
-          clientName: item.instance.instanceName,
-          integration: item.instance.integration.integration || 'webhook',
+          instance: {
+            instanceId: item.instance.instanceId,
+            instanceName: item.instance.instanceName,
+            webhook_wa_business: item.instance.integration.webhook_wa_business,
+            owner: item.instance.owner,
+            profileName: item.instance.profileName,
+            status: item.instance.status,
+            profilePictureUrl: item.instance.profilePictureUrl,
+            profileStatus: item.instance.profileStatus,
+          },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          // Campos adicionais baseados na resposta da Evolution API
-          serverUrl: item.instance.serverUrl,
-          webhookUrl: item.instance.integration.webhook_wa_business
-        } as EvolutionApiInstanceData));
+        } as any));
 
       return filteredInstances;
     } catch (error: any) {
