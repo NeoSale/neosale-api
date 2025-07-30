@@ -46,7 +46,7 @@ app.use(helmet())
 // CORS
 app.use(cors({
   origin: '*',
-  credentials: true,
+  credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'X-Requested-With']
 }))
@@ -145,7 +145,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`)
       console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
-      console.log(`❤️  Health check em ${BASE_URL}/health`)
+      console.log(`❤️ Health check em ${BASE_URL}/health`)
     })
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error)
