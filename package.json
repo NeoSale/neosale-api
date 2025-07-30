@@ -3,7 +3,7 @@
   "version": "0.9.0",
   "private": true,
   "scripts": {
-    "dev": "set PORT=3000 && nodemon src/server.ts",
+    "dev": "powershell -ExecutionPolicy Bypass -File scripts/kill-port-3000.ps1 && set PORT=3000 && nodemon src/server.ts", 
     "dev:docker": "node scripts/start-docker.js && npm run dev",
     "build": "tsc",
     "start": "node dist/server.js",

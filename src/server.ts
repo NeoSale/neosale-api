@@ -27,7 +27,7 @@ import revendedorRoutes from './routes/revendedorRoutes'
 import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
 import usuarioAdminRoutes from './routes/usuarioAdminRoutes'
-import { evolutionApiRoutes } from './routes/evolution-api.routes'
+import evolutionApiRoutes from './routes/evolution-api.routes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -35,29 +35,20 @@ import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001
 
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.API_BASE_URL
-if (!BASE_URL) {
-  // Se não estiver explicitamente em desenvolvimento local, usar URL de produção
-  const isLocalDev = process.env.NODE_ENV === 'development' || 
-                     process.env.npm_lifecycle_event === 'dev'
-  
-  if (isLocalDev) {
-    BASE_URL = `http://localhost:${PORT}`
-  } else {
-    BASE_URL = 'https://neosale-api.mrzt3w.easypanel.host'
-  }
-}
 
 // Middleware de segurança
 app.use(helmet())
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: '*',
+  credentials: false,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'X-Requested-With']
 }))
 
 // Logging

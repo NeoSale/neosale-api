@@ -1,44 +1,265 @@
-import { Router } from 'express'
-import { EvolutionApiController } from '../controllers/evolution-api.controller'
-import { validateRequest } from '../middleware/validate-request'
-import { 
-  createEvolutionApiSchema, 
-  updateEvolutionApiSchema, 
-  connectInstanceSchema,
-  instanceNameParamSchema
-} from '../lib/validators'
-import { validateClienteId } from '../middleware/validate-cliente-id'
+import { Router } from 'express';
+import { EvolutionApiController } from '../controllers/evolution-api.controller';
+const { body, param, query, validationResult } = require('express-validator');
 
-const router = Router()
-const evolutionApiController = new EvolutionApiController()
+// Middleware para processar erros de validação do express-validator
+const handleValidationErrors = (req: any, res: any, next: any) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: errors.array()
+    });
+  }
+  next();
+};
 
 /**
  * @swagger
- * tags:
- *   name: Evolution API
- *   description: Gerenciamento de instâncias da Evolution API
+ * components:
+ *   schemas:
+ *     EvolutionApiInstance:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: ID único da instância
+ *         instance_name:
+ *           type: string
+ *           description: Nome da instância
+ *         status:
+ *           type: string
+ *           enum: [connected, disconnected, connecting, close, error]
+ *           description: Status da conexão da instância
+ *         qr_code:
+ *           type: string
+ *           nullable: true
+ *           description: Código QR para conexão
+ *         webhook_url:
+ *           type: string
+ *           nullable: true
+ *           description: URL do webhook
+ *         serverUrl:
+ *           type: string
+ *           description: URL do servidor Evolution API
+ *           example: "https://evo.consultor-ia.io"
+ *         webhookUrl:
+ *           type: string
+ *           description: URL do webhook para receber eventos
+ *           example: "https://evo.consultor-ia.io/webhook/whatsapp/instanceName"
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do cliente proprietário
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data de criação
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data da última atualização
+ *     CreateEvolutionApiRequest:
+ *       type: object
+ *       required:
+ *         - instance_name
+ *         - integration
+ *       properties:
+ *         instance_name:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 50
+ *           pattern: '^[a-zA-Z0-9_-]+$'
+ *           description: Nome da instância (apenas letras, números, _ e -)
+ *         integration:
+ *           type: string
+ *           enum: ["WHATSAPP-BAILEYS", "WHATSAPP-BUSINESS"]
+ *           description: Tipo de integração do WhatsApp
+ *         qrcode:
+ *           type: boolean
+ *           default: true
+ *           description: Se deve gerar QR Code para conexão
+ *         settings:
+ *           type: object
+ *           properties:
+ *             reject_call:
+ *               type: boolean
+ *               default: false
+ *               description: Rejeitar chamadas automaticamente
+ *             msg_call:
+ *               type: string
+ *               default: ""
+ *               description: Mensagem para chamadas rejeitadas
+ *             groups_ignore:
+ *               type: boolean
+ *               default: false
+ *               description: Ignorar mensagens de grupos
+ *             always_online:
+ *               type: boolean
+ *               default: false
+ *               description: Manter sempre online
+ *             read_messages:
+ *               type: boolean
+ *               default: false
+ *               description: Marcar mensagens como lidas automaticamente
+ *             read_status:
+ *               type: boolean
+ *               default: false
+ *               description: Ler status automaticamente
+ *             sync_full_history:
+ *               type: boolean
+ *               default: false
+ *               description: Sincronizar histórico completo
+ *           description: Configurações da instância
+ *         webhook_url:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: URL do webhook (opcional)
+ *         webhook_events:
+ *           type: array
+ *           items:
+ *             type: string
+ *           default: []
+ *           description: Lista de eventos do webhook
+ *     EvolutionApiResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         data:
+ *           oneOf:
+ *             - $ref: '#/components/schemas/EvolutionApiInstance'
+ *             - type: array
+ *               items:
+ *                 $ref: '#/components/schemas/EvolutionApiInstance'
+ *         message:
+ *           type: string
+ *   parameters:
+ *     EvolutionApiInstanceId:
+ *       name: id
+ *       in: path
+ *       required: true
+ *       schema:
+ *         type: string
+ *       description: ID da instância
+ *     EvolutionApiInstanceName:
+ *       name: instanceName
+ *       in: path
+ *       required: true
+ *       schema:
+ *         type: string
+ *         minLength: 3
+ *         maxLength: 50
+ *         pattern: '^[a-zA-Z0-9_-]+$'
+ *       description: Nome da instância
  */
 
-// Middleware para validar cliente_id em todas as rotas
-router.use(validateClienteId)
+const router = Router();
+const evolutionApiController = new EvolutionApiController();
+
+// Validation middleware - cliente_id agora vem via headers
+
+const validateCreateInstance = [
+  body('instance_name')
+    .notEmpty()
+    .withMessage('instance_name is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instance_name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instance_name can only contain letters, numbers, underscores and hyphens'),
+  body('integration')
+    .notEmpty()
+    .withMessage('integration is required')
+    .isIn(['WHATSAPP-BAILEYS', 'WHATSAPP-BUSINESS'])
+    .withMessage('integration must be WHATSAPP-BAILEYS or WHATSAPP-BUSINESS'),
+  body('qrcode')
+    .optional()
+    .isBoolean()
+    .withMessage('qrcode must be a boolean'),
+  body('settings')
+    .optional()
+    .isObject()
+    .withMessage('settings must be an object'),
+  body('settings.reject_call')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.reject_call must be a boolean'),
+  body('settings.msg_call')
+    .optional()
+    .isString()
+    .withMessage('settings.msg_call must be a string'),
+  body('settings.groups_ignore')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.groups_ignore must be a boolean'),
+  body('settings.always_online')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.always_online must be a boolean'),
+  body('settings.read_messages')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.read_messages must be a boolean'),
+  body('settings.read_status')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.read_status must be a boolean'),
+  body('settings.sync_full_history')
+    .optional()
+    .isBoolean()
+    .withMessage('settings.sync_full_history must be a boolean'),
+  body('webhook_url')
+    .optional({ nullable: true })
+    .custom((value: any) => {
+      if (value === null || value === undefined || value === '') {
+        return true;
+      }
+      if (typeof value === 'string' && /^https?:\/\/.+/.test(value)) {
+        return true;
+      }
+      throw new Error('webhook_url must be a valid URL or null');
+    }),
+  body('webhook_events')
+    .optional()
+    .isArray()
+    .withMessage('webhook_events must be an array'),
+  handleValidationErrors
+];
+
+const validateInstanceId = [
+  param('id')
+    .notEmpty()
+    .withMessage('Instance ID is required'),
+  handleValidationErrors
+];
+
+const validateInstanceName = [
+  param('instanceName')
+    .notEmpty()
+    .withMessage('Instance name is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('Instance name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Instance name can only contain letters, numbers, underscores and hyphens'),
+  handleValidationErrors
+];
+
+// Routes
 
 /**
  * @swagger
  * /api/evolution-api:
  *   get:
- *     summary: Lista todas as instâncias da Evolution API
+ *     summary: Listar todas as instâncias da Evolution API
  *     tags: [Evolution API]
  *     parameters:
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
- *         description: Lista de instâncias retornada com sucesso
+ *         description: Lista de instâncias recuperada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -50,47 +271,37 @@ router.use(validateClienteId)
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/EvolutionApi'
+ *                     $ref: '#/components/schemas/EvolutionApiInstance'
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instances retrieved successfully
  *       400:
- *         description: Erro de validação
+ *         description: Parâmetros inválidos
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Listar todas as instâncias
-router.get('/', evolutionApiController.getAllInstances.bind(evolutionApiController))
+router.get('/', evolutionApiController.getAllInstances.bind(evolutionApiController));
 
 /**
  * @swagger
  * /api/evolution-api/{id}:
  *   get:
- *     summary: Obtém uma instância da Evolution API por ID
+ *     summary: Buscar instância por ID
  *     tags: [Evolution API]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *       - $ref: '#/components/parameters/EvolutionApiInstanceId'
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
- *         description: Instância encontrada
+ *         description: Instância encontrada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -100,46 +311,43 @@ router.get('/', evolutionApiController.getAllInstances.bind(evolutionApiControll
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/EvolutionApi'
+ *                   $ref: '#/components/schemas/EvolutionApiInstance'
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instance retrieved successfully
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  *       404:
  *         description: Instância não encontrada
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Obter instância por ID
-router.get('/:id', evolutionApiController.getInstanceById.bind(evolutionApiController))
+router.get('/:id', validateInstanceId, evolutionApiController.getInstanceById.bind(evolutionApiController));
 
 /**
  * @swagger
  * /api/evolution-api/name/{instanceName}:
  *   get:
- *     summary: Obtém uma instância da Evolution API por nome
+ *     summary: Buscar instância por nome
  *     tags: [Evolution API]
  *     parameters:
- *       - in: path
- *         name: instanceName
- *         required: true
- *         schema:
- *           type: string
- *         description: Nome da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *       - $ref: '#/components/parameters/EvolutionApiInstanceName'
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
- *         description: Instância encontrada
+ *         description: Instância encontrada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -149,46 +357,59 @@ router.get('/:id', evolutionApiController.getInstanceById.bind(evolutionApiContr
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/EvolutionApi'
+ *                   $ref: '#/components/schemas/EvolutionApiInstance'
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instance retrieved successfully
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  *       404:
  *         description: Instância não encontrada
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Obter instância por nome
-router.get('/name/:instanceName', 
-  validateRequest(instanceNameParamSchema, 'params'),
-  evolutionApiController.getInstanceByName.bind(evolutionApiController)
-)
+router.get('/name/:instanceName', validateInstanceName, evolutionApiController.getInstanceByName.bind(evolutionApiController));
 
 /**
  * @swagger
  * /api/evolution-api:
  *   post:
- *     summary: Cria uma nova instância da Evolution API
+ *     summary: Criar nova instância da Evolution API
  *     tags: [Evolution API]
  *     parameters:
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *       - $ref: '#/components/parameters/ClienteId'
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CreateEvolutionApiRequest'
+ *           example:
+ *             instance_name: "teste"
+ *             integration: "WHATSAPP-BAILEYS"
+ *             qrcode: true
+ *             settings:
+ *               reject_call: false
+ *               msg_call: ""
+ *               groups_ignore: false
+ *               always_online: false
+ *               read_messages: false
+ *               read_status: false
+ *               sync_full_history: false
+ *             webhook_url: ""
+ *             webhook_events: []
  *     responses:
  *       201:
  *         description: Instância criada com sucesso
@@ -201,56 +422,37 @@ router.get('/name/:instanceName',
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/EvolutionApi'
+ *                   $ref: '#/components/schemas/EvolutionApiInstance'
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instance created successfully
  *       400:
- *         description: Erro de validação
+ *         description: Dados inválidos ou instância já existe
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Criar nova instância
-router.post('/', 
-  validateRequest(createEvolutionApiSchema),
-  evolutionApiController.createInstance.bind(evolutionApiController)
-)
+router.post('/', validateCreateInstance, evolutionApiController.createInstance.bind(evolutionApiController));
 
 /**
  * @swagger
  * /api/evolution-api/{id}:
- *   put:
- *     summary: Atualiza uma instância da Evolution API
+ *   delete:
+ *     summary: Deletar instância da Evolution API
  *     tags: [Evolution API]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UpdateEvolutionApiRequest'
+ *       - $ref: '#/components/parameters/EvolutionApiInstanceId'
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
- *         description: Instância atualizada com sucesso
+ *         description: Instância deletada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -259,91 +461,39 @@ router.post('/',
  *                 success:
  *                   type: boolean
  *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/EvolutionApi'
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instance deleted successfully
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  *       404:
  *         description: Instância não encontrada
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Atualizar instância
-router.put('/:id', 
-  validateRequest(updateEvolutionApiSchema),
-  evolutionApiController.updateInstance.bind(evolutionApiController)
-)
+router.delete('/:id', validateInstanceId, evolutionApiController.deleteInstance.bind(evolutionApiController));
 
 /**
  * @swagger
- * /api/evolution-api/{id}:
- *   delete:
- *     summary: Remove uma instância da Evolution API
- *     tags: [Evolution API]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
- *     responses:
- *       200:
- *         description: Instância removida com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       404:
- *         description: Instância não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-// Deletar instância
-router.delete('/:id', evolutionApiController.deleteInstance.bind(evolutionApiController))
-
-/**
- * @swagger
- * /api/evolution-api/connect/{instanceName}:
+ * /api/evolution-api/{id}/connect:
  *   post:
- *     summary: Conecta uma instância da Evolution API
+ *     summary: Conectar instância da Evolution API
  *     tags: [Evolution API]
  *     parameters:
- *       - in: path
- *         name: instanceName
- *         required: true
- *         schema:
- *           type: string
- *         description: Nome da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *       - $ref: '#/components/parameters/EvolutionApiInstanceId'
+ *       - $ref: '#/components/parameters/ClienteId'
  *     responses:
  *       200:
  *         description: Instância conectada com sucesso
@@ -356,174 +506,82 @@ router.delete('/:id', evolutionApiController.deleteInstance.bind(evolutionApiCon
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   $ref: '#/components/schemas/QRCodeResponse'
+ *                   type: object
+ *                   properties:
+ *                     qr_code:
+ *                       type: string
+ *                       description: QR Code para conectar o WhatsApp
+ *                       example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+ *                     status:
+ *                       type: string
+ *                       example: "connecting"
+ *                 message:
+ *                   type: string
+ *                   example: Evolution API instance connection initiated
+ *       400:
+ *         description: Parâmetros inválidos ou instância já conectada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
  *       404:
  *         description: Instância não encontrada
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/ApiResponse'
  */
-// Conectar instância
-router.post('/connect/:instanceName', 
-  validateRequest(instanceNameParamSchema, 'params'),
-  evolutionApiController.connectInstance.bind(evolutionApiController)
-)
+router.post('/:id/connect', validateInstanceId, evolutionApiController.connectInstance.bind(evolutionApiController));
 
 /**
  * @swagger
- * /api/evolution-api/disconnect/{instanceName}:
- *   post:
- *     summary: Desconecta uma instância da Evolution API
- *     tags: [Evolution API]
- *     parameters:
- *       - in: path
- *         name: instanceName
- *         required: true
- *         schema:
- *           type: string
- *         description: Nome da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
- *     responses:
- *       200:
- *         description: Instância desconectada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/SuccessResponse'
- *       404:
- *         description: Instância não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-// Desconectar instância
-router.post('/disconnect/:instanceName', 
-  validateRequest(instanceNameParamSchema, 'params'),
-  evolutionApiController.disconnectInstance.bind(evolutionApiController)
-)
-
-/**
- * @swagger
- * /api/evolution-api/qrcode/{instanceName}:
+ * /api/evolution-api/connect/{clientName}:
  *   get:
- *     summary: Obtém o QR Code de uma instância da Evolution API
+ *     summary: Get QR Code for instance connection
  *     tags: [Evolution API]
  *     parameters:
  *       - in: path
- *         name: instanceName
+ *         name: clientName
  *         required: true
  *         schema:
  *           type: string
- *         description: Nome da instância
+ *         description: Name of the client instance
  *       - in: header
  *         name: cliente_id
  *         required: true
  *         schema:
  *           type: string
- *           format: uuid
- *         description: ID do cliente
+ *         description: Client ID for authentication
  *     responses:
  *       200:
- *         description: QR Code obtido com sucesso
+ *         description: QR Code retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/QRCodeResponse'
+ *                 pairingCode:
+ *                   type: string
+ *                   nullable: true
+ *                 code:
+ *                   type: string
+ *                 base64:
+ *                   type: string
+ *                 count:
+ *                   type: integer
+ *       400:
+ *         description: Bad request - missing cliente_id header
  *       404:
- *         description: Instância não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Instance not found or not owned by client
  *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *         description: Internal server error
  */
-// Obter QR Code
-router.get('/qrcode/:instanceName', 
-  validateRequest(instanceNameParamSchema, 'params'),
-  evolutionApiController.getQRCode.bind(evolutionApiController)
-)
+router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evolutionApiController));
 
-/**
- * @swagger
- * /api/evolution-api/status/{instanceName}:
- *   get:
- *     summary: Verifica o status de conexão de uma instância da Evolution API
- *     tags: [Evolution API]
- *     parameters:
- *       - in: path
- *         name: instanceName
- *         required: true
- *         schema:
- *           type: string
- *         description: Nome da instância
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
- *     responses:
- *       200:
- *         description: Status de conexão obtido com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/ConnectionStatus'
- *       404:
- *         description: Instância não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-// Verificar status de conexão
-router.get('/status/:instanceName', 
-  validateRequest(instanceNameParamSchema, 'params'),
-  evolutionApiController.getConnectionStatus.bind(evolutionApiController)
-)
-
-export { router as evolutionApiRoutes }
+export default router;

@@ -233,6 +233,30 @@ const options: swaggerJSDoc.Options = {
             }
           }
         },
+        ApiResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              description: 'Indica se a operação foi bem-sucedida'
+            },
+            message: {
+              type: 'string',
+              description: 'Mensagem descritiva da resposta'
+            },
+            data: {
+              type: 'object',
+              description: 'Dados retornados (opcional)'
+            },
+            errors: {
+              type: 'array',
+              items: {
+                type: 'object'
+              },
+              description: 'Detalhes dos erros (opcional)'
+            }
+          }
+        },
         EvolutionApi: {
           type: 'object',
           properties: {
@@ -521,8 +545,8 @@ const options: swaggerJSDoc.Options = {
 }
 
 const routesPath = path.join(__dirname, '../routes')
-console.log('🔍 Swagger __dirname:', __dirname)
-console.log('🔍 Routes path:', routesPath)
-console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
+// console.log('🔍 Swagger __dirname:', __dirname)
+// console.log('🔍 Routes path:', routesPath)
+// console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
 
 export const swaggerSpec = swaggerJSDoc(options)
