@@ -12,9 +12,9 @@ class EvolutionApiService {
     this.apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || '';
     this.timeout = 30000; // 30 seconds
 
-    console.log('Evolution API Service initialized:');
-    console.log('Base URL:', this.baseUrl);
-    console.log('API Key:', this.apiKey ? '[CONFIGURED]' : '[NOT CONFIGURED]');
+    // console.log('Evolution API Service initialized:');
+    // console.log('Base URL:', this.baseUrl);
+    // console.log('API Key:', this.apiKey ? '[CONFIGURED]' : '[NOT CONFIGURED]');
   }
 
   async getAllInstances(clienteId: string): Promise<EvolutionApiInstanceData[]> {

@@ -53,15 +53,21 @@ export class LeadController {
     return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     })
   }
   
   // Criar um único lead
   static async criarLead(req: Request, res: Response) {
     try {
-      const validatedData = createLeadSchema.parse(req.body)
-      const lead = await LeadService.criarLead(validatedData)
+      const cliente_id = req.headers.cliente_id as string
+      const bodyWithClienteId = {
+        ...req.body,
+        cliente_id
+      }
+      
+      const validatedData = createLeadSchema.parse(bodyWithClienteId)
+      const lead = await LeadService.criarLead(validatedData, cliente_id)
       
       return res.status(201).json({
         success: true,
@@ -106,8 +112,17 @@ export class LeadController {
   static async bulkImportLeads(req: Request, res: Response) {
     
     try {
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        })
+      }
+      
       const validatedData = bulkLeadsSchema.parse(req.body)
-      const result = await LeadService.bulkImportLeads(validatedData)
+      const result = await LeadService.bulkImportLeads(validatedData, cliente_id)
       
       const message = result.skipped.length > 0 
         ? `${result.created.length} leads importados em lote com sucesso, ${result.skipped.length} leads pulados por duplicação`
@@ -351,16 +366,12 @@ export class LeadController {
     try {
       const cliente_id = req.headers['cliente_id'] as string;
 
-      console.log('🧪 Teste - cliente_id:', cliente_id)
-      
       if (!cliente_id) {
         return res.status(400).json({
           success: false,
           message: 'cliente_id é obrigatório'
         });
       }
-      
-      console.log('📋 Listando todos os leads para cliente:', cliente_id)
       
       const leads = await LeadService.listarTodos(cliente_id)
       

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { LeadController } from '../controllers/leadController'
+import { validateClienteId } from '../middleware/validate-cliente-id'
 
 const router = Router()
 
@@ -280,7 +281,7 @@ router.get('/stats', LeadController.obterEstatisticas)
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/', LeadController.criarLead)
+router.post('/', validateClienteId, LeadController.criarLead)
 
 /**
  * @swagger

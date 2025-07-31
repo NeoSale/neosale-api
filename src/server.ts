@@ -17,7 +17,7 @@ import { swaggerSpec } from './lib/swagger'
 import { leadRoutes } from './routes/leadRoutes'
 import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import referenciaRoutes from './routes/referenciaRoutes'
-import configuracaoRoutes from './routes/configuracaoRoutes'
+import parametroRoutes from './routes/parametroRoutes'
 import mensagemRoutes from './routes/mensagemRoutes'
 import followupRoutes from './routes/followupRoutes'
 import configuracaoFollowupRoutes from './routes/configuracaoFollowupRoutes'
@@ -35,10 +35,10 @@ import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
-const PORT = process.env.PORT || 3001
+const PORT = process.env.NEXT_PUBLIC_PORT || 3001
 
 // Detectar automaticamente a URL base
-let BASE_URL = process.env.API_BASE_URL
+let BASE_URL = process.env.NEXT_PUBLIC_NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_BASE_URL : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${PORT}`
 
 // Middleware de segurança
 app.use(helmet())
@@ -58,6 +58,27 @@ app.use(morgan('combined'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
+// Middleware para processar text/plain como JSON (fix para frontend)
+app.use('/api/leads', (req, res, next) => {
+  if (req.headers['content-type'] === 'text/plain;charset=UTF-8' && req.method === 'POST') {
+    let body = ''
+    req.on('data', chunk => {
+      body += chunk.toString()
+    })
+    req.on('end', () => {
+      try {
+        req.body = JSON.parse(body)
+        next()
+      } catch (error) {
+        console.error('❌ Erro ao parsear JSON do text/plain:', error)
+        res.status(400).json({ error: 'Invalid JSON in request body' })
+      }
+    })
+  } else {
+    next()
+  }
+})
+
 // Swagger configurado em ./lib/swagger.ts
 
 // Rota raiz com informações da API
@@ -72,10 +93,10 @@ app.get('/', (req, res) => {
       leads: `${BASE_URL}/api/leads`,
       controleEnvios: `${BASE_URL}/api/controle-envios`,
       referencias: `${BASE_URL}/api/referencias`,
-      configuracoes: `${BASE_URL}/api/configuracoes`,
+      parametros: `${BASE_URL}/api/parametros`,
       mensagens: `${BASE_URL}/api/mensagens`,
       followups: `${BASE_URL}/api/followups`,
-      configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
+      parametrosFollowup: `${BASE_URL}/api/parametros-followup`,
       provedores: `${BASE_URL}/api/provedores`,
       tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
       revendedores: `${BASE_URL}/api/revendedores`,
@@ -92,10 +113,10 @@ app.get('/', (req, res) => {
 app.use('/api/leads', leadRoutes)
 app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api/referencias', referenciaRoutes)
-app.use('/api/configuracoes', configuracaoRoutes)
+app.use('/api/parametros', parametroRoutes)
 app.use('/api/mensagens', mensagemRoutes)
 app.use('/api/followups', followupRoutes)
-app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
+app.use('/api/parametros-followup', configuracaoFollowupRoutes)
 app.use('/api/provedores', provedorRoutes)
 app.use('/api/tipos-acesso', tipoAcessoRoutes)
 app.use('/api/revendedores', revendedorRoutes)

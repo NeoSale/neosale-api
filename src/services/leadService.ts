@@ -15,16 +15,33 @@ export class LeadService {
     console.log('🔄 Criando novo lead:', data.nome)
     
     try {
-      // Verificar se telefone já existe
-      const { data: existingPhone, error: phoneError } = await supabase!
+      // Verificar se telefone já existe e está ativo
+      const { data: existingPhones, error: phoneError } = await supabase!
         .from('leads')
-        .select('id, nome, telefone')
+        .select(`
+          id, 
+          nome, 
+          telefone,
+          deletado,
+          status_negociacao:status_negociacao_id(nome)
+        `)
         .eq('telefone', data.telefone)
         .eq('deletado', false)
-        .single()
       
-      if (existingPhone && !phoneError) {
-        throw new Error(`Já existe um lead com o telefone ${data.telefone}: ${existingPhone.nome}`)
+      if (phoneError) {
+        console.error('❌ Erro ao verificar telefone:', phoneError)
+        throw phoneError
+      }
+      
+      // Verificar se existe algum lead ativo com este telefone
+       const activePhone = existingPhones?.find((lead: any) => {
+         const statusNome = lead.status_negociacao?.nome
+         // Lead é considerado ativo se não tem status ou se o status não é 'perdido' nem 'fechado'
+         return !statusNome || (statusNome !== 'perdido' && statusNome !== 'fechado')
+       })
+      
+      if (activePhone) {
+        throw new Error(`Já existe um lead ativo com o telefone ${data.telefone}: ${activePhone.nome}`)
       }
       
       // Verificar se email já existe (se fornecido)
@@ -57,26 +74,10 @@ export class LeadService {
         origemId = origens.id
       }
       
-      // Criar followup primeiro com valores padrão
-      const { data: followup, error: followupError } = await supabase!
-        .from('followup')
-        .insert({
-          id_mensagem: (await supabase!.from('mensagens').select('id').limit(1).single()).data?.id || null,
-          status: 'sucesso',
-          mensagem_enviada: 'Mensagem padrão - aguardando envio'
-        })
-        .select()
-        .single()
-      
-      if (followupError) {
-        console.error('❌ Erro ao criar followup:', followupError)
-        throw followupError
-      }
-      
       // Gerar embedding para o lead
       const embedding = data.embedding || await generateLeadEmbedding(data)
       
-      // Criar o lead
+      // Criar o lead primeiro (sem followup_id)
       const { data: novoLead, error } = await supabase!
         .from('leads')
         .insert({
@@ -93,12 +94,42 @@ export class LeadService {
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
           origem_id: origemId,
-          followup_id: followup.id,
           qualificacao_id: data.qualificacao_id || null,
           cliente_id: clienteId || null,
           embedding: embedding,
           deletado: false
         })
+        .select('id')
+        .single()
+      
+      if (error) {
+        console.error('❌ Erro ao criar lead:', error)
+        throw error
+      }
+      
+      // Agora criar o followup com o id_lead
+      const { data: followup, error: followupError } = await supabase!
+        .from('followup')
+        .insert({
+          id_mensagem: (await supabase!.from('mensagens').select('id').limit(1).single()).data?.id || null,
+          id_lead: novoLead.id,
+          status: 'sucesso',
+          mensagem_enviada: 'Mensagem padrão - aguardando envio',
+          cliente_id: clienteId || null
+        })
+        .select()
+        .single()
+      
+      if (followupError) {
+        console.error('❌ Erro ao criar followup:', followupError)
+        throw followupError
+      }
+      
+      // Atualizar o lead com o followup_id
+      const { data: leadAtualizado, error: updateError } = await supabase!
+        .from('leads')
+        .update({ followup_id: followup.id })
+        .eq('id', novoLead.id)
         .select(`
           *,
           followup:followup_id(*),
@@ -109,13 +140,13 @@ export class LeadService {
         `)
         .single()
       
-      if (error) {
-        console.error('❌ Erro ao criar lead:', error)
-        throw error
-      }
+      if (updateError) {
+         console.error('❌ Erro ao atualizar lead com followup_id:', updateError)
+         throw updateError
+       }
       
-      console.log('✅ Lead criado com sucesso:', novoLead.id)
-      return novoLead
+      console.log('✅ Lead criado com sucesso:', leadAtualizado.id)
+      return leadAtualizado
       
     } catch (error: any) {
       console.error('❌ Erro ao criar lead:', error)
@@ -133,10 +164,10 @@ export class LeadService {
     
     for (const leadData of data.leads) {
       try {
-        // Verificar se telefone já existe
+        // Verificar se telefone já existe e está ativo (deletado = false)
         const { data: existingPhone, error: phoneError } = await supabase!
           .from('leads')
-          .select('id, nome, telefone')
+          .select('id, nome, telefone, deletado')
           .eq('telefone', leadData.telefone)
           .eq('deletado', false)
           .single()
@@ -147,8 +178,8 @@ export class LeadService {
         }
         
         if (existingPhone) {
-          console.log('⚠️ Lead com telefone já existe:', leadData.telefone, '- pulando')
-          skipped.push({ ...leadData, motivo: 'Telefone já existe' })
+          console.log('⚠️ Lead ativo com telefone já existe:', leadData.telefone, '- pulando')
+          skipped.push({ ...leadData, motivo: 'Telefone já existe em lead ativo' })
           continue
         }
         
@@ -200,7 +231,7 @@ export class LeadService {
             cargo: leadData.cargo,
             origem_id: leadData.origem_id,
             followup_id: followup.id,
-            cliente_id: clienteId || null
+            cliente_id: clienteId
           })
           .select()
           .single()
@@ -223,7 +254,7 @@ export class LeadService {
   }
 
   // Importar leads em lote (bulk) sem origem_id
-  static async bulkImportLeads(data: BulkLeadsInput, clienteId?: string) {
+  static async bulkImportLeads(data: BulkLeadsInput, clienteId: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads')
     
@@ -284,19 +315,7 @@ export class LeadService {
           }
         }
         
-        // Criar followup primeiro
-        const { data: followup, error: followupError } = await supabase!
-          .from('followup')
-          .insert({})
-          .select()
-          .single()
-        
-        if (followupError) {
-          console.error('❌ Erro ao criar followup:', followupError)
-          throw followupError
-        }
-        
-        // Criar lead com referência ao followup e origem outbound
+        // Criar lead primeiro sem followup_id
         const { data: lead, error: leadError } = await supabase!
           .from('leads')
           .insert({
@@ -306,8 +325,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             origem_id: origemOutbound,
-            followup_id: followup.id,
-            cliente_id: clienteId || null
+            cliente_id: clienteId
           })
           .select()
           .single()
@@ -315,6 +333,47 @@ export class LeadService {
         if (leadError) {
           console.error('❌ Erro ao criar lead:', leadError)
           throw leadError
+        }
+        
+        // Obter id_mensagem de forma robusta
+        const { data: mensagemData, error: mensagemError } = await supabase!
+          .from('mensagens')
+          .select('id')
+          .limit(1)
+          .single()
+        
+        if (mensagemError || !mensagemData?.id) {
+          console.error('❌ Erro ao obter id_mensagem ou nenhuma mensagem encontrada:', mensagemError)
+          throw new Error('Nenhuma mensagem encontrada na base de dados. É necessário ter pelo menos uma mensagem cadastrada.')
+        }
+        
+        // Criar followup com referência ao lead criado
+        const { data: followup, error: followupError } = await supabase!
+          .from('followup')
+          .insert({
+            id_mensagem: mensagemData.id,
+            id_lead: lead.id,
+            status: 'sucesso',
+            mensagem_enviada: 'Mensagem padrão - aguardando envio',
+            cliente_id: clienteId
+          })
+          .select()
+          .single()
+        
+        if (followupError) {
+          console.error('❌ Erro ao criar followup:', followupError)
+          throw followupError
+        }
+        
+        // Atualizar lead com referência ao followup
+        const { error: updateError } = await supabase!
+          .from('leads')
+          .update({ followup_id: followup.id })
+          .eq('id', lead.id)
+        
+        if (updateError) {
+          console.error('❌ Erro ao atualizar lead com followup_id:', updateError)
+          throw updateError
         }
         
         console.log('✅ Lead criado com sucesso:', lead.id)
@@ -589,7 +648,6 @@ export class LeadService {
   // Listar todos os leads
   static async listarTodos(clienteId?: string) {
     LeadService.checkSupabaseConnection();
-    console.log('🔄 Listando todos os leads')
     
     let query = supabase!
       .from('leads')

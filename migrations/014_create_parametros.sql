@@ -1,8 +1,8 @@
--- Migration: 014_create_configuracoes
--- Description: Create configuracoes table and insert initial data
+-- Migration: 014_create_parametros
+-- Description: Create parametros table and insert initial data
 -- Dependencies: 004_create_clientes
 
-CREATE TABLE IF NOT EXISTS configuracoes (
+CREATE TABLE IF NOT EXISTS parametros (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   chave varchar(255) NOT NULL,
   valor text,
@@ -13,14 +13,14 @@ CREATE TABLE IF NOT EXISTS configuracoes (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_configuracoes_cliente_id ON configuracoes(cliente_id);
-CREATE INDEX IF NOT EXISTS idx_configuracoes_embedding ON configuracoes USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_parametros_cliente_id ON parametros(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_parametros_embedding ON parametros USING ivfflat (embedding vector_cosine_ops);
 
 -- Create unique constraint for chave and cliente_id
-CREATE UNIQUE INDEX IF NOT EXISTS idx_configuracoes_chave_cliente_unique ON configuracoes(chave, cliente_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_parametros_chave_cliente_unique ON parametros(chave, cliente_id);
 
 -- Insert initial configuration data
-INSERT INTO configuracoes (chave, valor) VALUES
+INSERT INTO parametros (chave, valor) VALUES
   ('limite_envios_diarios', '100'),
   ('horario_inicio_envios', '08:00'),
   ('horario_fim_envios', '18:00'),

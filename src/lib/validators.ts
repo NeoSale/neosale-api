@@ -150,16 +150,16 @@ export type CreateFollowupInput = z.infer<typeof createFollowupSchema>
 export type UpdateFollowupInput = z.infer<typeof updateFollowupSchema>
 export type CreateLeadInput = z.infer<typeof createLeadSchema>
 
-// Validator para criação de configuração
-export const createConfiguracaoSchema = z.object({
+// Validator para criação de parâmetro
+export const createParametroSchema = z.object({
   chave: z.string().min(1, 'Chave é obrigatória'),
   valor: z.string().min(1, 'Valor é obrigatório'),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   embedding: z.array(z.number()).optional()
 })
 
-// Validator para atualização de configuração
-export const updateConfiguracaoSchema = z.object({
+// Validator para atualização de parâmetro
+export const updateParametroSchema = z.object({
   chave: z.string().min(1, 'Chave é obrigatória').optional(),
   valor: z.string().min(1, 'Valor é obrigatório').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
@@ -168,8 +168,8 @@ export const updateConfiguracaoSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-export type CreateConfiguracaoInput = z.infer<typeof createConfiguracaoSchema>
-export type UpdateConfiguracaoInput = z.infer<typeof updateConfiguracaoSchema>
+export type CreateParametroInput = z.infer<typeof createParametroSchema>
+export type UpdateParametroInput = z.infer<typeof updateParametroSchema>
 
 // ===== VALIDATORS PARA CONFIGURAÇÕES FOLLOWUP =====
 

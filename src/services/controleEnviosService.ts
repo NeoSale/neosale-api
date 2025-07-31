@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { ConfiguracaoService } from './configuracaoService'
+import { ParametroService } from './parametroService'
 
 export interface ControleEnvio {
   id: string
@@ -82,9 +82,9 @@ export class ControleEnviosService {
     let limiteDiarioPadrao = 0; // valor padrão caso não encontre a configuração
     
     try {
-      const configuracaoLimite = await ConfiguracaoService.getByChave('quantidade_diaria_maxima');
-      if (configuracaoLimite && configuracaoLimite.valor) {
-        limiteDiarioPadrao = parseInt(configuracaoLimite.valor);
+      const parametroLimite = await ParametroService.getByChave('quantidade_diaria_maxima');
+    if (parametroLimite && parametroLimite.valor) {
+      limiteDiarioPadrao = parseInt(parametroLimite.valor);
         console.log('✅ Limite diário obtido das configurações:', limiteDiarioPadrao);
       } else {
         console.log('⚠️ Configuração quantidade_diaria_maxima não encontrada, usando valor padrão:', limiteDiarioPadrao);

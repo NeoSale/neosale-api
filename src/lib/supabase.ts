@@ -27,15 +27,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 if (!supabaseUrl || !supabaseAnonKey || 
     supabaseUrl.includes('your-project') || 
     supabaseAnonKey.includes('your_supabase')) {
-  console.warn('⚠️  Supabase Configuration Warning:');
-  console.warn('Supabase credentials not configured. Database operations will not work.');
-  console.warn('To configure Supabase:');
-  console.warn('1. Go to https://supabase.com/dashboard');
-  console.warn('2. Select your project (or create one)');
-  console.warn('3. Go to Settings > API');
-  console.warn('4. Copy the URL and anon key to your .env file');
-  console.warn('5. Replace the placeholder values with real ones');
-  console.warn('');
+  // console.warn('⚠️  Supabase Configuration Warning:');
+  // console.warn('Supabase credentials not configured. Database operations will not work.');
+  // console.warn('To configure Supabase:');
+  // console.warn('1. Go to https://supabase.com/dashboard');
+  // console.warn('2. Select your project (or create one)');
+  // console.warn('3. Go to Settings > API');
+  // console.warn('4. Copy the URL and anon key to your .env file');
+  // console.warn('5. Replace the placeholder values with real ones');
+  // console.warn('');
 }
 
 // Criar cliente Supabase apenas se as credenciais estiverem configuradas

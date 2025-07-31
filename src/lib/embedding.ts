@@ -120,13 +120,13 @@ export function generateFollowupEmbedding(followup: any): number[] {
  * Gera embedding para configurações
  * Combina chave e valor da configuração
  */
-export function generateConfiguracaoEmbedding(configuracao: any): number[] {
-  const configuracaoData = {
-    chave: configuracao.chave,
-    valor: configuracao.valor
+export function generateParametroEmbedding(parametro: any): number[] {
+  const parametroData = {
+    chave: parametro.chave,
+    valor: parametro.valor
   }
-  
-  return generateEmbedding(configuracaoData)
+
+  return generateEmbedding(parametroData)
 }
 
 /**

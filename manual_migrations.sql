@@ -42,7 +42,7 @@ INSERT INTO migrations (filename) VALUES
   ('007_create_leads.sql'),
   ('008_insert_sample_data.sql'),
   ('009_create_controle_envios_diarios.sql'),
-  ('010_create_configuracoes.sql'),
+  ('014_create_parametros.sql'),
   ('011_add_ativo_to_mensagens.sql'),
   ('012_create_configuracoes_followup.sql'),
   ('013_create_user_management_tables.sql')

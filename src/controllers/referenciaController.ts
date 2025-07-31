@@ -25,7 +25,7 @@ export class ReferenciaController {
     return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NEXT_PUBLIC_NODE_ENV === 'development' ? error.message : undefined
     })
   }
 

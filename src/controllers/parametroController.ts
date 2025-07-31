@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { ConfiguracaoFollowupService } from '../services/configuracaoFollowupService';
-import { createConfiguracaoFollowupSchema, updateConfiguracaoFollowupSchema } from '../lib/validators';
+import { ParametroService } from '../services/parametroService';
+import { createParametroSchema, updateParametroSchema, CreateParametroInput, UpdateParametroInput } from '../lib/validators';
 
-export class ConfiguracaoFollowupController {
+export class ParametroController {
   static async getAll(req: Request, res: Response) {
     try {
       const { cliente_id } = req.params;
@@ -14,14 +14,14 @@ export class ConfiguracaoFollowupController {
         });
       }
       
-      const parametros = await ConfiguracaoFollowupService.getAll(cliente_id);
-      return res.status(200).json({
+      const parametros = await ParametroService.getAll(cliente_id);
+      return res.json({
         success: true,
         data: parametros,
         total: parametros.length
       });
     } catch (error) {
-      console.error('Erro ao buscar configurações de followup:', error);
+      console.error('Erro ao buscar parâmetros:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -41,21 +41,55 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.getById(id);
+      const parametro = await ParametroService.getById(id);
       
-      if (!configuracao) {
+      if (!parametro) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Parâmetro não encontrado'
         });
       }
 
       return res.json({
         success: true,
-        data: configuracao
+        data: parametro
       });
     } catch (error) {
-      console.error('Erro ao buscar configuração de followup:', error);
+      console.error('Erro ao buscar parâmetro:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
+
+  static async getByChave(req: Request, res: Response) {
+    try {
+      const { chave } = req.params;
+      
+      if (!chave) {
+        return res.status(400).json({
+          success: false,
+          message: 'Chave é obrigatória'
+        });
+      }
+
+      const parametro = await ParametroService.getByChave(chave);
+      
+      if (!parametro) {
+        return res.status(404).json({
+          success: false,
+          message: 'Parâmetro não encontrado'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: parametro
+      });
+    } catch (error) {
+      console.error('Erro ao buscar parâmetro por chave:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -67,7 +101,7 @@ export class ConfiguracaoFollowupController {
   static async create(req: Request, res: Response) {
     try {
       // Validar dados de entrada
-      const validationResult = createConfiguracaoFollowupSchema.safeParse(req.body);
+      const validationResult = createParametroSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
           success: false,
@@ -76,15 +110,26 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.create(validationResult.data);
+      const { chave, valor, cliente_id } = validationResult.data;
+
+      // Verificar se já existe um parâmetro com a mesma chave para este cliente
+      const existingConfig = await ParametroService.getByChave(chave);
+      if (existingConfig) {
+        return res.status(409).json({
+          success: false,
+          message: 'Já existe um parâmetro com esta chave'
+        });
+      }
+
+      const parametro = await ParametroService.create({ chave, valor, cliente_id });
       
       return res.status(201).json({
         success: true,
-        data: configuracao,
-        message: 'Configuração de followup criada com sucesso'
+        data: parametro,
+        message: 'Parâmetro criado com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao criar configuração de followup:', error);
+      console.error('Erro ao criar parâmetro:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -105,7 +150,7 @@ export class ConfiguracaoFollowupController {
       }
 
       // Validar dados de entrada
-      const validationResult = updateConfiguracaoFollowupSchema.safeParse(req.body);
+      const validationResult = updateParametroSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
           success: false,
@@ -114,24 +159,37 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      // Verificar se a configuração existe
-      const existingConfig = await ConfiguracaoFollowupService.getById(id);
+      const updateData = validationResult.data;
+
+      // Verificar se o parâmetro existe
+      const existingConfig = await ParametroService.getById(id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Parâmetro não encontrado'
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.update(id, validationResult.data);
+      // Se está atualizando a chave, verificar se não existe outro parâmetro com a mesma chave
+      if (updateData.chave && updateData.chave !== existingConfig.chave) {
+        const configWithSameKey = await ParametroService.getByChave(updateData.chave);
+        if (configWithSameKey) {
+          return res.status(409).json({
+            success: false,
+            message: 'Já existe um parâmetro com esta chave'
+          });
+        }
+      }
+
+      const parametro = await ParametroService.update(id, updateData);
       
       return res.json({
         success: true,
-        data: configuracao,
-        message: 'Configuração de followup atualizada com sucesso'
+        data: parametro,
+        message: 'Parâmetro atualizado com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao atualizar configuração de followup:', error);
+      console.error('Erro ao atualizar parâmetro:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -151,23 +209,23 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      // Verificar se a configuração existe
-      const existingConfig = await ConfiguracaoFollowupService.getById(id);
+      // Verificar se o parâmetro existe
+      const existingConfig = await ParametroService.getById(id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Parâmetro não encontrado'
         });
       }
 
-      await ConfiguracaoFollowupService.delete(id);
+      await ParametroService.delete(id);
       
       return res.json({
         success: true,
-        message: 'Configuração de followup deletada com sucesso'
+        message: 'Parâmetro deletado com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao deletar configuração de followup:', error);
+      console.error('Erro ao deletar parâmetro:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',

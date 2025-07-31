@@ -8,15 +8,15 @@ const options: swaggerJSDoc.Options = {
     info: {
       title: 'NeoSale API',
       version: '1.0.0',
-      description: 'API REST para gerenciamento de leads com Next.js, TypeScript e Supabase',
+      description: 'API REST da NeoSale',
       contact: {
-        name: 'NeoSale Team',
+        name: 'NeoSale AI',
         email: 'contato@neosale.com'
       }
     },
     servers: [
       {
-        url: process.env.API_BASE_URL || 'http://localhost:3000',
+        url: process.env.NEXT_PUBLIC_API_BASE_URL,
         description: 'Servidor NeoSale'
       }
     ],

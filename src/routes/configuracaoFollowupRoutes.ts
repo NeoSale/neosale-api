@@ -100,7 +100,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/configuracoes-followup:
+ * /api/parametros-followup:
  *   get:
  *     summary: Buscar todas as configurações de followup
  *     tags: [Configurações Followup]
@@ -132,7 +132,7 @@ router.get('/', ConfiguracaoFollowupController.getAll);
 
 /**
  * @swagger
- * /api/configuracoes-followup/{id}:
+ * /api/parametros-followup/{id}:
  *   get:
  *     summary: Buscar configuração de followup por ID
  *     tags: [Configurações Followup]
@@ -174,9 +174,9 @@ router.get('/:id', ConfiguracaoFollowupController.getById);
 
 /**
  * @swagger
- * /api/configuracoes-followup:
- *   post:
- *     summary: Criar nova configuração de followup
+ * /api/parametros-followup:
+   *   post:
+   *     summary: Criar configuração de followup
  *     tags: [Configurações Followup]
  *     requestBody:
  *       required: true
@@ -217,9 +217,9 @@ router.post('/', ConfiguracaoFollowupController.create);
 
 /**
  * @swagger
- * /api/configuracoes-followup/{id}:
- *   put:
- *     summary: Atualizar configuração de followup
+ * /api/parametros-followup/{id}:
+   *   put:
+   *     summary: Atualizar configuração de followup
  *     tags: [Configurações Followup]
  *     parameters:
  *       - in: path
@@ -274,9 +274,9 @@ router.put('/:id', ConfiguracaoFollowupController.update);
 
 /**
  * @swagger
- * /api/configuracoes-followup/{id}:
- *   delete:
- *     summary: Deletar configuração de followup
+ * /api/parametros-followup/{id}:
+   *   delete:
+   *     summary: Deletar configuração de followup
  *     tags: [Configurações Followup]
  *     parameters:
  *       - in: path
