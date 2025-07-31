@@ -716,6 +716,7 @@ router.put('/:id/mensagem', LeadController.atualizarMensagem)
  *     summary: Busca um lead específico por telefone
  *     tags: [Leads]
  *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
  *       - in: path
  *         name: telefone
  *         required: true
@@ -738,13 +739,13 @@ router.put('/:id/mensagem', LeadController.atualizarMensagem)
  *                 data:
  *                   $ref: '#/components/schemas/Lead'
  *       400:
- *         description: Telefone não fornecido
+ *         description: Telefone não fornecido ou cliente_id é obrigatório no header
  *       404:
  *         description: Lead não encontrado
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/telefone/:telefone', LeadController.buscarPorTelefone)
+router.get('/telefone/:telefone', validateClienteId, LeadController.buscarPorTelefone)
 
 /**
  * @swagger

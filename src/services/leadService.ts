@@ -608,11 +608,11 @@ export class LeadService {
   }
 
   // Buscar lead por telefone
-  static async buscarPorTelefone(telefone: string, clienteId?: string) {
+  static async buscarPorTelefone(telefone: string, clienteId: string) {
     LeadService.checkSupabaseConnection();
-    console.log('🔄 Buscando lead por telefone:', telefone)
+    console.log('🔄 Buscando lead por telefone:', telefone, 'para cliente:', clienteId)
     
-    let query = supabase!
+    const query = supabase!
       .from('leads')
       .select(`
         *,
@@ -623,11 +623,8 @@ export class LeadService {
         qualificacao:qualificacao_id(*)
       `)
       .eq('telefone', telefone)
+      .eq('cliente_id', clienteId)
       .eq('deletado', false)
-    
-    if (clienteId) {
-      query = query.eq('cliente_id', clienteId)
-    }
     
     const { data: lead, error } = await query.single()
     

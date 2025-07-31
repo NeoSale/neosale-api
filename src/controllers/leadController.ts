@@ -329,10 +329,12 @@ export class LeadController {
     }
   }
 
-  // GET /api/leads/telefone/[telefone]/cliente/[cliente_id] - Buscar lead por telefone e cliente
+  // GET /api/leads/telefone/[telefone] - Buscar lead por telefone e cliente
   static async buscarPorTelefone(req: Request, res: Response) {
     try {
-      const { telefone, cliente_id } = req.params
+      console.log('🔍 Buscando lead por telefone:', req.params)
+      const { telefone } = req.params
+      const cliente_id = req.headers['cliente_id'] as string
       
       if (!telefone) {
         return res.status(400).json({
@@ -344,7 +346,7 @@ export class LeadController {
       if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'cliente_id é obrigatório'
+          message: 'cliente_id é obrigatório no header'
         })
       }
       

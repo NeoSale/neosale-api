@@ -16,7 +16,9 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_API_BASE_URL,
+        url: process.env.NEXT_PUBLIC_NODE_ENV === 'production' 
+          ? process.env.NEXT_PUBLIC_API_BASE_URL 
+          : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_PORT}`,
         description: 'Servidor NeoSale'
       }
     ],
@@ -28,7 +30,8 @@ const options: swaggerJSDoc.Options = {
           required: true,
           schema: {
             type: 'string',
-            format: 'uuid'
+            format: 'uuid',
+            default: process.env.DEFAULT_CLIENTE_ID
           },
           description: 'ID do cliente para filtrar os dados'
         }

@@ -35,7 +35,7 @@ import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
-const PORT = process.env.NEXT_PUBLIC_PORT || 3001
+const PORT = process.env.NEXT_PUBLIC_PORT
 
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.NEXT_PUBLIC_NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_BASE_URL : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${PORT}`
