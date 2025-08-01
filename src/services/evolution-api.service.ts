@@ -624,6 +624,70 @@ class EvolutionApiService {
       throw new Error(`Failed to get cliente_id by instance name: ${error.message}`);
     }
   }
+
+  async getBase64FromMediaMessage(instanceName: string, keyId: string, apikey: string): Promise<any> {
+    try {
+      console.log(`Getting base64 from media message for instance: ${instanceName}, keyId: ${keyId}`);
+
+      if (!this.baseUrl) {
+        throw new Error('Evolution API base URL not configured');
+      }
+
+      const url = `${this.baseUrl}/chat/getBase64FromMediaMessage/${instanceName}`;
+      
+      const requestBody = {
+        message: {
+          key: {
+            id: keyId
+          }
+        },
+        convertToMp4: false
+      };
+      
+      console.log('Request URL:', url);
+      console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+      console.log('Request Headers:', { 'apikey': apikey ? '[REDACTED]' : 'NOT_PROVIDED', 'Content-Type': 'application/json' });
+      
+      const response = await axios.post(url, requestBody, {
+        headers: {
+          'apikey': apikey,
+          'Content-Type': 'application/json'
+        },
+        timeout: this.timeout
+      });
+
+      console.log('Evolution API response status:', response.status);
+      
+      if (response.status !== 200 && response.status !== 201) {
+        throw new Error(`Evolution API returned status ${response.status}`);
+      }
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in getBase64FromMediaMessage:', error.message);
+      
+      if (error.response) {
+        console.error('Evolution API error details:');
+        console.error('Status:', error.response.status);
+        console.error('Status Text:', error.response.statusText);
+        console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
+        console.error('Response Headers:', error.response.headers);
+        
+        // Verificar se é um erro específico de mensagem não encontrada
+        if (error.response.status === 400 && error.response.data?.response?.message?.includes('Message not found')) {
+          throw new Error('Message not found - The message ID may be invalid or the message may have expired');
+        }
+        
+        throw new Error(`Evolution API error: ${error.response.data?.message || error.response.data?.response?.message || error.response.statusText}`);
+      }
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Unable to connect to Evolution API server');
+      }
+      
+      throw new Error(`Failed to get base64 from media message: ${error.message}`);
+    }
+  }
 }
 
 export default new EvolutionApiService();

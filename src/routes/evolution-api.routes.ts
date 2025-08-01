@@ -247,6 +247,24 @@ const validateInstanceName = [
   handleValidationErrors
 ];
 
+const validateGetBase64FromMediaMessage = [
+  param('instance_name')
+    .notEmpty()
+    .withMessage('instance_name is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instance_name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instance_name can only contain letters, numbers, underscores and hyphens'),
+  body('message.key.id')
+    .notEmpty()
+    .withMessage('message.key.id is required'),
+  body('convertToMp4')
+    .optional()
+    .isBoolean()
+    .withMessage('convertToMp4 must be a boolean'),
+  handleValidationErrors
+];
+
 const validateUpdateInstance = [
   body('instance_name')
     .optional()
@@ -883,5 +901,113 @@ router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evoluti
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get('/cliente/:instanceName', validateInstanceName, evolutionApiController.getClienteIdByInstanceName.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/getBase64FromMediaMessage/{instance_name}:
+ *   post:
+ *     tags:
+ *       - Evolution API
+ *     summary: Get base64 from media message
+ *     description: Retrieve base64 data from a media message using Evolution API
+ *     parameters:
+ *       - in: path
+ *         name: instance_name
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 50
+ *           pattern: '^[a-zA-Z0-9_-]+$'
+ *         description: Nome da instância
+ *       - in: header
+ *         name: apikey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API key para autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message
+ *             properties:
+ *               message:
+ *                 type: object
+ *                 required:
+ *                   - key
+ *                 properties:
+ *                   key:
+ *                     type: object
+ *                     required:
+ *                       - id
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: ID da mensagem de mídia
+ *               convertToMp4:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Converter para MP4 se aplicável
+ *           example:
+ *             message:
+ *               key:
+ *                 id: "message_key_id_here"
+ *             convertToMp4: false
+ *     responses:
+ *       200:
+ *         description: Media base64 retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     mediaType:
+ *                       type: string
+ *                       description: Tipo da mídia
+ *                     size:
+ *                       type: object
+ *                       properties:
+ *                         fileLength:
+ *                           type: string
+ *                           description: Tamanho do arquivo
+ *                         height:
+ *                           type: number
+ *                           description: Altura da imagem
+ *                         width:
+ *                           type: number
+ *                           description: Largura da imagem
+ *                     mimetype:
+ *                       type: string
+ *                       description: Tipo MIME do arquivo
+ *                     base64:
+ *                       type: string
+ *                       description: Dados em base64 da mídia
+ *                 message:
+ *                   type: string
+ *                   example: "Media base64 retrieved successfully"
+ *       400:
+ *         description: Bad request - missing required parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/getBase64FromMediaMessage/:instance_name', validateGetBase64FromMediaMessage, evolutionApiController.getBase64FromMediaMessage.bind(evolutionApiController));
 
 export default router;

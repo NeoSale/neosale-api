@@ -308,7 +308,7 @@ export class EvolutionApiController {
           message: 'Instance not found'
         });
       }
-      
+
       return res.json({
         success: true,
         data: { cliente_id: clienteId },
@@ -316,6 +316,49 @@ export class EvolutionApiController {
       });
     } catch (error: any) {
       console.error('Error in getClienteIdByInstanceName:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
+
+  async getBase64FromMediaMessage(req: Request, res: Response) {
+    try {
+      const { instance_name } = req.params;
+      const { message } = req.body;
+      const apikey = req.headers['apikey'] as string;
+      
+      if (!instance_name) {
+        return res.status(400).json({
+          success: false,
+          message: 'instance_name é obrigatório'
+        });
+      }
+
+      if (!message?.key?.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'message.key.id é obrigatório'
+        });
+      }
+
+      if (!apikey) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header apikey é obrigatório'
+        });
+      }
+
+      const mediaData = await evolutionApiService.getBase64FromMediaMessage(instance_name, message.key.id, apikey);
+      
+      return res.json({
+        success: true,
+        data: mediaData,
+        message: 'Media base64 retrieved successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in getBase64FromMediaMessage:', error);
       return res.status(500).json({
         success: false,
         message: error.message || 'Internal server error'

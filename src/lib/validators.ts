@@ -5,7 +5,7 @@ export const importLeadsSchema = z.object({
   leads: z.array(
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
-      telefone: z.string().min(1, 'Telefone é obrigatório'),
+      telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
       email: z.string().email('Email inválido'),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
@@ -19,7 +19,7 @@ export const bulkLeadsSchema = z.object({
   leads: z.array(
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
-      telefone: z.string().min(1, 'Telefone é obrigatório'),
+      telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
       email: z.string().email('Email inválido').optional(),
       empresa: z.string().optional(),
       cargo: z.string().optional()
@@ -68,7 +68,7 @@ export const paginationSchema = z.object({
 // Validator para atualização de lead
 export const updateLeadSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').optional(),
-  telefone: z.string().min(1, 'Telefone é obrigatório').optional(),
+  telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)').optional(),
   email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
@@ -120,7 +120,7 @@ export const updateFollowupSchema = z.object({
 // Validator para criação de um único lead
 export const createLeadSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
-  telefone: z.string().min(1, 'Telefone é obrigatório'),
+  telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
   email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
