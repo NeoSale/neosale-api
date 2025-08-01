@@ -688,6 +688,76 @@ class EvolutionApiService {
       throw new Error(`Failed to get base64 from media message: ${error.message}`);
     }
   }
+
+  private removeMarkdown(text: string): string {
+    return text
+      // Remove headers
+      .replace(/^#{1,6}\s+/gm, '')
+      // Remove bold and italic
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/__([^_]+)__/g, '$1')
+      .replace(/_([^_]+)_/g, '$1')
+      // Remove strikethrough
+      .replace(/~~([^~]+)~~/g, '$1')
+      // Remove code blocks
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      // Remove links
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      // Remove images
+      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+      // Remove horizontal rules
+      .replace(/^---+$/gm, '')
+      // Remove blockquotes
+      .replace(/^>\s+/gm, '')
+      // Remove list markers
+      .replace(/^[\s]*[-*+]\s+/gm, '')
+      .replace(/^[\s]*\d+\.\s+/gm, '')
+      // Clean up extra whitespace
+      .replace(/\n\s*\n/g, '\n')
+      .trim();
+  }
+
+  async sendText(instanceName: string, number: string, text: string, apikey: string): Promise<any> {
+    try {
+      console.log(`Sending text message to ${number} via instance: ${instanceName}`);
+
+      // Aplicar as transformações no texto conforme solicitado
+      const processedText = this.removeMarkdown(text)
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\//g, '\\/')
+        .replace(/\t/g, '\\t')
+        .replace(/\n/g, '\\n');
+
+      const url = `${this.baseUrl}/message/sendText/${instanceName}`;
+      
+      const response = await axios.post(url, {
+        number: number,
+        textMessage: {
+          text: processedText
+        }
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apikey
+        },
+        timeout: this.timeout
+      });
+
+      console.log('Text message sent successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('Error sending text message:', error.response?.data || error.message);
+      
+      if (error.response) {
+        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+      
+      throw new Error(`Failed to send text message: ${error.message}`);
+    }
+  }
 }
 
 export default new EvolutionApiService();

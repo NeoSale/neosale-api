@@ -2,12 +2,13 @@ import { supabase } from '../lib/supabase';
 import { CreateConfiguracoesInput, UpdateConfiguracoesInput } from '../lib/validators';
 
 export interface Configuracoes {
-  id: string;
   cliente_id: string;
   horario_inicio: string;
   horario_fim: string;
   qtd_envio_diario: number;
   somente_dias_uteis: boolean;
+  apiKeyOpenAI?: string;
+  PromptSDR?: string;
   created_at: string;
   updated_at: string;
 }
@@ -35,33 +36,29 @@ export class ConfiguracoesService {
     return data || [];
   }
 
-  static async getById(id: string, clienteId?: string): Promise<Configuracoes | null> {
+  static async getById(clienteId: string): Promise<Configuracoes | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    let query = supabase
+    const query = supabase
       .from('configuracoes')
       .select('*')
-      .eq('id', id);
-
-    if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
-    }
+      .eq('cliente_id', clienteId);
 
     const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null;
+        return null; // Não encontrado
       }
-      throw new Error(`Erro ao buscar configuração de followup: ${error.message}`);
+      throw new Error(`Erro ao buscar configuração: ${error.message}`);
     }
 
     return data;
   }
 
-  static async create(input: CreateConfiguracoesInput & { cliente_id: string }): Promise<Configuracoes> {
+  static async create(input: CreateConfiguracoesInput, clienteId: string): Promise<Configuracoes> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
@@ -69,8 +66,8 @@ export class ConfiguracoesService {
     // Verificar se já existe uma configuração para este cliente
     const { data: existingConfig } = await supabase
       .from('configuracoes')
-      .select('id')
-      .eq('cliente_id', input.cliente_id)
+      .select('cliente_id')
+      .eq('cliente_id', clienteId)
       .single();
 
     if (existingConfig) {
@@ -80,11 +77,13 @@ export class ConfiguracoesService {
     const { data, error } = await supabase
       .from('configuracoes')
       .insert({
-        cliente_id: input.cliente_id,
+        cliente_id: clienteId,
         horario_inicio: input.horario_inicio,
         horario_fim: input.horario_fim,
         qtd_envio_diario: input.qtd_envio_diario,
         somente_dias_uteis: input.somente_dias_uteis,
+        apiKeyOpenAI: input.apiKeyOpenAI,
+        PromptSDR: input.PromptSDR,
         updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
       })
       .select()
@@ -97,24 +96,18 @@ export class ConfiguracoesService {
     return data;
   }
 
-  static async update(id: string, input: UpdateConfiguracoesInput, clienteId?: string): Promise<Configuracoes> {
+  static async update(clienteId: string, input: UpdateConfiguracoesInput): Promise<Configuracoes> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('configuracoes')
       .update({
         ...input,
         updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
       })
-      .eq('id', id);
-
-    if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
-    }
-
-    const { data, error } = await query
+      .eq('cliente_id', clienteId)
       .select()
       .single();
 
@@ -125,22 +118,16 @@ export class ConfiguracoesService {
     return data;
   }
 
-  static async delete(id: string, clienteId?: string): Promise<void> {
+  static async delete(clienteId: string): Promise<void> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
-    let query = supabase
+    const { error } = await supabase
       .from('configuracoes')
       .delete()
-      .eq('id', id);
-
-    if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
-    }
-
-    const { error } = await query;
-
+      .eq('cliente_id', clienteId);
+    
     if (error) {
       throw new Error(`Erro ao deletar configuração de followup: ${error.message}`);
     }

@@ -32,16 +32,16 @@ export class ConfiguracoesController {
 
   static async getById(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
       
-      if (!id) {
+      if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'ID é obrigatório'
+          message: 'cliente_id é obrigatório'
         });
       }
 
-      const configuracao = await ConfiguracoesService.getById(id);
+      const configuracao = await ConfiguracoesService.getById(cliente_id);
       
       if (!configuracao) {
         return res.status(404).json({
@@ -85,10 +85,10 @@ export class ConfiguracoesController {
         });
       }
 
-      const configuracao = await ConfiguracoesService.create({
-        ...validationResult.data,
+      const configuracao = await ConfiguracoesService.create(
+        validationResult.data,
         cliente_id
-      });
+      );
       
       return res.status(201).json({
         success: true,
@@ -107,12 +107,12 @@ export class ConfiguracoesController {
 
   static async update(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
 
-      if (!id) {
+      if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'ID é obrigatório'
+          message: 'cliente_id é obrigatório'
         });
       }
 
@@ -127,7 +127,7 @@ export class ConfiguracoesController {
       }
 
       // Verificar se a configuração existe
-      const existingConfig = await ConfiguracoesService.getById(id);
+      const existingConfig = await ConfiguracoesService.getById(cliente_id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
@@ -135,7 +135,7 @@ export class ConfiguracoesController {
         });
       }
 
-      const configuracao = await ConfiguracoesService.update(id, validationResult.data);
+      const configuracao = await ConfiguracoesService.update(cliente_id, validationResult.data);
       
       return res.json({
         success: true,
@@ -154,17 +154,17 @@ export class ConfiguracoesController {
 
   static async delete(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
 
-      if (!id) {
+      if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'ID é obrigatório'
+          message: 'cliente_id é obrigatório'
         });
       }
 
       // Verificar se a configuração existe
-      const existingConfig = await ConfiguracoesService.getById(id);
+      const existingConfig = await ConfiguracoesService.getById(cliente_id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
@@ -172,7 +172,7 @@ export class ConfiguracoesController {
         });
       }
 
-      await ConfiguracoesService.delete(id);
+      await ConfiguracoesService.delete(cliente_id);
       
       return res.json({
         success: true,

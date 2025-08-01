@@ -365,6 +365,47 @@ export class EvolutionApiController {
       });
     }
   }
+
+  async sendText(req: Request, res: Response) {
+    try {
+      const { instancename } = req.params;
+      const { number, textMessage } = req.body;
+      const apikey = req.headers['apikey'] as string;
+      
+      if (!apikey) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header apikey é obrigatório'
+        });
+      }
+
+      if (!number || !textMessage?.text) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campos number e textMessage.text são obrigatórios'
+        });
+      }
+
+      const result = await evolutionApiService.sendText(
+        instancename,
+        number,
+        textMessage.text,
+        apikey
+      );
+      
+      return res.json({
+        success: true,
+        data: result,
+        message: 'Text message sent successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in sendText:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 }
 
 export const evolutionApiController = new EvolutionApiController();

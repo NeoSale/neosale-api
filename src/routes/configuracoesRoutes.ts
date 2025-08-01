@@ -10,14 +10,10 @@ const router = Router();
  *     Configuracoes:
  *       type: object
  *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *           description: ID único da configuração
  *         cliente_id:
  *           type: string
  *           format: uuid
- *           description: ID do cliente
+ *           description: ID do cliente (chave primária)
  *         horario_inicio:
  *           type: string
  *           description: Horário de início
@@ -38,6 +34,12 @@ const router = Router();
  *           type: string
  *           format: date-time
  *           description: Data de atualização
+ *         apiKeyOpenAI:
+ *           type: string
+ *           description: Chave da API OpenAI
+ *         PromptSDR:
+ *           type: string
+ *           description: Prompt para SDR
  *     CreateConfiguracoes:
  *       type: object
  *       required:
@@ -58,6 +60,12 @@ const router = Router();
  *         somente_dias_uteis:
  *           type: boolean
  *           description: Se deve enviar apenas em dias úteis
+ *         apiKeyOpenAI:
+ *           type: string
+ *           description: Chave da API OpenAI
+ *         PromptSDR:
+ *           type: string
+ *           description: Prompt para SDR
  */
 
 /**
@@ -99,18 +107,11 @@ router.get('/', ConfiguracoesController.getAll);
 
 /**
  * @swagger
- * /api/configuracoes/{id}:
+ * /api/configuracoes/cliente:
  *   get:
- *     summary: Obtém uma configuração por ID
+ *     summary: Obtém uma configuração por cliente_id
  *     tags: [Configurações]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da configuração
  *       - in: header
  *         name: cliente_id
  *         required: true
@@ -135,7 +136,7 @@ router.get('/', ConfiguracoesController.getAll);
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/:id', ConfiguracoesController.getById);
+router.get('/cliente', ConfiguracoesController.getById);
 
 /**
  * @swagger
@@ -180,18 +181,11 @@ router.post('/', ConfiguracoesController.create);
 
 /**
  * @swagger
- * /api/configuracoes/{id}:
+ * /api/configuracoes/cliente:
  *   put:
  *     summary: Atualiza uma configuração
  *     tags: [Configurações]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da configuração
  *       - in: header
  *         name: cliente_id
  *         required: true
@@ -224,22 +218,15 @@ router.post('/', ConfiguracoesController.create);
  *       500:
  *         description: Erro interno do servidor
  */
-router.put('/:id', ConfiguracoesController.update);
+router.put('/cliente', ConfiguracoesController.update);
 
 /**
  * @swagger
- * /api/configuracoes/{id}:
+ * /api/configuracoes/cliente:
  *   delete:
  *     summary: Remove uma configuração
  *     tags: [Configurações]
  *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID da configuração
  *       - in: header
  *         name: cliente_id
  *         required: true
@@ -264,6 +251,6 @@ router.put('/:id', ConfiguracoesController.update);
  *       500:
  *         description: Erro interno do servidor
  */
-router.delete('/:id', ConfiguracoesController.delete);
+router.delete('/cliente', ConfiguracoesController.delete);
 
 export default router;

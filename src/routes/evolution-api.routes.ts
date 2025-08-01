@@ -137,6 +137,35 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *                 $ref: '#/components/schemas/EvolutionApiInstance'
  *         message:
  *           type: string
+ *     SendTextRequest:
+ *       type: object
+ *       required:
+ *         - number
+ *         - textMessage
+ *       properties:
+ *         number:
+ *           type: string
+ *           description: Número do destinatário (com código do país)
+ *           example: "5511999999999"
+ *         textMessage:
+ *           type: object
+ *           required:
+ *             - text
+ *           properties:
+ *             text:
+ *               type: string
+ *               description: Texto da mensagem (será processado para remover markdown e escapar caracteres especiais)
+ *               example: "Olá! Esta é uma mensagem de teste."
+ *     SendTextResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *         data:
+ *           type: object
+ *           description: Dados de resposta da Evolution API
+ *         message:
+ *           type: string
  *   parameters:
  *     EvolutionApiInstanceId:
  *       name: id
@@ -262,6 +291,32 @@ const validateGetBase64FromMediaMessage = [
     .optional()
     .isBoolean()
     .withMessage('convertToMp4 must be a boolean'),
+  handleValidationErrors
+];
+
+const validateSendText = [
+  param('instancename')
+    .notEmpty()
+    .withMessage('instancename is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instancename must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instancename can only contain letters, numbers, underscores and hyphens'),
+  body('number')
+    .notEmpty()
+    .withMessage('number is required')
+    .isString()
+    .withMessage('number must be a string'),
+  body('textMessage')
+    .notEmpty()
+    .withMessage('textMessage is required')
+    .isObject()
+    .withMessage('textMessage must be an object'),
+  body('textMessage.text')
+    .notEmpty()
+    .withMessage('textMessage.text is required')
+    .isString()
+    .withMessage('textMessage.text must be a string'),
   handleValidationErrors
 ];
 
@@ -1009,5 +1064,48 @@ router.get('/cliente/:instanceName', validateInstanceName, evolutionApiControlle
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.post('/getBase64FromMediaMessage/:instance_name', validateGetBase64FromMediaMessage, evolutionApiController.getBase64FromMediaMessage.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/message/sendText/{instancename}:
+ *   post:
+ *     summary: Enviar mensagem de texto
+ *     description: Envia uma mensagem de texto através da instância especificada
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - name: instancename
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 50
+ *           pattern: '^[a-zA-Z0-9_-]+$'
+ *         description: Nome da instância
+ *       - name: apikey
+ *         in: header
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Chave de API para autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SendTextRequest'
+ *     responses:
+ *       200:
+ *         description: Mensagem enviada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SendTextResponse'
+ *       400:
+ *         description: Dados inválidos ou header apikey ausente
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/message/sendText/:instancename', validateSendText, evolutionApiController.sendText.bind(evolutionApiController));
 
 export default router;
