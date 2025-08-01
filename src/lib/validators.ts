@@ -177,19 +177,50 @@ export type UpdateParametroInput = z.infer<typeof updateParametroSchema>
 // ===== VALIDATORS PARA CONFIGURAÇÕES FOLLOWUP =====
 
 // Validator para criação de configuração followup
-export const createConfiguracaoFollowupSchema = z.object({
-  horario_inicio: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, 'Horário de início deve estar no formato HH:MM:SS'),
-  horario_fim: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, 'Horário de fim deve estar no formato HH:MM:SS'),
+export const createConfiguracoesSchema = z.object({
+  horario_inicio: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 24;
+  }, 'Horário de início deve ser um número entre 0 e 24').transform((val) => {
+    if (!val || val === '') return '08:00:00';
+    const num = parseInt(val);
+    return `${num.toString().padStart(2, '0')}:00:00`;
+  }),
+  horario_fim: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 24;
+  }, 'Horário de fim deve ser um número entre 0 e 24').transform((val) => {
+    if (!val || val === '') return '18:00:00';
+    const num = parseInt(val);
+    return `${num.toString().padStart(2, '0')}:00:00`;
+  }),
   qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0'),
   somente_dias_uteis: z.boolean(),
-  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   embedding: z.array(z.number()).optional()
 })
 
 // Validator para atualização de configuração followup
-export const updateConfiguracaoFollowupSchema = z.object({
-  horario_inicio: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, 'Horário de início deve estar no formato HH:MM:SS').optional(),
-  horario_fim: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, 'Horário de fim deve estar no formato HH:MM:SS').optional(),
+export const updateConfiguracoesSchema = z.object({
+  horario_inicio: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 24;
+  }, 'Horário de início deve ser um número entre 0 e 24').transform((val) => {
+    if (!val || val === '') return undefined;
+    const num = parseInt(val);
+    return `${num.toString().padStart(2, '0')}:00:00`;
+  }),
+  horario_fim: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    const num = parseInt(val);
+    return !isNaN(num) && num >= 0 && num <= 24;
+  }, 'Horário de fim deve ser um número entre 0 e 24').transform((val) => {
+    if (!val || val === '') return undefined;
+    const num = parseInt(val);
+    return `${num.toString().padStart(2, '0')}:00:00`;
+  }),
   qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
   somente_dias_uteis: z.boolean().optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
@@ -198,8 +229,8 @@ export const updateConfiguracaoFollowupSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-export type CreateConfiguracaoFollowupInput = z.infer<typeof createConfiguracaoFollowupSchema>
-export type UpdateConfiguracaoFollowupInput = z.infer<typeof updateConfiguracaoFollowupSchema>
+export type CreateConfiguracoesInput = z.infer<typeof createConfiguracoesSchema>
+export type UpdateConfiguracoesInput = z.infer<typeof updateConfiguracoesSchema>
 
 // ===== VALIDATORS PARA PROVEDORES =====
 

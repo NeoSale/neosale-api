@@ -21,10 +21,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_parametros_chave_cliente_unique ON paramet
 
 -- Insert initial configuration data
 INSERT INTO parametros (chave, valor) VALUES
-  ('limite_envios_diarios', '100'),
+  ('limite_envios_diarios', '50'),
   ('horario_inicio_envios', '08:00'),
   ('horario_fim_envios', '18:00'),
-  ('intervalo_entre_mensagens', '60'),
-  ('webhook_url', ''),
+  ('envia_somente_dias_uteis', 'true'),
+  ('webhook_url', 'https://project-neosale-n8n.lkqho4.easypanel.host/webhook'),
 
 ON CONFLICT DO NOTHING;

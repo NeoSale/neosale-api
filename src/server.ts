@@ -20,7 +20,7 @@ import referenciaRoutes from './routes/referenciaRoutes'
 import parametroRoutes from './routes/parametroRoutes'
 import mensagemRoutes from './routes/mensagemRoutes'
 import followupRoutes from './routes/followupRoutes'
-import configuracaoFollowupRoutes from './routes/configuracaoFollowupRoutes'
+import configuracoesRoutes from './routes/configuracoesRoutes'
 import provedorRoutes from './routes/provedorRoutes'
 import tipoAcessoRoutes from './routes/tipoAcessoRoutes'
 import revendedorRoutes from './routes/revendedorRoutes'
@@ -96,7 +96,7 @@ app.get('/', (req, res) => {
       parametros: `${BASE_URL}/api/parametros`,
       mensagens: `${BASE_URL}/api/mensagens`,
       followups: `${BASE_URL}/api/followups`,
-      parametrosFollowup: `${BASE_URL}/api/parametros-followup`,
+      configuracoes: `${BASE_URL}/api/configuracoes`,
       provedores: `${BASE_URL}/api/provedores`,
       tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
       revendedores: `${BASE_URL}/api/revendedores`,
@@ -116,7 +116,7 @@ app.use('/api/referencias', referenciaRoutes)
 app.use('/api/parametros', parametroRoutes)
 app.use('/api/mensagens', mensagemRoutes)
 app.use('/api/followups', followupRoutes)
-app.use('/api/parametros-followup', configuracaoFollowupRoutes)
+app.use('/api/configuracoes', configuracoesRoutes)
 app.use('/api/provedores', provedorRoutes)
 app.use('/api/tipos-acesso', tipoAcessoRoutes)
 app.use('/api/revendedores', revendedorRoutes)

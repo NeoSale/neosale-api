@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { CreateConfiguracaoFollowupInput, UpdateConfiguracaoFollowupInput } from '../lib/validators';
+import { CreateConfiguracoesInput, UpdateConfiguracoesInput } from '../lib/validators';
 
-export interface ConfiguracaoFollowup {
+export interface Configuracoes {
   id: string;
   cliente_id: string;
   horario_inicio: string;
@@ -12,14 +12,14 @@ export interface ConfiguracaoFollowup {
   updated_at: string;
 }
 
-export class ConfiguracaoFollowupService {
-  static async getAll(clienteId?: string): Promise<ConfiguracaoFollowup[]> {
+export class ConfiguracoesService {
+  static async getAll(clienteId?: string): Promise<Configuracoes[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
     let query = supabase
-      .from('configuracoes_followup')
+      .from('configuracoes')
       .select('*');
 
     if (clienteId) {
@@ -35,13 +35,13 @@ export class ConfiguracaoFollowupService {
     return data || [];
   }
 
-  static async getById(id: string, clienteId?: string): Promise<ConfiguracaoFollowup | null> {
+  static async getById(id: string, clienteId?: string): Promise<Configuracoes | null> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
     let query = supabase
-      .from('configuracoes_followup')
+      .from('configuracoes')
       .select('*')
       .eq('id', id);
 
@@ -61,13 +61,24 @@ export class ConfiguracaoFollowupService {
     return data;
   }
 
-  static async create(input: CreateConfiguracaoFollowupInput & { cliente_id: string }): Promise<ConfiguracaoFollowup> {
+  static async create(input: CreateConfiguracoesInput & { cliente_id: string }): Promise<Configuracoes> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
+    // Verificar se já existe uma configuração para este cliente
+    const { data: existingConfig } = await supabase
+      .from('configuracoes')
+      .select('id')
+      .eq('cliente_id', input.cliente_id)
+      .single();
+
+    if (existingConfig) {
+      throw new Error('Já existe uma configuração para este cliente');
+    }
+
     const { data, error } = await supabase
-      .from('configuracoes_followup')
+      .from('configuracoes')
       .insert({
         cliente_id: input.cliente_id,
         horario_inicio: input.horario_inicio,
@@ -86,13 +97,13 @@ export class ConfiguracaoFollowupService {
     return data;
   }
 
-  static async update(id: string, input: UpdateConfiguracaoFollowupInput, clienteId?: string): Promise<ConfiguracaoFollowup> {
+  static async update(id: string, input: UpdateConfiguracoesInput, clienteId?: string): Promise<Configuracoes> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
     }
 
     let query = supabase
-      .from('configuracoes_followup')
+      .from('configuracoes')
       .update({
         ...input,
         updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
@@ -120,7 +131,7 @@ export class ConfiguracaoFollowupService {
     }
 
     let query = supabase
-      .from('configuracoes_followup')
+      .from('configuracoes')
       .delete()
       .eq('id', id);
 

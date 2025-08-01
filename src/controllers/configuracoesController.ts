@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { ConfiguracaoFollowupService } from '../services/configuracaoFollowupService';
-import { createConfiguracaoFollowupSchema, updateConfiguracaoFollowupSchema } from '../lib/validators';
+import { ConfiguracoesService } from '../services/configuracoesService';
+import { createConfiguracoesSchema, updateConfiguracoesSchema } from '../lib/validators';
 
-export class ConfiguracaoFollowupController {
+export class ConfiguracoesController {
   static async getAll(req: Request, res: Response) {
     try {
-      const { cliente_id } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
       
       if (!cliente_id) {
         return res.status(400).json({
@@ -14,7 +14,7 @@ export class ConfiguracaoFollowupController {
         });
       }
       
-      const parametros = await ConfiguracaoFollowupService.getAll(cliente_id);
+      const parametros = await ConfiguracoesService.getAll(cliente_id);
       return res.status(200).json({
         success: true,
         data: parametros,
@@ -41,7 +41,7 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.getById(id);
+      const configuracao = await ConfiguracoesService.getById(id);
       
       if (!configuracao) {
         return res.status(404).json({
@@ -66,8 +66,17 @@ export class ConfiguracaoFollowupController {
 
   static async create(req: Request, res: Response) {
     try {
+      const cliente_id = req.headers.cliente_id as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+
       // Validar dados de entrada
-      const validationResult = createConfiguracaoFollowupSchema.safeParse(req.body);
+      const validationResult = createConfiguracoesSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
           success: false,
@@ -76,7 +85,10 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.create(validationResult.data);
+      const configuracao = await ConfiguracoesService.create({
+        ...validationResult.data,
+        cliente_id
+      });
       
       return res.status(201).json({
         success: true,
@@ -105,7 +117,7 @@ export class ConfiguracaoFollowupController {
       }
 
       // Validar dados de entrada
-      const validationResult = updateConfiguracaoFollowupSchema.safeParse(req.body);
+      const validationResult = updateConfiguracoesSchema.safeParse(req.body);
       if (!validationResult.success) {
         return res.status(400).json({
           success: false,
@@ -115,7 +127,7 @@ export class ConfiguracaoFollowupController {
       }
 
       // Verificar se a configuração existe
-      const existingConfig = await ConfiguracaoFollowupService.getById(id);
+      const existingConfig = await ConfiguracoesService.getById(id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
@@ -123,7 +135,7 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      const configuracao = await ConfiguracaoFollowupService.update(id, validationResult.data);
+      const configuracao = await ConfiguracoesService.update(id, validationResult.data);
       
       return res.json({
         success: true,
@@ -152,7 +164,7 @@ export class ConfiguracaoFollowupController {
       }
 
       // Verificar se a configuração existe
-      const existingConfig = await ConfiguracaoFollowupService.getById(id);
+      const existingConfig = await ConfiguracoesService.getById(id);
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
@@ -160,7 +172,7 @@ export class ConfiguracaoFollowupController {
         });
       }
 
-      await ConfiguracaoFollowupService.delete(id);
+      await ConfiguracoesService.delete(id);
       
       return res.json({
         success: true,

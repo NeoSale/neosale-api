@@ -59,7 +59,7 @@ WHERE table_schema = 'public'
 AND table_name IN (
   'migrations', 'provedores', 'tipos_acesso', 
   'revendedores', 'clientes', 'usuarios',
-  'configuracoes_followup'
+  'configuracoes'
 )
 ORDER BY table_name;
 
