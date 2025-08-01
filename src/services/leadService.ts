@@ -28,6 +28,7 @@ export class LeadService {
         `)
         .eq('telefone', data.telefone)
         .eq('deletado', false)
+        .eq('cliente_id', clienteId)
       
       if (phoneError) {
         console.error('❌ Erro ao verificar telefone:', phoneError)
@@ -52,6 +53,7 @@ export class LeadService {
           .select('id, nome, email')
           .eq('email', data.email)
           .eq('deletado', false)
+          .eq('cliente_id', clienteId)
           .single()
         
         if (existingEmail && !emailError) {
@@ -65,7 +67,7 @@ export class LeadService {
         // Se o campo 'origem' foi fornecido, buscar por nome, senão usar 'outbound'
         const nomeOrigem = (data as any).origem || 'outbound'
         
-        const origem = await ReferenciaService.buscarOrigemPorNome(nomeOrigem, clienteId)
+        const origem = await ReferenciaService.buscarOrigemPorNome(nomeOrigem)
         
         if (!origem) {
           throw new Error(`Origem "${nomeOrigem}" não encontrada. É necessário ter a origem "${nomeOrigem}" cadastrada.`)
@@ -170,6 +172,7 @@ export class LeadService {
           .select('id, nome, telefone, deletado')
           .eq('telefone', leadData.telefone)
           .eq('deletado', false)
+          .eq('cliente_id', clienteId)
           .single()
         
         if (phoneError && phoneError.code !== 'PGRST116') {
@@ -190,6 +193,7 @@ export class LeadService {
             .select('id, nome, email')
             .eq('email', leadData.email)
             .eq('deletado', false)
+            .eq('cliente_id', clienteId)
             .single()
           
           if (emailError && emailError.code !== 'PGRST116') {
@@ -281,6 +285,7 @@ export class LeadService {
           .select('id, nome, telefone')
           .eq('telefone', leadData.telefone)
           .eq('deletado', false)
+          .eq('cliente_id', clienteId)
           .single()
         
         if (phoneError && phoneError.code !== 'PGRST116') {
@@ -301,6 +306,7 @@ export class LeadService {
             .select('id, nome, email')
             .eq('email', leadData.email)
             .eq('deletado', false)
+            .eq('cliente_id', clienteId)
             .single()
           
           if (emailError && emailError.code !== 'PGRST116') {
