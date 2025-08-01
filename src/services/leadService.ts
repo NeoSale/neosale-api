@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
 import { generateLeadEmbedding } from '../lib/embedding'
+import { ReferenciaService } from './referenciaService'
 export class LeadService {
   // Verificar se Supabase está configurado
   private static checkSupabaseConnection() {
@@ -58,20 +59,19 @@ export class LeadService {
         }
       }
       
-      // Se origem_id não foi fornecido, usar origem 'outbound' como padrão
+      // Determinar origem_id baseado no campo 'origem' ou usar 'outbound' como padrão
       let origemId = data.origem_id
       if (!origemId) {
-        const { data: origens, error: origemError } = await supabase!
-          .from('origens_leads')
-          .select('id')
-          .eq('nome', 'outbound')
-          .single()
+        // Se o campo 'origem' foi fornecido, buscar por nome, senão usar 'outbound'
+        const nomeOrigem = (data as any).origem || 'outbound'
         
-        if (origemError || !origens) {
-          throw new Error('Origem "outbound" não encontrada. É necessário ter a origem "outbound" cadastrada.')
+        const origem = await ReferenciaService.buscarOrigemPorNome(nomeOrigem, clienteId)
+        
+        if (!origem) {
+          throw new Error(`Origem "${nomeOrigem}" não encontrada. É necessário ter a origem "${nomeOrigem}" cadastrada.`)
         }
         
-        origemId = origens.id
+        origemId = origem.id
       }
       
       // Gerar embedding para o lead

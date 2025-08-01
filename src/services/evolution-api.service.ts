@@ -598,6 +598,32 @@ class EvolutionApiService {
       throw new Error(`Failed to fetch instances from Evolution API: ${error.response?.data?.message || error.message}`);
     }
   }
+
+  async getClienteIdByInstanceName(instanceName: string): Promise<string | null> {
+    try {
+      console.log(`Getting cliente_id by instance name: ${instanceName}`);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      const { data: instance, error } = await supabase
+        .from('evolution_api')
+        .select('cliente_id')
+        .eq('instance_name', instanceName)
+        .single();
+
+      if (error || !instance) {
+        console.log('Instance not found with name:', instanceName);
+        return null;
+      }
+
+      return instance.cliente_id;
+    } catch (error: any) {
+      console.error('Error in getClienteIdByInstanceName:', error);
+      throw new Error(`Failed to get cliente_id by instance name: ${error.message}`);
+    }
+  }
 }
 
 export default new EvolutionApiService();

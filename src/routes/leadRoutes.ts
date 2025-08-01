@@ -38,6 +38,10 @@ const router = Router()
  *           type: string
  *         erp_atual:
  *           type: string
+ *         origem:
+ *           type: string
+ *           enum: [inbound, outbound]
+ *           description: Origem do lead (inbound ou outbound). Se não informado, será usado outbound como padrão
  *         origem_id:
  *           type: string
  *           format: uuid

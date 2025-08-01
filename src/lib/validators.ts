@@ -131,6 +131,9 @@ export const createLeadSchema = z.object({
   observacao: z.string().optional(),
   segmento: z.string().optional(),
   erp_atual: z.string().optional(),
+  origem: z.enum(['inbound', 'outbound'], {
+    errorMap: () => ({ message: 'Origem deve ser inbound ou outbound' })
+  }).optional(),
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),

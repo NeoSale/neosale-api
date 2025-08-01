@@ -295,6 +295,33 @@ export class EvolutionApiController {
       });
     }
   }
+
+  async getClienteIdByInstanceName(req: Request, res: Response) {
+    try {
+      const { instanceName } = req.params;
+      
+      const clienteId = await evolutionApiService.getClienteIdByInstanceName(instanceName);
+      
+      if (!clienteId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Instance not found'
+        });
+      }
+      
+      return res.json({
+        success: true,
+        data: { cliente_id: clienteId },
+        message: 'Cliente ID retrieved successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in getClienteIdByInstanceName:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 }
 
 export const evolutionApiController = new EvolutionApiController();

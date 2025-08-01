@@ -835,4 +835,53 @@ router.put('/:id', validateInstanceId, validateUpdateInstance, evolutionApiContr
  */
 router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evolutionApiController));
 
+/**
+ * @swagger
+ * /api/evolution-api/cliente/{instanceName}:
+ *   get:
+ *     summary: Get cliente_id by instance name
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: instanceName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nome da instância
+ *     responses:
+ *       200:
+ *         description: Cliente ID retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     cliente_id:
+ *                       type: string
+ *                       format: uuid
+ *                       description: ID do cliente
+ *                 message:
+ *                   type: string
+ *                   example: "Cliente ID retrieved successfully"
+ *       404:
+ *         description: Instance not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/cliente/:instanceName', validateInstanceName, evolutionApiController.getClienteIdByInstanceName.bind(evolutionApiController));
+
 export default router;
