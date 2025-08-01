@@ -726,7 +726,7 @@ router.put('/:id/mensagem', LeadController.atualizarMensagem)
  *         required: true
  *         schema:
  *           type: string
- *         description: Telefone do lead no formato 5599999999999
+ *         description: Telefone do lead
  *         example: "5511999999999"
  *     responses:
  *       200:

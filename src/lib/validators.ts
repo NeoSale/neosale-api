@@ -5,8 +5,8 @@ export const importLeadsSchema = z.object({
   leads: z.array(
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
-      telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
-      email: z.string().email('Email inválido'),
+      telefone: z.string().min(1, 'Telefone é obrigatório'),
+      email: z.string(),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
       origem_id: z.string().uuid('origem_id deve ser um UUID válido')
@@ -19,8 +19,8 @@ export const bulkLeadsSchema = z.object({
   leads: z.array(
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
-      telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
-      email: z.string().email('Email inválido').optional(),
+      telefone: z.string().min(1, 'Telefone é obrigatório'),
+      email: z.string().optional(),
       empresa: z.string().optional(),
       cargo: z.string().optional()
     })
@@ -68,7 +68,7 @@ export const paginationSchema = z.object({
 // Validator para atualização de lead
 export const updateLeadSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').optional(),
-  telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)').optional(),
+  telefone: z.string().min(1, 'Telefone é obrigatório').optional(),
   email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
@@ -120,7 +120,7 @@ export const updateFollowupSchema = z.object({
 // Validator para criação de um único lead
 export const createLeadSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
-  telefone: z.string().min(1, 'Telefone é obrigatório').regex(/^55\d{10,11}$/, 'Telefone deve estar no formato 5599999999999 (13 dígitos) ou 559999999999 (12 dígitos)'),
+  telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().optional(),
   empresa: z.string().optional(),
   cargo: z.string().optional(),
@@ -314,7 +314,7 @@ export type UpdateUsuarioAdminInput = z.infer<typeof updateUsuarioAdminSchema>
 // Validator para criação de revendedor
 export const createRevendedorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres'),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional().default('ativo'),
   embedding: z.array(z.number()).optional()
@@ -323,7 +323,7 @@ export const createRevendedorSchema = z.object({
 // Validator para atualização de revendedor
 export const updateRevendedorSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional(),
   embedding: z.array(z.number()).optional()
@@ -339,7 +339,7 @@ export type UpdateRevendedorInput = z.infer<typeof updateRevendedorSchema>
 // Validator para criação de cliente
 export const createClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres'),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional().default('ativo'),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido'),
@@ -349,7 +349,7 @@ export const createClienteSchema = z.object({
 // Validator para atualização de cliente
 export const updateClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional(),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
@@ -366,7 +366,7 @@ export type UpdateClienteInput = z.infer<typeof updateClienteSchema>
 // Validator para criação de usuário
 export const createUsuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres'),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   provedor_id: z.string().uuid('provedor_id deve ser um UUID válido'),
   ativo: z.boolean().optional().default(true),
@@ -376,7 +376,7 @@ export const createUsuarioSchema = z.object({
 // Validator para atualização de usuário
 export const updateUsuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   provedor_id: z.string().uuid('provedor_id deve ser um UUID válido').optional(),
   ativo: z.boolean().optional(),
@@ -552,7 +552,7 @@ export const updateUsuarioPermissaoSistemaSchema = z.object({
 // Schema para atualização de usuário com múltiplos relacionamentos
 export const updateUsuarioComRelacionamentosSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   provedor_id: z.string().uuid('provedor_id deve ser um UUID válido').optional(),
   ativo: z.boolean().optional(),
