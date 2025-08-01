@@ -724,12 +724,13 @@ class EvolutionApiService {
       console.log(`Sending text message to ${number} via instance: ${instanceName}`);
 
       // Aplicar as transformações no texto conforme solicitado
-      const processedText = this.removeMarkdown(text)
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"')
-        .replace(/\//g, '\\/')
-        .replace(/\t/g, '\\t')
-        .replace(/\n/g, '\\n');
+      const processedText = text;
+      // const processedText = this.removeMarkdown(text)
+      //   .replace(/\\/g, "\\\\")
+      //   .replace(/"/g, '\\"')
+      //   .replace(/\//g, '\\/')
+      //   .replace(/\t/g, '\\t')
+      //   .replace(/\n/g, '\\n');
 
       const url = `${this.baseUrl}/message/sendText/${instanceName}`;
       
