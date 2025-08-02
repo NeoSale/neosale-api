@@ -374,11 +374,12 @@ export class LeadController {
         });
       }
       
-      const leads = await LeadService.listarTodos(cliente_id)
+      const result = await LeadService.listarTodos(cliente_id)
       
       return res.status(200).json({
         success: true,
-        data: leads,
+        data: result.leads,
+        total: result.total,
         message: 'Leads listados com sucesso'
       })
     } catch (error) {

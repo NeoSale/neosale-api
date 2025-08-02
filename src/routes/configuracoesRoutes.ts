@@ -40,6 +40,12 @@ const router = Router();
  *         PromptSDR:
  *           type: string
  *           description: Prompt para SDR
+ *         PromptCalendar:
+ *           type: string
+ *           description: Prompt para Calendar
+ *         UsaCalendar:
+ *           type: string
+ *           description: Usa Calendar
  *     CreateConfiguracoes:
  *       type: object
  *       required:
@@ -66,6 +72,12 @@ const router = Router();
  *         PromptSDR:
  *           type: string
  *           description: Prompt para SDR
+ *         PromptCalendar:
+ *           type: string
+ *           description: Prompt para Calendar
+ *         UsaCalendar:
+ *           type: string
+ *           description: Usa Calendar
  */
 
 /**

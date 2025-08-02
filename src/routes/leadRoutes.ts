@@ -90,6 +90,9 @@ const router = Router()
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Lead'
+ *                 total:
+ *                   type: integer
+ *                   description: Total de leads encontrados
  *                 message:
  *                   type: string
  */

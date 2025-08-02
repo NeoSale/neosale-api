@@ -9,6 +9,8 @@ export interface Configuracoes {
   somente_dias_uteis: boolean;
   apiKeyOpenAI?: string;
   PromptSDR?: string;
+  PromptCalendar?: string;
+  UsaCalendar?: string;
   created_at: string;
   updated_at: string;
 }

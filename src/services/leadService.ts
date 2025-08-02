@@ -652,30 +652,52 @@ export class LeadService {
   static async listarTodos(clienteId?: string) {
     LeadService.checkSupabaseConnection();
     
-    let query = supabase!
+    // Primeiro, contar o total de leads
+    let countQuery = supabase!
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('deletado', false)
+    
+    if (clienteId) {
+      countQuery = countQuery.eq('cliente_id', clienteId)
+    }
+    
+    const { count, error: countError } = await countQuery
+    
+    if (countError) {
+      console.error('❌ Erro ao contar leads:', countError)
+      throw countError
+    }
+    
+    // Depois, buscar os dados dos leads
+    let dataQuery = supabase!
       .from('leads')
       .select(`
         *,
-        followup:followup_id(*),
-        origem:origem_id(*),
-        etapa_funil:etapa_funil_id(*),
-        status_negociacao:status_negociacao_id(*)
+        followup (*),
+        origem:origem_id (nome),
+        etapa_funil:etapa_funil_id (nome),
+        status_negociacao:status_negociacao_id (nome)
       `)
       .eq('deletado', false)
     
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId)
+      dataQuery = dataQuery.eq('cliente_id', clienteId)
     }
     
-    const { data: leads, error } = await query.order('created_at', { ascending: false })
+    const { data: leads, error } = await dataQuery.order('created_at', { ascending: false })
     
     if (error) {
       console.error('❌ Erro ao listar leads:', error)
       throw error
     }
     
-    console.log('✅ Leads listados:', leads?.length || 0, 'encontrados')
-    return leads || []
+    console.log('✅ Leads listados:', leads?.length || 0, 'encontrados de', count, 'total')
+    
+    return {
+      leads: leads || [],
+      total: count || 0
+    }
   }
 
   // Listar leads com paginação

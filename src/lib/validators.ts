@@ -200,6 +200,8 @@ export const createConfiguracoesSchema = z.object({
   somente_dias_uteis: z.boolean(),
   apiKeyOpenAI: z.string().optional(),
   PromptSDR: z.string().optional(),
+  PromptCalendar: z.string().optional(),
+  UsaCalendar: z.string().optional(),
   embedding: z.array(z.number()).optional()
 })
 
@@ -227,6 +229,8 @@ export const updateConfiguracoesSchema = z.object({
   somente_dias_uteis: z.boolean().optional(),
   apiKeyOpenAI: z.string().optional(),
   PromptSDR: z.string().optional(),
+  PromptCalendar: z.string().optional(),
+  UsaCalendar: z.string().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
