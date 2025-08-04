@@ -124,10 +124,10 @@ class EvolutionApiService {
       // Nota: webhook_url e webhook_events devem ser configurados separadamente
       // após a criação da instância usando o endpoint /webhook/set/{instance}
 
-      const url = `${this.baseUrl}/instance/create`;
+      const urlCreate = `${this.baseUrl}/instance/create`;
 
-      const response = await axios.post(
-        url,
+      const responseCreate = await axios.post(
+        urlCreate,
         createPayload,
         {
           headers: {
@@ -138,7 +138,7 @@ class EvolutionApiService {
         }
       );
 
-      const createdInstance = response.data;
+      const createdInstance = responseCreate.data;
       console.log('Evolution API create response:', JSON.stringify(createdInstance, null, 2));
 
       if (!createdInstance || !createdInstance.instance || !createdInstance.instance.instanceName) {
@@ -149,14 +149,17 @@ class EvolutionApiService {
       const instanceName = createdInstance.instance.instanceName;
 
       // 2. Configurar webhook se fornecido
-      if (instanceData.webhook_url && instanceData.webhook_events && instanceData.webhook_events.length > 0) {
-        try {
-          await this.setWebhook(instanceId, instanceData.webhook_url, instanceData.webhook_events);
-          console.log(`Webhook configured for instance: ${instanceId}`);
-        } catch (webhookError) {
-          console.error('Error configuring webhook:', webhookError);
-          // Não falhar a criação da instância se o webhook falhar
-        }
+      try {
+        await this.setWebhook(instanceName, clienteId);
+        console.log(`Webhook configured for instance: ${instanceId}`);
+      } catch (webhookError) {
+        console.error('Error configuring webhook:', webhookError);
+        // Não falhar a criação da instância se o webhook falhar
+      }
+
+      // Configure settings in Evolution API
+      if (createPayload.settings) {
+        await this.configureSettings(instanceData.instance_name, createPayload.settings);
       }
 
       // 3. Salvar referência na tabela local
@@ -206,17 +209,87 @@ class EvolutionApiService {
     }
   }
 
-  async setWebhook(instanceId: string, webhookUrl: string, events: string[]): Promise<void> {
+  async getInstanceSettings(instanceName: string): Promise<any> {
     try {
-      const url = `${this.baseUrl}/webhook/set/${instanceId}`;
+      const settingsResponse = await axios.get(
+        `${this.baseUrl}/settings/find/${instanceName}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.apiKey
+          },
+          timeout: this.timeout
+        }
+      );
+      return settingsResponse.data;
+    } catch (error: any) {
+      console.error(`Error fetching settings for instance ${instanceName}:`, error);
+      throw error;
+    }
+  }
+
+  async configureSettings(instanceName: string, settings: any): Promise<void> {
+
+    console.log(`Configuring settings for instance: ${instanceName}`);
+    console.log('Settings:', settings);
+    
+    try {
+      const settingsResponse = await axios.post(
+        `${this.baseUrl}/settings/set/${instanceName}`,
+        settings,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': this.apiKey
+          },
+          timeout: this.timeout
+        }
+      );
+      console.log('Settings configured successfully:', settingsResponse.data);
+    } catch (settingsError) {
+      console.error('Error configuring settings:', settingsError);
+      // Continue even if settings configuration fails
+      throw settingsError;
+    }
+  }
+
+  async setWebhook(instanceName: string, clienteId: string): Promise<void> {
+    try {
+
+      // Get webhook URL from parameters table
+      const { data: webhookParam, error: webhookError } = await supabase!
+        .from('parametros')
+        .select('valor')
+        .eq('chave', 'webhook_url')
+        .single();
+
+      if (webhookError || !webhookParam) {
+        throw new Error('Webhook URL parameter not found');
+      }
+
+      // Get client nickname from database
+      const { data: clientData, error: clientError } = await supabase!
+        .from('clientes')
+        .select('nickname')
+        .eq('id', clienteId)
+        .single();
+
+      if (clientError || !clientData?.nickname) {
+        throw new Error('Client nickname not found');
+      }
+
+      const webhookUrl = `${webhookParam.valor}/${clientData.nickname}`;
+      const events = ["MESSAGES_UPSERT"]; // Default events to listen for
+
+      const url = `${this.baseUrl}/webhook/set/${instanceName}`;
       const payload = {
         url: webhookUrl,
         webhook_by_events: false,
-        webhook_base64: false,
+        webhook_base64: true,
         events: events
       };
 
-      console.log(`Setting webhook for instance ${instanceId}:`, JSON.stringify(payload, null, 2));
+      console.log(`Setting webhook for instance ${instanceName}:`, JSON.stringify(payload, null, 2));
 
       const response = await axios.post(
         url,
@@ -491,48 +564,18 @@ class EvolutionApiService {
 
       // Primeiro, chamar o endpoint /settings/set/{instanceName} com as configurações
       const settingsData = {
-        always_online: updateData.settings?.always_online || true,
-        groups_ignore: updateData.settings?.groups_ignore || true,
-        msg_call: updateData.settings?.msg_call || "",
-        read_messages: updateData.settings?.read_messages || false,
-        read_status: updateData.settings?.read_status || false,
-        reject_call: updateData.settings?.reject_call || false,
-        sync_full_history: updateData.settings?.sync_full_history || false
+        always_online: updateData.settings?.always_online,
+        groups_ignore: updateData.settings?.groups_ignore,
+        msg_call: updateData.settings?.msg_call,
+        read_messages: updateData.settings?.read_messages,
+        read_status: updateData.settings?.read_status,
+        reject_call: updateData.settings?.reject_call,
+        sync_full_history: updateData.settings?.sync_full_history,
       };
 
-      const settingsResponse = await axios.post(
-        `${this.baseUrl}/settings/set/${instanceName}`,
-        settingsData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': this.apiKey
-          },
-          timeout: this.timeout
-        }
-      );
-
-      console.log(`Instance ${instanceName} settings updated successfully`);
-
-      // Depois, chamar o endpoint /webhook/set/{instanceName} com as configurações de webhook
-      const webhookData = {
-        enabled: updateData.enabled,
-        events: ["MESSAGES_UPSERT"],
-        url: updateData.webhook_url,
-        webhook_base64: true
-      };
-
-      const webhookResponse = await axios.post(
-        `${this.baseUrl}/webhook/set/${instanceName}`,
-        webhookData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': this.apiKey
-          },
-          timeout: this.timeout
-        }
-      );
+      if (updateData.settings) {
+        await this.configureSettings(instanceData.instance_name, settingsData);
+      }
 
       console.log(`Instance ${instanceName} webhook updated successfully`);
 
@@ -574,23 +617,38 @@ class EvolutionApiService {
         throw new Error('Invalid response format from Evolution API');
       }
 
+      
+
       // Filtrar apenas as instâncias que pertencem ao cliente e mapear para o formato esperado
-      const filteredInstances = allInstances
-        .filter(item => instanceIds.includes(item.instance.instanceId))
-        .map(item => ({
-          instance: {
-            instanceId: item.instance.instanceId,
-            instanceName: item.instance.instanceName,
-            webhook_wa_business: item.instance.integration.webhook_wa_business,
-            owner: item.instance.owner,
-            profileName: item.instance.profileName,
-            status: item.instance.status,
-            profilePictureUrl: item.instance.profilePictureUrl,
-            profileStatus: item.instance.profileStatus,
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as any));
+      const filteredInstances = await Promise.all(
+        allInstances
+          .filter(item => instanceIds.includes(item.instance.instanceId))
+          .map(async item => {
+            // Buscar settings da instância
+            let settings = null;
+            try {
+              settings = await this.getInstanceSettings(item.instance.instanceName);
+            } catch (error) {
+              console.error(`Error fetching settings for instance ${item.instance.instanceName}:`, error);
+            }
+
+            return {
+              instance: {
+                instanceId: item.instance.instanceId,
+                instanceName: item.instance.instanceName,
+                webhook_wa_business: item.instance.integration.webhook_wa_business,
+                owner: item.instance.owner,
+                profileName: item.instance.profileName,
+                status: item.instance.status,
+                profilePictureUrl: item.instance.profilePictureUrl,
+                profileStatus: item.instance.profileStatus,
+                settings: settings,
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            } as any;
+          })
+      );
 
       return filteredInstances;
     } catch (error: any) {
@@ -634,7 +692,7 @@ class EvolutionApiService {
       }
 
       const url = `${this.baseUrl}/chat/getBase64FromMediaMessage/${instanceName}`;
-      
+
       const requestBody = {
         message: {
           key: {
@@ -643,11 +701,11 @@ class EvolutionApiService {
         },
         convertToMp4: false
       };
-      
+
       console.log('Request URL:', url);
       console.log('Request Body:', JSON.stringify(requestBody, null, 2));
       console.log('Request Headers:', { 'apikey': apikey ? '[REDACTED]' : 'NOT_PROVIDED', 'Content-Type': 'application/json' });
-      
+
       const response = await axios.post(url, requestBody, {
         headers: {
           'apikey': apikey,
@@ -657,7 +715,7 @@ class EvolutionApiService {
       });
 
       console.log('Evolution API response status:', response.status);
-      
+
       if (response.status !== 200 && response.status !== 201) {
         throw new Error(`Evolution API returned status ${response.status}`);
       }
@@ -665,26 +723,26 @@ class EvolutionApiService {
       return response.data;
     } catch (error: any) {
       console.error('Error in getBase64FromMediaMessage:', error.message);
-      
+
       if (error.response) {
         console.error('Evolution API error details:');
         console.error('Status:', error.response.status);
         console.error('Status Text:', error.response.statusText);
         console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
         console.error('Response Headers:', error.response.headers);
-        
+
         // Verificar se é um erro específico de mensagem não encontrada
         if (error.response.status === 400 && error.response.data?.response?.message?.includes('Message not found')) {
           throw new Error('Message not found - The message ID may be invalid or the message may have expired');
         }
-        
+
         throw new Error(`Evolution API error: ${error.response.data?.message || error.response.data?.response?.message || error.response.statusText}`);
       }
-      
+
       if (error.code === 'ECONNREFUSED') {
         throw new Error('Unable to connect to Evolution API server');
       }
-      
+
       throw new Error(`Failed to get base64 from media message: ${error.message}`);
     }
   }
@@ -733,7 +791,7 @@ class EvolutionApiService {
       //   .replace(/\n/g, '\\n');
 
       const url = `${this.baseUrl}/message/sendText/${instanceName}`;
-      
+
       const response = await axios.post(url, {
         number: number,
         textMessage: {
@@ -751,11 +809,11 @@ class EvolutionApiService {
       return response.data;
     } catch (error: any) {
       console.error('Error sending text message:', error.response?.data || error.message);
-      
+
       if (error.response) {
         throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       }
-      
+
       throw new Error(`Failed to send text message: ${error.message}`);
     }
   }

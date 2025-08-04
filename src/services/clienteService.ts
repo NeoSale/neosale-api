@@ -6,6 +6,7 @@ export interface Cliente {
   nome: string;
   email: string;
   telefone?: string;
+  nickname?: string;
   status: string;
   revendedor_id?: string;
   created_at: string;
@@ -21,6 +22,18 @@ export interface ClienteWithRevendedor extends Cliente {
 }
 
 export class ClienteService {
+  // Função para gerar nickname a partir do nome
+  private static generateNickname(nome: string): string {
+    return nome
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais exceto espaços e hífens
+      .trim()
+      .replace(/\s+/g, '-') // Substitui espaços por hífens
+      .replace(/-+/g, '-') // Remove hífens duplicados
+      .replace(/^-|-$/g, ''); // Remove hífens do início e fim
+  }
   static async getAllClientes(): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
@@ -200,12 +213,39 @@ export class ClienteService {
       throw new Error('Supabase client não está inicializado');
     }
 
+    // Gerar nickname automaticamente se não foi fornecido
+    let nickname = input.nickname;
+    if (!nickname) {
+      nickname = this.generateNickname(input.nome);
+      
+      // Verificar se o nickname já existe e adicionar sufixo se necessário
+      let counter = 1;
+      let finalNickname = nickname;
+      
+      while (true) {
+        const { data: existingClient } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('nickname', finalNickname)
+          .single();
+        
+        if (!existingClient) {
+          nickname = finalNickname;
+          break;
+        }
+        
+        finalNickname = `${nickname}-${counter}`;
+        counter++;
+      }
+    }
+
     const { data, error } = await supabase
       .from('clientes')
       .insert({
         nome: input.nome,
         email: input.email,
         telefone: input.telefone,
+        nickname: nickname,
         status: input.status ?? 'ativo',
         revendedor_id: input.revendedor_id,
         updated_at: new Date().toISOString()
