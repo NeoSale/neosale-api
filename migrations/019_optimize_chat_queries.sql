@@ -13,7 +13,8 @@ RETURNS TABLE (
   session_id UUID,
   nome TEXT,
   ultima_mensagem TEXT,
-  data_ultima_mensagem TIMESTAMP
+  data_ultima_mensagem TIMESTAMP,
+  profile_picture_url TEXT
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -24,6 +25,7 @@ BEGIN
       l.nome,
       ch.message as ultima_mensagem,
       ch.created_at as data_ultima_mensagem,
+      l.profile_picture_url,
       ROW_NUMBER() OVER (
         PARTITION BY l.nome 
         ORDER BY ch.created_at DESC NULLS LAST, l.created_at DESC
@@ -46,7 +48,8 @@ BEGIN
     llm.session_id,
     llm.nome,
     llm.ultima_mensagem,
-    llm.data_ultima_mensagem
+    llm.data_ultima_mensagem,
+    llm.profile_picture_url
   FROM lead_last_messages llm
   WHERE llm.rn = 1
   ORDER BY llm.data_ultima_mensagem DESC NULLS LAST

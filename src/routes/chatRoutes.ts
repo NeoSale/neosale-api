@@ -100,6 +100,70 @@ const router = Router();
  *             totalPages:
  *               type: integer
  *               example: 2
+ *     
+ *     LeadWithLastMessage:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: ID único do lead
+ *           example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *         session_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da sessão (mesmo que o ID do lead)
+ *           example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *         nome:
+ *           type: string
+ *           description: Nome do lead
+ *           example: "João Silva"
+ *         ultima_mensagem:
+ *           type: object
+ *           nullable: true
+ *           description: Última mensagem do lead
+ *           example: {"type":"human","content":"Olá, tenho interesse no produto"}
+ *         data_ultima_mensagem:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Data da última mensagem
+ *           example: "2024-01-15T10:30:00Z"
+ *         profile_picture_url:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           description: URL da foto de perfil do lead
+ *           example: "https://example.com/profile.jpg"
+ *     
+ *     LeadsWithLastMessageResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Leads com última mensagem encontrados"
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/LeadWithLastMessage'
+ *         pagination:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: integer
+ *               example: 100
+ *             page:
+ *               type: integer
+ *               example: 1
+ *             limit:
+ *               type: integer
+ *               example: 50
+ *             totalPages:
+ *               type: integer
+ *               example: 2
  */
 
 /**
@@ -175,7 +239,7 @@ router.post('/', validateRequest(createChatHistorySchema), ChatController.create
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ChatHistoriesListResponse'
+ *               $ref: '#/components/schemas/LeadsWithLastMessageResponse'
  *       400:
  *         description: cliente_id é obrigatório
  *       500:

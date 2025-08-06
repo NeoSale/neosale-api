@@ -103,6 +103,11 @@ const options: swaggerJSDoc.Options = {
               format: 'uuid',
               description: 'ID do status de negociação'
             },
+            profile_picture_url: {
+              type: 'string',
+              format: 'uri',
+              description: 'URL da foto de perfil do lead'
+            },
             created_at: {
               type: 'string',
               format: 'date-time',

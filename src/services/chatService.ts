@@ -181,7 +181,7 @@ export class ChatService {
       // Primeiro, buscar todos os leads ativos do cliente
       const { data: allLeads, error: leadsError } = await supabase!
         .from('leads')
-        .select('id, nome')
+        .select('id, nome, profile_picture_url')
         .eq('cliente_id', clienteId)
         .eq('deletado', false);
 
@@ -220,7 +220,8 @@ export class ChatService {
           session_id: lead.id,
           nome: lead.nome,
           ultima_mensagem: lastMessage?.message || null,
-          data_ultima_mensagem: lastMessage?.created_at || null
+          data_ultima_mensagem: lastMessage?.created_at || null,
+          profile_picture_url: lead.profile_picture_url || null
         };
 
         // Se não existe lead com esse nome ou se a mensagem atual é mais recente
