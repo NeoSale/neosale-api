@@ -14,7 +14,8 @@ RETURNS TABLE (
   nome TEXT,
   ultima_mensagem TEXT,
   data_ultima_mensagem TIMESTAMP,
-  profile_picture_url TEXT
+  profile_picture_url TEXT,
+  telefone TEXT
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -26,6 +27,7 @@ BEGIN
       ch.message as ultima_mensagem,
       ch.created_at as data_ultima_mensagem,
       l.profile_picture_url,
+      l.telefone,
       ROW_NUMBER() OVER (
         PARTITION BY l.nome 
         ORDER BY ch.created_at DESC NULLS LAST, l.created_at DESC
@@ -49,7 +51,8 @@ BEGIN
     llm.nome,
     llm.ultima_mensagem,
     llm.data_ultima_mensagem,
-    llm.profile_picture_url
+    llm.profile_picture_url,
+    llm.telefone
   FROM lead_last_messages llm
   WHERE llm.rn = 1
   ORDER BY llm.data_ultima_mensagem DESC NULLS LAST

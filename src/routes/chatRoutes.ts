@@ -135,6 +135,11 @@ const router = Router();
  *           nullable: true
  *           description: URL da foto de perfil do lead
  *           example: "https://example.com/profile.jpg"
+ *         telefone:
+ *           type: string
+ *           nullable: true
+ *           description: Número de telefone do lead
+ *           example: "+5511999999999"
  *     
  *     LeadsWithLastMessageResponse:
  *       type: object

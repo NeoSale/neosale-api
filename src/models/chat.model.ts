@@ -30,6 +30,7 @@ export interface LeadWithLastMessageResponse {
   ultima_mensagem: string | null;
   data_ultima_mensagem: string | null;
   profile_picture_url: string | null;
+  telefone: string | null;
 }
 
 export interface GetChatHistoriesResponse {
