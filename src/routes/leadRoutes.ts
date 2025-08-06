@@ -251,6 +251,10 @@ router.get('/stats', LeadController.obterEstatisticas)
  *                 type: string
  *                 format: uuid
  *                 description: ID da qualificação (opcional)
+ *               profile_picture_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: URL da foto de perfil do lead (opcional)
  *             required:
  *               - nome
  *               - telefone
@@ -263,12 +267,13 @@ router.get('/stats', LeadController.obterEstatisticas)
  *               contador: "1"
  *               escritorio: "Escritório Central"
  *               responsavel: "Maria Santos"
-*               cnpj: "12.345.678/0001-90"
+ *               cnpj: "12.345.678/0001-90"
  *               observacao: "Cliente interessado em ERP"
  *               segmento: "Tecnologia"
  *               erp_atual: "SAP"
  *               origem_id: "123e4567-e89b-12d3-a456-426614174000"
  *               qualificacao_id: "456e7890-e89b-12d3-a456-426614174001"
+ *               profile_picture_url: "https://example.com/profile.jpg"
  *     responses:
  *       201:
  *         description: Lead criado com sucesso
@@ -583,6 +588,10 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *                 type: string
  *                 format: uuid
  *                 description: ID da qualificação
+ *               profile_picture_url:
+ *                 type: string
+ *                 format: uri
+ *                 description: URL da foto de perfil do lead
  *               status_agendamento:
  *                 type: boolean
  *                 description: Status de agendamento
@@ -598,6 +607,7 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *               nome: "João Silva"
  *               telefone: "(11) 99999-9999"
  *               email: "joao@email.com"
+ *               profile_picture_url: "https://example.com/profile.jpg"
  *     responses:
  *       200:
  *         description: Lead atualizado com sucesso
@@ -787,6 +797,65 @@ router.get('/telefone/:telefone', validateClienteId, LeadController.buscarPorTel
  *         description: Erro interno do servidor
  */
 router.get('/debug/cliente-id', LeadController.testeClienteId)
+
+/**
+ * @swagger
+ * /api/leads/{id}/ai-habilitada:
+ *   put:
+ *     summary: Atualizar campo ai_habilitada do lead
+ *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do lead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - ai_habilitada
+ *             properties:
+ *               ai_habilitada:
+ *                 type: boolean
+ *                 description: Indica se a IA está habilitada para este lead
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: Campo ai_habilitada atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     nome:
+ *                       type: string
+ *                     ai_habilitada:
+ *                       type: boolean
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/:id/ai-habilitada', validateClienteId, LeadController.atualizarAiHabilitada)
 
 /**
  * @swagger

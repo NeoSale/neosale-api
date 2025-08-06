@@ -320,6 +320,22 @@ const validateSendText = [
   handleValidationErrors
 ];
 
+const validateFetchProfilePictureUrl = [
+  param('instance_name')
+    .notEmpty()
+    .withMessage('instance_name is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instance_name must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instance_name can only contain letters, numbers, underscores and hyphens'),
+  body('number')
+    .notEmpty()
+    .withMessage('number is required')
+    .isString()
+    .withMessage('number must be a string'),
+  handleValidationErrors
+];
+
 const validateUpdateInstance = [
   body('instance_name')
     .optional()
@@ -1107,5 +1123,47 @@ router.post('/getBase64FromMediaMessage/:instance_name', validateGetBase64FromMe
  *         description: Erro interno do servidor
  */
 router.post('/message/sendText/:instancename', validateSendText, evolutionApiController.sendText.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/chat/fetchProfilePictureUrl/{instance_name}:
+ *   post:
+ *     summary: Fetch profile picture URL
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: instance_name
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Instance name
+ *       - in: header
+ *         name: apikey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API key for authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - number
+ *             properties:
+ *               number:
+ *                 type: string
+ *                 description: Phone number
+ *                 example: "5511999999999"
+ *     responses:
+ *       200:
+ *         description: Profile picture URL fetched successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/chat/fetchProfilePictureUrl/:instance_name', validateFetchProfilePictureUrl, evolutionApiController.fetchProfilePictureUrl.bind(evolutionApiController));
 
 export default router;

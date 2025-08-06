@@ -93,6 +93,7 @@ export class LeadService {
           responsavel: data.responsavel || null,
           cnpj: data.cnpj || null,
           observacao: data.observacao || null,
+          profile_picture_url: data.profile_picture_url || null,
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
           origem_id: origemId,
@@ -1007,6 +1008,42 @@ export class LeadService {
       
     } catch (error) {
       console.error('❌ Erro no serviço de exclusão:', error)
+      throw error
+    }
+  }
+
+  // Atualizar campo ai_habilitada do lead
+  static async atualizarAiHabilitada(id: string, aiHabilitada: boolean, clienteId?: string) {
+    LeadService.checkSupabaseConnection();
+    console.log(`🔄 Atualizando ai_habilitada do lead ${id} para:`, aiHabilitada)
+    
+    try {
+      // Construir query base
+      let query = supabase!
+        .from('leads')
+        .update({ ai_habilitada: aiHabilitada })
+        .eq('id', id)
+        .eq('deletado', false)
+      
+      // Adicionar filtro de cliente se fornecido
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId)
+      }
+      
+      const { data, error } = await query.select('id, nome, ai_habilitada').single()
+      
+      if (error) {
+        console.error('❌ Erro ao atualizar ai_habilitada:', error)
+        if (error.code === 'PGRST116') {
+          throw new Error('Lead não encontrado')
+        }
+        throw error
+      }
+      
+      console.log('✅ Campo ai_habilitada atualizado com sucesso:', data)
+      return data
+    } catch (error) {
+      console.error('❌ Erro ao atualizar ai_habilitada:', error)
       throw error
     }
   }

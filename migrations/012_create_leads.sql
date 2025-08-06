@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS leads (
   qualificacao_id uuid REFERENCES qualificacao(id),
   followup_id uuid REFERENCES followup(id),
   deletado boolean DEFAULT false,
+  ai_habilitada boolean DEFAULT true, -- indica se a IA está habilitada para este lead
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
+  profile_picture_url text, -- URL da foto de perfil do lead
+  instance_name text, -- nome da instância do Evolution API associada ao lead
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp DEFAULT now()
 );

@@ -1,0 +1,391 @@
+import { Router } from 'express';
+import { ChatController } from '../controllers/chatController';
+import { validateRequest } from '../middleware/validate-request';
+import { createChatHistorySchema, updateChatHistorySchema, sessionIdParamSchema, idParamSchema, numericIdParamSchema, paginationSchema } from '../lib/validators';
+
+const router = Router();
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     ChatHistory:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID único da mensagem
+ *           example: 1
+ *         session_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da sessão (referencia o ID do lead)
+ *           example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *         message:
+ *           type: object
+ *           description: Conteúdo da mensagem em formato JSON
+ *           example: {"type":"ai","content":"Olá! Como posso ajudar?","tool_calls":[],"additional_kwargs":{},"response_metadata":{},"invalid_tool_calls":[]}
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data e hora de criação
+ *           example: "2024-01-15T10:30:00Z"
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data e hora da última atualização
+ *           example: "2024-01-15T10:30:00Z"
+ *       required:
+ *         - session_id
+ *         - message
+ *     
+ *     CreateChatHistoryRequest:
+ *       type: object
+ *       properties:
+ *         session_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da sessão (referencia o ID do lead)
+ *           example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *         message:
+ *           type: object
+ *           description: Conteúdo da mensagem em formato JSON
+ *           example: {"type":"ai","content":"Olá! Como posso ajudar?","tool_calls":[],"additional_kwargs":{},"response_metadata":{},"invalid_tool_calls":[]}
+ *       required:
+ *         - session_id
+ *         - message
+ *     
+ *     UpdateChatHistoryRequest:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: object
+ *           description: Conteúdo da mensagem em formato JSON
+ *           example: {"type":"ai","content":"Mensagem atualizada","tool_calls":[],"additional_kwargs":{},"response_metadata":{},"invalid_tool_calls":[]}
+ *     
+ *     ChatHistoryResponse:
+ *       allOf:
+ *         - $ref: '#/components/schemas/ChatHistory'
+ *         - type: object
+ *           properties:
+ *             id:
+ *               type: integer
+ *               description: ID único da mensagem
+ *     
+ *     ChatHistoriesListResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Mensagens de chat encontradas"
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ChatHistoryResponse'
+ *         pagination:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: integer
+ *               example: 100
+ *             page:
+ *               type: integer
+ *               example: 1
+ *             limit:
+ *               type: integer
+ *               example: 50
+ *             totalPages:
+ *               type: integer
+ *               example: 2
+ */
+
+/**
+ * @swagger
+ * /api/chat:
+ *   post:
+ *     summary: Criar nova mensagem de chat
+ *     tags: [Chat]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateChatHistoryRequest'
+ *     responses:
+ *       201:
+ *         description: Mensagem de chat criada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem de chat criada com sucesso"
+ *                 data:
+ *                   $ref: '#/components/schemas/ChatHistoryResponse'
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/', validateRequest(createChatHistorySchema), ChatController.createChatHistory);
+
+/**
+ * @swagger
+ * /api/chat/cliente:
+ *   get:
+ *     summary: Buscar mensagens de chat por cliente_id
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *         example: "d1cdfe73-7553-47c6-ba4b-8c54b9b87481"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Número de itens por página
+ *     responses:
+ *       200:
+ *         description: Mensagens de chat encontradas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ChatHistoriesListResponse'
+ *       400:
+ *         description: cliente_id é obrigatório
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/cliente', ChatController.getChatHistoriesByClienteId);
+
+/**
+ * @swagger
+ * /api/chat/session/{session_id}:
+ *   get:
+ *     summary: Buscar mensagens de chat por session_id (ID do lead)
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: session_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da sessão (ID do lead)
+ *         example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Número de itens por página
+ *     responses:
+ *       200:
+ *         description: Mensagens de chat encontradas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ChatHistoriesListResponse'
+ *       400:
+ *         description: session_id inválido
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/session/:session_id', ChatController.getChatHistoriesBySessionId);
+
+/**
+ * @swagger
+ * /api/chat/{id}:
+ *   get:
+ *     summary: Buscar mensagem de chat por ID
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da mensagem
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Mensagem de chat encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem de chat encontrada"
+ *                 data:
+ *                   $ref: '#/components/schemas/ChatHistoryResponse'
+ *       404:
+ *         description: Mensagem não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+// Debug middleware
+router.get('/:id', (req, res, next) => {
+  console.log('Debug - req.params:', req.params);
+  console.log('Debug - req.params.id type:', typeof req.params.id);
+  console.log('Debug - numericIdParamSchema:', numericIdParamSchema);
+  const testParse = numericIdParamSchema.safeParse(req.params);
+  console.log('Debug - test parse result:', testParse);
+  next();
+}, validateRequest(numericIdParamSchema, 'params'), ChatController.getChatHistoryById);
+
+/**
+ * @swagger
+ * /api/chat/{id}:
+ *   put:
+ *     summary: Atualizar mensagem de chat
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da mensagem
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateChatHistoryRequest'
+ *     responses:
+ *       200:
+ *         description: Mensagem de chat atualizada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem de chat atualizada com sucesso"
+ *                 data:
+ *                   $ref: '#/components/schemas/ChatHistoryResponse'
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Mensagem não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/:id', validateRequest(numericIdParamSchema, 'params'), validateRequest(updateChatHistorySchema), ChatController.updateChatHistory);
+
+/**
+ * @swagger
+ * /api/chat/{id}:
+ *   delete:
+ *     summary: Deletar mensagem de chat
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da mensagem
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Mensagem de chat deletada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem de chat deletada com sucesso"
+ *       404:
+ *         description: Mensagem não encontrada
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.delete('/:id', validateRequest(numericIdParamSchema, 'params'), ChatController.deleteChatHistory);
+
+/**
+ * @swagger
+ * /api/chat/session/{session_id}:
+ *   delete:
+ *     summary: Deletar todas as mensagens de uma sessão
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: session_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da sessão (ID do lead)
+ *         example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *     responses:
+ *       200:
+ *         description: Todas as mensagens da sessão foram deletadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Todas as mensagens da sessão foram deletadas com sucesso"
+ *       400:
+ *         description: session_id inválido
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.delete('/session/:session_id', ChatController.deleteChatHistoriesBySessionId);
+
+export default router;

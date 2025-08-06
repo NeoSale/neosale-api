@@ -562,4 +562,36 @@ export class LeadController {
       })
     }
   }
+
+  // PUT /api/leads/:id/ai-habilitada - Atualizar campo ai_habilitada
+  static async atualizarAiHabilitada(req: Request, res: Response) {
+    try {
+      const id = LeadController.extractIdFromUrl(req)
+      const { ai_habilitada } = req.body
+      
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do lead é obrigatório'
+        })
+      }
+      
+      if (typeof ai_habilitada !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'Campo ai_habilitada deve ser um valor booleano'
+        })
+      }
+      
+      const result = await LeadService.atualizarAiHabilitada(id, ai_habilitada)
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Campo ai_habilitada atualizado com sucesso',
+        data: result
+      })
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
 }

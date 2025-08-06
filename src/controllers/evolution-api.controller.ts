@@ -392,6 +392,9 @@ export class EvolutionApiController {
         textMessage.text,
         apikey
       );
+
+      // Atualizar o campo instance_name nos leads que correspondem ao número
+      await evolutionApiService.updateLeadInstanceName(instancename, number);
       
       return res.json({
         success: true,
@@ -400,6 +403,46 @@ export class EvolutionApiController {
       });
     } catch (error: any) {
       console.error('Error in sendText:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
+
+  async fetchProfilePictureUrl(req: Request, res: Response) {
+    try {
+      const { instance_name } = req.params;
+      const { number } = req.body;
+      const apikey = req.headers['apikey'] as string;
+      
+      if (!apikey) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header apikey é obrigatório'
+        });
+      }
+
+      if (!number) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campo number é obrigatório'
+        });
+      }
+
+      const result = await evolutionApiService.fetchProfilePictureUrl(
+        instance_name,
+        number,
+        apikey
+      );
+      
+      return res.json({
+        success: true,
+        data: result,
+        message: 'Profile picture URL fetched successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in fetchProfilePictureUrl:', error);
       return res.status(500).json({
         success: false,
         message: error.message || 'Internal server error'

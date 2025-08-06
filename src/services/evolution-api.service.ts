@@ -817,6 +817,78 @@ class EvolutionApiService {
       throw new Error(`Failed to send text message: ${error.message}`);
     }
   }
+
+  async fetchProfilePictureUrl(instanceName: string, number: string, apikey: string): Promise<any> {
+    try {
+      const url = `${this.baseUrl}/chat/fetchProfilePictureUrl/${instanceName}`;
+      
+      const response = await axios.post(url, {
+        number: number
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apikey
+        },
+        timeout: this.timeout
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching profile picture URL:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to fetch profile picture URL');
+    }
+  }
+
+  async updateLeadInstanceName(instanceName: string, number: string): Promise<void> {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      console.log(`Updating instance_name for leads with phone: ${number} to instance: ${instanceName}`);
+
+      // Primeiro, buscar o cliente_id da instância
+      const { data: instanceData, error: instanceError } = await supabase
+        .from('evolution_api')
+        .select('cliente_id')
+        .eq('instance_name', instanceName)
+        .single();
+
+      if (instanceError || !instanceData) {
+        console.log(`Instance ${instanceName} not found in database, skipping lead update`);
+        return;
+      }
+
+      const clienteId = instanceData.cliente_id;
+      console.log(`Found cliente_id: ${clienteId} for instance: ${instanceName}`);
+
+      // Limpar o número de telefone para comparação (remover caracteres especiais)
+      const cleanNumber = number.replace(/[^0-9]/g, '');
+
+      // Atualizar apenas leads do mesmo cliente que tenham o telefone correspondente
+      const { data, error } = await supabase
+        .from('leads')
+        .update({ instance_name: instanceName })
+        .or(`telefone.eq.${number},telefone.eq.${cleanNumber},telefone.like.%${cleanNumber}%`)
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+        .select('id, nome, telefone, cliente_id');
+
+      if (error) {
+        console.error('Error updating lead instance_name:', error);
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        console.log(`Updated instance_name for ${data.length} leads of cliente ${clienteId}:`, data.map(lead => ({ id: lead.id, nome: lead.nome, telefone: lead.telefone })));
+      } else {
+        console.log(`No leads found with phone number: ${number} for cliente: ${clienteId}`);
+      }
+    } catch (error: any) {
+      console.error('Error in updateLeadInstanceName:', error);
+      // Não falhar o envio da mensagem se a atualização do lead falhar
+    }
+  }
 }
 
 export default new EvolutionApiService();

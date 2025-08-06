@@ -52,6 +52,11 @@ export const idParamSchema = z.object({
   id: z.string().uuid('ID deve ser um UUID válido')
 })
 
+// Validator para parâmetros de ID numérico (para chat)
+export const numericIdParamSchema = z.object({
+  id: z.string().regex(/^\d+$/, 'ID deve ser um número válido').transform((val) => parseInt(val, 10))
+})
+
 // Validator para paginação
 export const paginationSchema = z.object({
   page: z.string().optional().transform((val) => {
@@ -84,6 +89,7 @@ export const updateLeadSchema = z.object({
   etapa_funil_id: z.string().uuid('etapa_funil_id deve ser um UUID válido').optional(),
   status_negociacao_id: z.string().uuid('status_negociacao_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
+  profile_picture_url: z.string().url('URL da foto de perfil deve ser uma URL válida').optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
@@ -137,6 +143,7 @@ export const createLeadSchema = z.object({
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  profile_picture_url: z.string().url('URL da foto de perfil deve ser uma URL válida').optional(),
   embedding: z.array(z.number()).optional()
 })
 
@@ -623,3 +630,31 @@ export type CreateEvolutionApiInput = z.infer<typeof createEvolutionApiSchema>
 export type UpdateEvolutionApiInput = z.infer<typeof updateEvolutionApiSchema>
 export type ConnectInstanceInput = z.infer<typeof connectInstanceSchema>
 export type InstanceNameParam = z.infer<typeof instanceNameParamSchema>
+
+// ===== VALIDATORS PARA CHAT HISTORIES =====
+
+// Validator para criação de chat history
+export const createChatHistorySchema = z.object({
+  session_id: z.string().uuid('session_id deve ser um UUID válido'),
+  message: z.any().refine((val) => val !== null && val !== undefined, {
+    message: 'Message é obrigatório'
+  }),
+  embedding: z.array(z.number()).optional()
+})
+
+// Validator para atualização de chat history
+export const updateChatHistorySchema = z.object({
+  message: z.any().optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+// Validator para parâmetros de session_id
+export const sessionIdParamSchema = z.object({
+  session_id: z.string().uuid('session_id deve ser um UUID válido')
+})
+
+export type CreateChatHistoryInput = z.infer<typeof createChatHistorySchema>
+export type UpdateChatHistoryInput = z.infer<typeof updateChatHistorySchema>
+export type SessionIdParam = z.infer<typeof sessionIdParamSchema>
+export type NumericIdParam = z.infer<typeof numericIdParamSchema>
