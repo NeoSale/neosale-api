@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS configuracoes (
   apiKeyOpenAI text,
   PromptSDR text,
   PromptCalendar text,
-  UsaCalendar text,
+  UsaCalendar boolean NOT NULL DEFAULT false,
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp DEFAULT now(),
   updated_at timestamp DEFAULT now()
