@@ -105,7 +105,7 @@ const options: swaggerJSDoc.Options = {
             },
             profile_picture_url: {
               type: 'string',
-              format: 'uri',
+              nullable: true,
               description: 'URL da foto de perfil do lead'
             },
             created_at: {

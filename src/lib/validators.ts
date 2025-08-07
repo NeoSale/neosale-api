@@ -89,7 +89,7 @@ export const updateLeadSchema = z.object({
   etapa_funil_id: z.string().uuid('etapa_funil_id deve ser um UUID válido').optional(),
   status_negociacao_id: z.string().uuid('status_negociacao_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
-  profile_picture_url: z.string().url('URL da foto de perfil deve ser uma URL válida').optional(),
+  profile_picture_url: z.string().nullable().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
@@ -143,7 +143,7 @@ export const createLeadSchema = z.object({
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
-  profile_picture_url: z.string().url('URL da foto de perfil deve ser uma URL válida').optional(),
+  profile_picture_url: z.string().nullable().optional(),
   embedding: z.array(z.number()).optional()
 })
 

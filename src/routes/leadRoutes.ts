@@ -253,7 +253,7 @@ router.get('/stats', LeadController.obterEstatisticas)
  *                 description: ID da qualificação (opcional)
  *               profile_picture_url:
  *                 type: string
- *                 format: uri
+ *                 nullable: true
  *                 description: URL da foto de perfil do lead (opcional)
  *             required:
  *               - nome
@@ -590,7 +590,7 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *                 description: ID da qualificação
  *               profile_picture_url:
  *                 type: string
- *                 format: uri
+ *                 nullable: true
  *                 description: URL da foto de perfil do lead
  *               status_agendamento:
  *                 type: boolean
