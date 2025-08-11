@@ -296,30 +296,9 @@ export class LeadService {
         
         if (existingPhone) {
           console.log('⚠️ Lead com telefone já existe:', leadData.telefone, '- pulando')
-          skipped.push({ ...leadData, motivo: 'Telefone já existe' })
+          skipped.push({ ...leadData, motivo: 'Telefone já existe na base de leads' })
+
           continue
-        }
-        
-        // Verificar se email já existe (apenas se email foi fornecido)
-        if (leadData.email) {
-          const { data: existingEmail, error: emailError } = await supabase!
-            .from('leads')
-            .select('id, nome, email')
-            .eq('email', leadData.email)
-            .eq('deletado', false)
-            .eq('cliente_id', clienteId)
-            .single()
-          
-          if (emailError && emailError.code !== 'PGRST116') {
-            console.error('❌ Erro ao verificar email:', emailError)
-            throw emailError
-          }
-          
-          if (existingEmail) {
-            console.log('⚠️ Lead com email já existe:', leadData.email, '- pulando')
-            skipped.push({ ...leadData, motivo: 'Email já existe' })
-            continue
-          }
         }
         
         // Criar lead primeiro sem followup_id

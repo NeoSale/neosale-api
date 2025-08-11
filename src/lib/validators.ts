@@ -357,6 +357,21 @@ export const createClienteSchema = z.object({
     .optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional().default('ativo'),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido'),
+  // Novos campos adicionados
+  nome_responsavel_principal: z.string().max(255, 'Nome do responsável deve ter no máximo 255 caracteres').optional(),
+  cnpj: z.string().max(18, 'CNPJ deve ter no máximo 18 caracteres').optional(),
+  cep: z.string().max(10, 'CEP deve ter no máximo 10 caracteres').optional(),
+  logradouro: z.string().max(255, 'Logradouro deve ter no máximo 255 caracteres').optional(),
+  numero: z.string().max(20, 'Número deve ter no máximo 20 caracteres').optional(),
+  complemento: z.string().max(100, 'Complemento deve ter no máximo 100 caracteres').optional(),
+  cidade: z.string().max(100, 'Cidade deve ter no máximo 100 caracteres').optional(),
+  estado: z.string().max(50, 'Estado deve ter no máximo 50 caracteres').optional(),
+  pais: z.string().max(50, 'País deve ter no máximo 50 caracteres').optional().default('Brasil'),
+  espaco_fisico: z.boolean().optional().default(false),
+  site_oficial: z.string().max(255, 'Site oficial deve ter no máximo 255 caracteres').optional(),
+  redes_sociais: z.record(z.string(), z.string().url('Link da rede social deve ser uma URL válida')).optional(),
+  horario_funcionamento: z.record(z.string(), z.string()).optional(),
+  regioes_atendidas: z.string().optional(),
   embedding: z.array(z.number()).optional()
 })
 
@@ -368,6 +383,21 @@ export const updateClienteSchema = z.object({
   nickname: z.string().max(100, 'Nickname deve ter no máximo 100 caracteres').regex(/^[a-z0-9-]+$/, 'Nickname deve conter apenas letras minúsculas, números e hífens').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional(),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
+  // Novos campos adicionados
+  nome_responsavel_principal: z.string().max(255, 'Nome do responsável deve ter no máximo 255 caracteres').optional(),
+  cnpj: z.string().max(18, 'CNPJ deve ter no máximo 18 caracteres').optional(),
+  cep: z.string().max(10, 'CEP deve ter no máximo 10 caracteres').optional(),
+  logradouro: z.string().max(255, 'Logradouro deve ter no máximo 255 caracteres').optional(),
+  numero: z.string().max(20, 'Número deve ter no máximo 20 caracteres').optional(),
+  complemento: z.string().max(100, 'Complemento deve ter no máximo 100 caracteres').optional(),
+  cidade: z.string().max(100, 'Cidade deve ter no máximo 100 caracteres').optional(),
+  estado: z.string().max(50, 'Estado deve ter no máximo 50 caracteres').optional(),
+  pais: z.string().max(50, 'País deve ter no máximo 50 caracteres').optional(),
+  espaco_fisico: z.boolean().optional(),
+  site_oficial: z.string().max(255, 'Site oficial deve ter no máximo 255 caracteres').optional(),
+  redes_sociais: z.record(z.string(), z.string().url('Link da rede social deve ser uma URL válida')).optional(),
+  horario_funcionamento: z.record(z.string(), z.string()).optional(),
+  regioes_atendidas: z.string().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
