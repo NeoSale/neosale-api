@@ -173,29 +173,74 @@ const router = Router()
  * @swagger
  * /api/configuracoes-followup:
  *   get:
- *     summary: Buscar todas as configurações de follow-up
- *     description: Retorna uma lista de todas as configurações de follow-up cadastradas no sistema
+ *     summary: Buscar configuração de follow-up por cliente
  *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
- *         description: Lista de configurações recuperada com sucesso
+ *         description: Configuração de follow-up recuperada com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *                 message:
+ *                   type: string
+ *                   example: "Configuração de follow-up recuperada com sucesso"
+ *       400:
+ *         description: Dados de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "cliente_id é obrigatório no cabeçalho da requisição"
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Configuração de follow-up não encontrada para este cliente"
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Erro interno do servidor"
+ *                 error:
+ *                   type: string
+ *                   example: "Mensagem de erro detalhada"
  */
 router.get('/', ConfiguracaoFollowupController.getAll)
 
@@ -247,53 +292,7 @@ router.get('/', ConfiguracaoFollowupController.getAll)
  */
 router.get('/:id', ConfiguracaoFollowupController.getById)
 
-/**
- * @swagger
- * /api/configuracoes-followup/cliente/{cliente_id}:
- *   get:
- *     summary: Buscar configuração de follow-up por ID do cliente
- *     description: Retorna a configuração de follow-up de um cliente específico
- *     tags: [Configurações Follow-up]
- *     parameters:
- *       - in: path
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID único do cliente
- *     responses:
- *       200:
- *         description: Configuração encontrada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
- *       400:
- *         description: ID do cliente inválido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       404:
- *         description: Configuração não encontrada para este cliente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- */
-router.get('/cliente/:cliente_id', ConfiguracaoFollowupController.getByClienteId)
+
 
 /**
  * @swagger

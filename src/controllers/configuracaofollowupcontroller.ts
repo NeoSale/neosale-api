@@ -6,15 +6,42 @@ import { z } from 'zod'
 export class ConfiguracaoFollowupController {
   static async getAll(req: Request, res: Response) {
     try {
-      const configuracoes = await ConfiguracaoFollowupService.getAll()
-      res.json({
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no cabeçalho da requisição'
+        });
+      }
+      
+      // Validar se cliente_id é um UUID válido
+      try {
+        z.string().uuid().parse(cliente_id);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id deve ser um UUID válido'
+        });
+      }
+      
+      const configuracao = await ConfiguracaoFollowupService.getByClienteId(cliente_id)
+      
+      if (!configuracao) {
+        return res.status(404).json({
+          success: false,
+          message: 'Configuração de follow-up não encontrada para este cliente'
+        })
+      }
+      
+      return res.json({
         success: true,
-        data: configuracoes,
-        message: 'Configurações de follow-up recuperadas com sucesso'
+        data: configuracao,
+        message: 'Configuração de follow-up recuperada com sucesso'
       })
     } catch (error) {
-      console.error('Erro ao buscar configurações de follow-up:', error)
-      res.status(500).json({
+      console.error('Erro ao buscar configuração de follow-up:', error)
+      return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
         error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -58,41 +85,7 @@ export class ConfiguracaoFollowupController {
     }
   }
 
-  static async getByClienteId(req: Request, res: Response) {
-    try {
-      const { cliente_id } = z.object({ cliente_id: z.string().uuid() }).parse(req.params)
-      
-      const configuracao = await ConfiguracaoFollowupService.getByClienteId(cliente_id)
-      
-      if (!configuracao) {
-        return res.status(404).json({
-          success: false,
-          message: 'Configuração de follow-up não encontrada para este cliente'
-        })
-      }
 
-      return res.json({
-        success: true,
-        data: configuracao,
-        message: 'Configuração de follow-up recuperada com sucesso'
-      })
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dados de entrada inválidos',
-          errors: error.errors
-        })
-      }
-
-      console.error('Erro ao buscar configuração de follow-up por cliente_id:', error)
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor',
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
-      })
-    }
-  }
 
   static async create(req: Request, res: Response) {
     try {
