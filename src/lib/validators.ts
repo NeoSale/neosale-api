@@ -350,7 +350,7 @@ export type UpdateRevendedorInput = z.infer<typeof updateRevendedorSchema>
 // Validator para criação de cliente
 export const createClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres'),
+  email: z.string().min(1, 'Email é obrigatório').email('Email deve ter um formato válido').max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().min(1, 'Telefone é obrigatório').max(20, 'Telefone deve ter no máximo 20 caracteres'),
   nickname: z.string().max(100, 'Nickname deve ter no máximo 100 caracteres')
     .regex(/^[a-z0-9-]*$/, 'Nickname deve conter apenas letras minúsculas, números e hífens')
@@ -371,15 +371,14 @@ export const createClienteSchema = z.object({
   site_oficial: z.string().max(255, 'Site oficial deve ter no máximo 255 caracteres').optional(),
   redes_sociais: z.record(z.string(), z.string().url('Link da rede social deve ser uma URL válida')).optional(),
   horario_funcionamento: z.record(z.string(), z.string()).optional(),
-  regioes_atendidas: z.string().optional(),
   embedding: z.array(z.number()).optional()
 })
 
 // Validator para atualização de cliente
 export const updateClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
-  telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
+  email: z.string().email('Email deve ter um formato válido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  telefone: z.string().min(1, 'Telefone é obrigatório').max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
   nickname: z.string().max(100, 'Nickname deve ter no máximo 100 caracteres').regex(/^[a-z0-9-]+$/, 'Nickname deve conter apenas letras minúsculas, números e hífens').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional(),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
@@ -397,7 +396,6 @@ export const updateClienteSchema = z.object({
   site_oficial: z.string().max(255, 'Site oficial deve ter no máximo 255 caracteres').optional(),
   redes_sociais: z.record(z.string(), z.string().url('Link da rede social deve ser uma URL válida')).optional(),
   horario_funcionamento: z.record(z.string(), z.string()).optional(),
-  regioes_atendidas: z.string().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'

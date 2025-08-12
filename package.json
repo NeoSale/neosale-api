@@ -1,6 +1,6 @@
 {
   "name": "neosale-api",
-  "version": "1.11.5",
+  "version": "1.11.6",
   "private": true,
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File scripts/kill-port-3000.ps1 && set PORT=3000 && nodemon src/server.ts", 
@@ -11,6 +11,9 @@
     "lint": "eslint src/**/*.ts",
     "migrate": "ts-node src/scripts/run-migrations.ts",
     "migrate:docker": "npm run docker:start && npm run migrate",
+    "migrate:all": "node migration-config.js",
+    "migrate:neosale": "node migration-config.js neosale",
+    "migrate:omie": "node migration-config.js omie",
     "docker:check": "node scripts/check-docker.js",
     "docker:start": "powershell -ExecutionPolicy Bypass -File scripts/start-docker.ps1",
     "docker:auto": "node scripts/start-docker.js",

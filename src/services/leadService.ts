@@ -647,7 +647,7 @@ export class LeadService {
       .from('leads')
       .select(`
         *,
-        followup (*),
+        followup!leads_followup_id_fkey (*),
         origem:origem_id (nome),
         etapa_funil:etapa_funil_id (nome),
         status_negociacao:status_negociacao_id (nome)

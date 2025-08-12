@@ -7,15 +7,61 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nome varchar(255) NOT NULL,
   email varchar(255) NOT NULL UNIQUE,
   telefone varchar(20),
-  provedor_id uuid REFERENCES provedores(id) ON DELETE RESTRICT,
-  tipo_acesso_id uuid REFERENCES tipos_acesso(id) ON DELETE RESTRICT,
-  revendedor_id uuid REFERENCES revendedores(id) ON DELETE SET NULL,
-  cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
+  provedor_id uuid,
+  tipo_acesso_id uuid,
+  revendedor_id uuid,
+  cliente_id UUID, -- referência ao cliente proprietário
   ativo boolean NOT NULL DEFAULT true,
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp DEFAULT now(),
   updated_at timestamp DEFAULT now()
 );
+
+-- Add columns if they don't exist
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS provedor_id uuid;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tipo_acesso_id uuid;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS revendedor_id uuid;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cliente_id UUID;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo boolean DEFAULT true;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS embedding vector(1536);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at timestamp DEFAULT now();
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at timestamp DEFAULT now();
+
+-- Add foreign key constraints if they don't exist
+DO $add_constraints$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'usuarios_provedor_id_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_provedor_id_fkey 
+        FOREIGN KEY (provedor_id) REFERENCES provedores(id) ON DELETE RESTRICT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'usuarios_tipo_acesso_id_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_tipo_acesso_id_fkey 
+        FOREIGN KEY (tipo_acesso_id) REFERENCES tipos_acesso(id) ON DELETE RESTRICT;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'usuarios_revendedor_id_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_revendedor_id_fkey 
+        FOREIGN KEY (revendedor_id) REFERENCES revendedores(id) ON DELETE SET NULL;
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'usuarios_cliente_id_fkey'
+    ) THEN
+        ALTER TABLE usuarios ADD CONSTRAINT usuarios_cliente_id_fkey 
+        FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE;
+    END IF;
+END $add_constraints$;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);

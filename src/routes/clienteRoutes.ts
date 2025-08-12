@@ -25,10 +25,10 @@ const router = Router();
  *           type: string
  *           nullable: true
  *           description: Telefone do cliente
- *         endereco:
+ *         nickname:
  *           type: string
  *           nullable: true
- *           description: Endereço do cliente
+ *           description: Apelido/nickname do cliente
  *         revendedor_id:
  *           type: string
  *           format: uuid
@@ -37,6 +37,58 @@ const router = Router();
  *           type: string
  *           enum: [ativo, inativo, suspenso]
  *           description: Status do cliente
+ *         nome_responsavel_principal:
+ *           type: string
+ *           nullable: true
+ *           description: Nome do responsável principal
+ *         cnpj:
+ *           type: string
+ *           nullable: true
+ *           description: CNPJ da empresa
+ *         cep:
+ *           type: string
+ *           nullable: true
+ *           description: CEP do endereço
+ *         logradouro:
+ *           type: string
+ *           nullable: true
+ *           description: Logradouro do endereço
+ *         numero:
+ *           type: string
+ *           nullable: true
+ *           description: Número do endereço
+ *         complemento:
+ *           type: string
+ *           nullable: true
+ *           description: Complemento do endereço
+ *         cidade:
+ *           type: string
+ *           nullable: true
+ *           description: Cidade
+ *         estado:
+ *           type: string
+ *           nullable: true
+ *           description: Estado
+ *         pais:
+ *           type: string
+ *           nullable: true
+ *           description: País
+ *         espaco_fisico:
+ *           type: boolean
+ *           nullable: true
+ *           description: Possui espaço físico
+ *         site_oficial:
+ *           type: string
+ *           nullable: true
+ *           description: Site oficial da empresa
+ *         redes_sociais:
+ *           type: object
+ *           nullable: true
+ *           description: Links das redes sociais (JSON)
+ *         horario_funcionamento:
+ *           type: object
+ *           nullable: true
+ *           description: Horários de funcionamento (JSON)
  *         created_at:
  *           type: string
  *           format: date-time
@@ -259,6 +311,54 @@ router.get('/:id', ClienteController.getById);
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.get('/email/:email', ClienteController.getByEmail);
+
+/**
+ * @swagger
+ * /api/clientes/cnpj/{cnpj}:
+ *   get:
+ *     summary: Buscar cliente por CNPJ
+ *     tags: [Clientes]
+ *     parameters:
+ *       - in: path
+ *         name: cnpj
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: CNPJ do cliente
+ *       - in: path
+ *         name: revendedor_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do revendedor
+ *     responses:
+ *       200:
+ *         description: Cliente encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Cliente'
+ *       404:
+ *         description: Cliente não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/cnpj/:cnpj/:revendedor_id', ClienteController.getByCnpj);
 
 /**
  * @swagger

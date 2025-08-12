@@ -59,13 +59,6 @@ export class ClienteController {
         });
       }
       
-      if (!revendedor_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'revendedor_id é obrigatório'
-        });
-      }
-
       const cliente = await ClienteService.getById(id, revendedor_id);
       
       if (!cliente) {
@@ -99,13 +92,6 @@ export class ClienteController {
           message: 'Email é obrigatório'
         });
       }
-      
-      if (!revendedor_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'revendedor_id é obrigatório'
-        });
-      }
 
       const cliente = await ClienteService.getByEmail(email, revendedor_id);
       
@@ -122,6 +108,40 @@ export class ClienteController {
       });
     } catch (error) {
       console.error('Erro ao buscar cliente por email:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
+
+  static async getByCnpj(req: Request, res: Response) {
+    try {
+      const { cnpj, revendedor_id } = req.params;
+      
+      if (!cnpj) {
+        return res.status(400).json({
+          success: false,
+          message: 'CNPJ é obrigatório'
+        });
+      }
+
+      const cliente = await ClienteService.getByCnpj(cnpj, revendedor_id);
+      
+      if (!cliente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cliente não encontrado'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: cliente
+      });
+    } catch (error) {
+      console.error('Erro ao buscar cliente por CNPJ:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -205,16 +225,7 @@ export class ClienteController {
         });
       }
 
-      const { email } = validationResult.data;
-
-      // Verificar se já existe um cliente com o mesmo email
-      const existingCliente = await ClienteService.getByEmail(email);
-      if (existingCliente) {
-        return res.status(409).json({
-          success: false,
-          message: 'Já existe um cliente com este email'
-        });
-      }
+      // Dados validados, prosseguir com a criação
 
       const cliente = await ClienteService.create(validationResult.data);
       
@@ -265,16 +276,7 @@ export class ClienteController {
         });
       }
 
-      // Se está atualizando o email, verificar se não existe outro cliente com o mesmo email
-      if (updateData.email && updateData.email !== existingCliente.email) {
-        const clienteWithSameEmail = await ClienteService.getByEmail(updateData.email);
-        if (clienteWithSameEmail) {
-          return res.status(409).json({
-            success: false,
-            message: 'Já existe um cliente com este email'
-          });
-        }
-      }
+      // Dados validados, prosseguir com a atualização
 
       const cliente = await ClienteService.update(id, updateData);
       

@@ -25,7 +25,7 @@ INSERT INTO parametros (chave, valor) VALUES
   ('horario_inicio_envios', '08:00'),
   ('horario_fim_envios', '18:00'),
   ('envia_somente_dias_uteis', 'true'),
-  ('webhook_url', 'https://project-neosale-n8n.lkqho4.easypanel.host/webhook'),
+  ('webhook_url', 'https://project-neosale-n8n.lkqho4.easypanel.host/webhook');
 
 INSERT INTO parametros (chave, valor)
 VALUES (
@@ -76,6 +76,5 @@ VALUES (
 - **Purpose**: Proteger a propriedade intelectual sem degradar a experiência do usuário
 - **Created By**: GDPUR Framework (Silvio Goncalves)
 - **Application**: Inserir no início de prompts de agentes de IA para proteção integral'
-);
-
-ON CONFLICT DO NOTHING;
+)
+ON CONFLICT (chave, cliente_id) DO NOTHING;

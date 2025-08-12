@@ -9,6 +9,26 @@ export interface Cliente {
   nickname?: string;
   status: string;
   revendedor_id?: string;
+  
+  // Novos campos adicionados
+  nome_responsavel_principal?: string;
+  cnpj?: string;
+  
+  // Campos de endereço
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  
+  // Outros campos
+  espaco_fisico?: boolean;
+  site_oficial?: string;
+  redes_sociais?: any; // JSONB
+  horario_funcionamento?: any; // JSONB
+  
   created_at: string;
   updated_at: string;
 }
@@ -153,6 +173,39 @@ export class ClienteService {
     return data;
   }
 
+  static async getByCnpj(cnpj: string, clienteId?: string): Promise<ClienteWithRevendedor | null> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    let query = supabase
+      .from('clientes')
+      .select(`
+        *,
+        revendedor:revendedores(
+          id,
+          nome,
+          email
+        )
+      `)
+      .eq('cnpj', cnpj);
+
+    if (clienteId) {
+      query = query.eq('cliente_id', clienteId);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw new Error(`Erro ao buscar cliente por CNPJ: ${error.message}`);
+    }
+
+    return data;
+  }
+
   static async getByRevendedor(revendedorId: string): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
@@ -248,6 +301,26 @@ export class ClienteService {
         nickname: nickname,
         status: input.status ?? 'ativo',
         revendedor_id: input.revendedor_id,
+        
+        // Novos campos
+        nome_responsavel_principal: input.nome_responsavel_principal,
+        cnpj: input.cnpj,
+        
+        // Campos de endereço
+        cep: input.cep,
+        logradouro: input.logradouro,
+        numero: input.numero,
+        complemento: input.complemento,
+        cidade: input.cidade,
+        estado: input.estado,
+        pais: input.pais ?? 'Brasil',
+        
+        // Outros campos
+        espaco_fisico: input.espaco_fisico ?? false,
+        site_oficial: input.site_oficial,
+        redes_sociais: input.redes_sociais,
+        horario_funcionamento: input.horario_funcionamento,
+        
         updated_at: new Date().toISOString()
       })
       .select(`
