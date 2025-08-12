@@ -1,0 +1,450 @@
+import { Router } from 'express'
+import { ConfiguracaoFollowupController } from '../controllers/configuracaofollowupcontroller'
+
+const router = Router()
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     DiaHorarioEnvio:
+ *       type: object
+ *       properties:
+ *         segunda:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-18:00"
+ *           description: Horário de funcionamento na segunda-feira ou "fechado"
+ *         terca:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-18:00"
+ *           description: Horário de funcionamento na terça-feira ou "fechado"
+ *         quarta:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-18:00"
+ *           description: Horário de funcionamento na quarta-feira ou "fechado"
+ *         quinta:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-18:00"
+ *           description: Horário de funcionamento na quinta-feira ou "fechado"
+ *         sexta:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-18:00"
+ *           description: Horário de funcionamento na sexta-feira ou "fechado"
+ *         sabado:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "08:00-12:00"
+ *           description: Horário de funcionamento no sábado ou "fechado"
+ *         domingo:
+ *           type: string
+ *           pattern: '^(\\d{2}:\\d{2}-\\d{2}:\\d{2}|fechado)$'
+ *           example: "fechado"
+ *           description: Horário de funcionamento no domingo ou "fechado"
+ *       required:
+ *         - segunda
+ *         - terca
+ *         - quarta
+ *         - quinta
+ *         - sexta
+ *         - sabado
+ *         - domingo
+ *
+ *     ConfiguracaoFollowup:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           description: ID único da configuração
+ *         dia_horario_envio:
+ *           $ref: '#/components/schemas/DiaHorarioEnvio'
+ *         qtd_envio_diario:
+ *           type: integer
+ *           minimum: 1
+ *           example: 50
+ *           description: Quantidade máxima de envios por dia
+ *         em_execucao:
+ *           type: boolean
+ *           example: false
+ *           description: Indica se o follow-up está em execução
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do cliente proprietário da configuração
+ *         embedding:
+ *           type: array
+ *           items:
+ *             type: number
+ *           description: Vetor de embedding para busca semântica
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data de criação
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           description: Data da última atualização
+ *       required:
+ *         - id
+ *         - dia_horario_envio
+ *         - qtd_envio_diario
+ *         - em_execucao
+ *         - cliente_id
+ *         - created_at
+ *         - updated_at
+ *
+ *     CreateConfiguracaoFollowup:
+ *       type: object
+ *       properties:
+ *         dia_horario_envio:
+ *           $ref: '#/components/schemas/DiaHorarioEnvio'
+ *         qtd_envio_diario:
+ *           type: integer
+ *           minimum: 1
+ *           example: 50
+ *           description: Quantidade máxima de envios por dia
+ *         em_execucao:
+ *           type: boolean
+ *           example: false
+ *           description: Indica se o follow-up está em execução
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do cliente proprietário da configuração
+ *         embedding:
+ *           type: array
+ *           items:
+ *             type: number
+ *           description: Vetor de embedding para busca semântica
+ *       required:
+ *         - cliente_id
+ *
+ *     UpdateConfiguracaoFollowup:
+ *       type: object
+ *       properties:
+ *         dia_horario_envio:
+ *           $ref: '#/components/schemas/DiaHorarioEnvio'
+ *         qtd_envio_diario:
+ *           type: integer
+ *           minimum: 1
+ *           example: 50
+ *           description: Quantidade máxima de envios por dia
+ *         em_execucao:
+ *           type: boolean
+ *           example: false
+ *           description: Indica se o follow-up está em execução
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do cliente proprietário da configuração
+ *         embedding:
+ *           type: array
+ *           items:
+ *             type: number
+ *           description: Vetor de embedding para busca semântica
+ *
+ *     ApiResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           description: Indica se a operação foi bem-sucedida
+ *         message:
+ *           type: string
+ *           description: Mensagem descritiva do resultado
+ *         data:
+ *           description: Dados retornados pela operação
+ *         error:
+ *           type: string
+ *           description: Mensagem de erro (apenas em caso de falha)
+ *         errors:
+ *           type: array
+ *           items:
+ *             type: object
+ *           description: Lista de erros de validação (apenas em caso de falha)
+ */
+
+/**
+ * @swagger
+ * /api/configuracoes-followup:
+ *   get:
+ *     summary: Buscar todas as configurações de follow-up
+ *     description: Retorna uma lista de todas as configurações de follow-up cadastradas no sistema
+ *     tags: [Configurações Follow-up]
+ *     responses:
+ *       200:
+ *         description: Lista de configurações recuperada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/', ConfiguracaoFollowupController.getAll)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/{id}:
+ *   get:
+ *     summary: Buscar configuração de follow-up por ID
+ *     description: Retorna uma configuração de follow-up específica pelo seu ID
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID único da configuração de follow-up
+ *     responses:
+ *       200:
+ *         description: Configuração encontrada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: ID inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/:id', ConfiguracaoFollowupController.getById)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/cliente/{cliente_id}:
+ *   get:
+ *     summary: Buscar configuração de follow-up por ID do cliente
+ *     description: Retorna a configuração de follow-up de um cliente específico
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID único do cliente
+ *     responses:
+ *       200:
+ *         description: Configuração encontrada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: ID do cliente inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada para este cliente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/cliente/:cliente_id', ConfiguracaoFollowupController.getByClienteId)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup:
+ *   post:
+ *     summary: Criar nova configuração de follow-up
+ *     description: Cria uma nova configuração de follow-up no sistema
+ *     tags: [Configurações Follow-up]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateConfiguracaoFollowup'
+ *           example:
+ *             dia_horario_envio:
+ *               segunda: "08:00-18:00"
+ *               terca: "08:00-18:00"
+ *               quarta: "08:00-18:00"
+ *               quinta: "08:00-18:00"
+ *               sexta: "08:00-18:00"
+ *               sabado: "08:00-12:00"
+ *               domingo: "fechado"
+ *             qtd_envio_diario: 50
+ *             em_execucao: false
+ *             cliente_id: "123e4567-e89b-12d3-a456-426614174000"
+ *     responses:
+ *       201:
+ *         description: Configuração criada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: Dados de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/', ConfiguracaoFollowupController.create)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/{id}:
+ *   put:
+ *     summary: Atualizar configuração de follow-up
+ *     description: Atualiza uma configuração de follow-up existente
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID único da configuração de follow-up
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateConfiguracaoFollowup'
+ *           example:
+ *             qtd_envio_diario: 75
+ *             em_execucao: true
+ *     responses:
+ *       200:
+ *         description: Configuração atualizada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: Dados de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.put('/:id', ConfiguracaoFollowupController.update)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/{id}:
+ *   delete:
+ *     summary: Deletar configuração de follow-up
+ *     description: Remove uma configuração de follow-up do sistema
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID único da configuração de follow-up
+ *     responses:
+ *       200:
+ *         description: Configuração deletada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: ID inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.delete('/:id', ConfiguracaoFollowupController.delete)
+
+export default router

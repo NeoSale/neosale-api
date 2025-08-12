@@ -79,9 +79,7 @@ const router = Router();
  * /api/parametros:
  *   get:
  *     summary: Buscar todos os parâmetros
- *     tags: [Configurações]
- *     parameters:
- *       - $ref: '#/components/parameters/ClienteId'
+ *     tags: [Parâmetros]
  *     responses:
  *       200:
  *         description: Lista de configurações retornada com sucesso
@@ -114,7 +112,7 @@ router.get('/', ParametroController.getAll);
  * /api/parametros/{id}:
  *   get:
  *     summary: Buscar parâmetro por ID
- *     tags: [Configurações]
+ *     tags: [Parâmetros]
  *     parameters:
  *       - in: path
  *         name: id
@@ -150,7 +148,7 @@ router.get('/:id', ParametroController.getById);
  * /api/parametros/chave/{chave}:
  *   get:
  *     summary: Buscar parâmetro por chave
- *     tags: [Configurações]
+ *     tags: [Parâmetros]
  *     parameters:
  *       - in: path
  *         name: chave
@@ -185,9 +183,7 @@ router.get('/chave/:chave', ParametroController.getByChave);
  * /api/parametros:
  *   post:
  *     summary: Criar novo parâmetro
- *     tags: [Configurações]
- *     parameters:
- *       - $ref: '#/components/parameters/ClienteId'
+ *     tags: [Parâmetros]
  *     requestBody:
  *       required: true
  *       content:
@@ -224,7 +220,7 @@ router.post('/', ParametroController.create);
  * /api/parametros/{id}:
  *   put:
  *     summary: Atualizar parâmetro
- *     tags: [Configurações]
+ *     tags: [Parâmetros]
  *     parameters:
  *       - in: path
  *         name: id
@@ -269,9 +265,9 @@ router.put('/:id', ParametroController.update);
 /**
  * @swagger
  * /api/parametros/{id}:
-   *   delete:
-   *     summary: Deletar parâmetro
- *     tags: [Configurações]
+ *   delete:
+ *     summary: Deletar parâmetro
+ *     tags: [Parâmetros]
  *     parameters:
  *       - in: path
  *         name: id

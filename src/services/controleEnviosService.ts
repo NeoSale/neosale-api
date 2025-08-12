@@ -8,6 +8,7 @@ export interface ControleEnvio {
   quantidade_enviada: number
   limite_diario: number
   created_at: string
+  em_execucao?: boolean
 }
 
 export class ControleEnviosService {
@@ -69,8 +70,25 @@ export class ControleEnviosService {
       return await this.createControleEnvio(data, clienteId)
     }
     
+    // Buscar o campo em_execucao da tabela configuracoes_followup
+    let em_execucao = false;
+    if (clienteId) {
+      const { data: configFollowup } = await supabase!
+        .from('configuracoes_followup')
+        .select('em_execucao')
+        .eq('cliente_id', clienteId)
+        .single();
+      
+      if (configFollowup) {
+        em_execucao = configFollowup.em_execucao;
+      }
+    }
+    
     console.log('✅ Controle de envio encontrado:', controleEnvio.id)
-    return controleEnvio
+    return {
+      ...controleEnvio,
+      em_execucao
+    }
   }
   
   // Criar novo registro de controle de envio
@@ -78,20 +96,46 @@ export class ControleEnviosService {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Criando novo controle de envio para data:', data)
     
-    // Pegar o limite diário padrão do endpoint de configurações
+    // Pegar o limite diário específico do cliente da tabela configuracoes_followup
     let limiteDiarioPadrao = 0; // valor padrão caso não encontre a configuração
+    let em_execucao = false; // valor padrão para em_execucao
     
-    try {
-      const parametroLimite = await ParametroService.getByChave('quantidade_diaria_maxima');
-    if (parametroLimite && parametroLimite.valor) {
-      limiteDiarioPadrao = parseInt(parametroLimite.valor);
-        console.log('✅ Limite diário obtido das configurações:', limiteDiarioPadrao);
-      } else {
-        console.log('⚠️ Configuração quantidade_diaria_maxima não encontrada, usando valor padrão:', limiteDiarioPadrao);
+    if (clienteId) {
+      try {
+        const { data: configFollowup, error } = await supabase!
+          .from('configuracoes_followup')
+          .select('qtd_envio_diario, em_execucao')
+          .eq('cliente_id', clienteId)
+          .single();
+        
+        if (configFollowup) {
+          if (configFollowup.qtd_envio_diario) {
+            limiteDiarioPadrao = configFollowup.qtd_envio_diario;
+            console.log('✅ Limite diário obtido das configurações do cliente:', limiteDiarioPadrao);
+          }
+          em_execucao = configFollowup.em_execucao || false;
+          console.log('✅ Status em_execucao obtido das configurações do cliente:', em_execucao);
+        } else {
+          console.log('⚠️ Configuração de follow-up não encontrada para o cliente, usando valores padrão');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar configuração de follow-up do cliente:', error);
+        console.log('⚠️ Usando valores padrão');
       }
-    } catch (error) {
-      console.error('❌ Erro ao buscar configuração quantidade_diaria_maxima:', error);
-      console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
+    } else {
+      // Fallback para o parâmetro global se não houver cliente_id
+      try {
+        const parametroLimite = await ParametroService.getByChave('qtd_envio_diario_followup');
+        if (parametroLimite && parametroLimite.valor) {
+          limiteDiarioPadrao = parseInt(parametroLimite.valor);
+          console.log('✅ Limite diário obtido das configurações globais:', limiteDiarioPadrao);
+        } else {
+          console.log('⚠️ Configuração quantidade_diaria_maxima não encontrada, usando valor padrão:', limiteDiarioPadrao);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar configuração quantidade_diaria_maxima:', error);
+        console.log('⚠️ Usando valor padrão:', limiteDiarioPadrao);
+      }
     }
     
     const insertData: any = {
@@ -116,7 +160,10 @@ export class ControleEnviosService {
     }
     
     console.log('✅ Controle de envio criado com sucesso:', novoControleEnvio.id)
-    return novoControleEnvio
+    return {
+      ...novoControleEnvio,
+      em_execucao
+    }
   }
   
   // Atualizar quantidade enviada

@@ -47,10 +47,18 @@ const router = Router()
 
 /**
  * @swagger
- * /api/controle-envios:
+ * /api/controle-envios/cliente/{cliente_id}:
  *   get:
- *     summary: Lista todos os registros de controle de envios
+ *     summary: Lista todos os registros de controle de envios por cliente
  *     tags: [Controle de Envios]
+ *     parameters:
+ *       - in: path
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Lista de registros de controle de envios
@@ -69,10 +77,12 @@ const router = Router()
  *                   type: integer
  *                 message:
  *                   type: string
+ *       400:
+ *         description: cliente_id é obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/', ControleEnviosController.getAllControleEnvios)
+router.get('/cliente/:cliente_id', ControleEnviosController.getAllControleEnvios)
 
 /**
  * @swagger
@@ -80,6 +90,14 @@ router.get('/', ControleEnviosController.getAllControleEnvios)
  *   get:
  *     summary: Busca o controle de envios para hoje
  *     tags: [Controle de Envios]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Controle de envios de hoje
@@ -105,6 +123,14 @@ router.get('/hoje', ControleEnviosController.getControleEnvioHoje)
  *   put:
  *     summary: Altera a quantidade enviada da data de hoje
  *     tags: [Controle de Envios]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     requestBody:
  *       required: true
  *       content:
@@ -135,7 +161,7 @@ router.get('/hoje', ControleEnviosController.getControleEnvioHoje)
  *                 message:
  *                   type: string
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos ou cliente_id obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
@@ -145,8 +171,16 @@ router.put('/hoje/quantidade', ControleEnviosController.alterarQuantidadeEnviada
  * @swagger
  * /api/controle-envios/limite-diario:
  *   put:
- *     summary: Altera o limite diário de hoje
+ *     summary: Altera o limite diário de envios
  *     tags: [Controle de Envios]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     requestBody:
  *       required: true
  *       content:
@@ -158,10 +192,10 @@ router.put('/hoje/quantidade', ControleEnviosController.alterarQuantidadeEnviada
  *             properties:
  *               limite:
  *                 type: integer
- *                 minimum: 0
+ *                 minimum: 1
  *                 description: Novo limite diário de envios
  *             example:
- *               limite: 50
+ *               limite: 100
  *     responses:
  *       200:
  *         description: Limite diário alterado com sucesso
@@ -177,7 +211,7 @@ router.put('/hoje/quantidade', ControleEnviosController.alterarQuantidadeEnviada
  *                 message:
  *                   type: string
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos ou cliente_id obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
@@ -185,9 +219,9 @@ router.put('/limite-diario', ControleEnviosController.alterarLimiteDiario)
 
 /**
  * @swagger
- * /api/controle-envios/{data}:
+ * /api/controle-envios/{data}/cliente/{cliente_id}:
  *   get:
- *     summary: Busca controle de envios por data específica
+ *     summary: Busca controle de envios por data específica e cliente
  *     tags: [Controle de Envios]
  *     parameters:
  *       - in: path
@@ -198,6 +232,13 @@ router.put('/limite-diario', ControleEnviosController.alterarLimiteDiario)
  *           format: date
  *           example: "2024-01-15"
  *         description: Data no formato YYYY-MM-DD
+ *       - in: path
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Controle de envios encontrado ou criado
@@ -213,17 +254,17 @@ router.put('/limite-diario', ControleEnviosController.alterarLimiteDiario)
  *                 message:
  *                   type: string
  *       400:
- *         description: Formato de data inválido
+ *         description: Formato de data inválido ou cliente_id obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/:data', ControleEnviosController.getControleEnvioByDate)
+router.get('/:data/cliente/:cliente_id', ControleEnviosController.getControleEnvioByDate)
 
 /**
  * @swagger
- * /api/controle-envios/{data}/status:
+ * /api/controle-envios/{data}/status/cliente/{cliente_id}:
  *   get:
- *     summary: Verifica se ainda pode enviar mensagens na data
+ *     summary: Verifica se ainda pode enviar mensagens na data para um cliente
  *     tags: [Controle de Envios]
  *     parameters:
  *       - in: path
@@ -234,6 +275,13 @@ router.get('/:data', ControleEnviosController.getControleEnvioByDate)
  *           format: date
  *           example: "2024-01-15"
  *         description: Data no formato YYYY-MM-DD
+ *       - in: path
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Status de envio verificado
@@ -249,17 +297,17 @@ router.get('/:data', ControleEnviosController.getControleEnvioByDate)
  *                 message:
  *                   type: string
  *       400:
- *         description: Formato de data inválido
+ *         description: Formato de data inválido ou cliente_id obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/:data/status', ControleEnviosController.getStatusEnvio)
+router.get('/:data/status/cliente/:cliente_id', ControleEnviosController.getStatusEnvio)
 
 /**
  * @swagger
- * /api/controle-envios/{data}/incrementar:
+ * /api/controle-envios/{data}/incrementar/cliente/{cliente_id}:
  *   post:
- *     summary: Incrementa a quantidade de mensagens enviadas
+ *     summary: Incrementa a quantidade de mensagens enviadas para um cliente
  *     tags: [Controle de Envios]
  *     parameters:
  *       - in: path
@@ -270,6 +318,13 @@ router.get('/:data/status', ControleEnviosController.getStatusEnvio)
  *           format: date
  *           example: "2024-01-15"
  *         description: Data no formato YYYY-MM-DD
+ *       - in: path
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     requestBody:
  *       content:
  *         application/json:
@@ -298,10 +353,10 @@ router.get('/:data/status', ControleEnviosController.getStatusEnvio)
  *                 message:
  *                   type: string
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos ou cliente_id obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/:data/incrementar', ControleEnviosController.incrementarQuantidade)
+router.post('/:data/incrementar/cliente/:cliente_id', ControleEnviosController.incrementarQuantidade)
 
 export { router as controleEnviosRoutes }

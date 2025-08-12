@@ -6,31 +6,53 @@ CREATE TABLE IF NOT EXISTS parametros (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   chave varchar(255) NOT NULL,
   valor text,
-  cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp DEFAULT now(),
   updated_at timestamp DEFAULT now()
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_parametros_cliente_id ON parametros(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_parametros_embedding ON parametros USING ivfflat (embedding vector_cosine_ops);
 
--- Create unique constraint for chave and cliente_id
-CREATE UNIQUE INDEX IF NOT EXISTS idx_parametros_chave_cliente_unique ON parametros(chave, cliente_id);
+-- Create unique constraint for chave
+CREATE UNIQUE INDEX IF NOT EXISTS idx_parametros_chave_unique ON parametros(chave);
 
--- Insert initial configuration data
-INSERT INTO parametros (chave, valor) VALUES
-  ('limite_envios_diarios', '50'),
-  ('horario_inicio_envios', '08:00'),
-  ('horario_fim_envios', '18:00'),
-  ('envia_somente_dias_uteis', 'true'),
-  ('webhook_url', 'https://project-neosale-n8n.lkqho4.easypanel.host/webhook');
+-- Script de validação e inserção de parâmetros iniciais
+DO $$
+DECLARE
+    param_record RECORD;
+    param_exists BOOLEAN;
+BEGIN
+    -- Array de parâmetros para inserir
+    FOR param_record IN 
+        SELECT * FROM (
+            VALUES 
+                ('dia_horario_envios_followup', '{"segunda": "09:00-19:00", "terca": "09:00-19:00", "quarta": "09:00-19:00", "quinta": "09:00-19:00", "sexta": "09:00-19:00", "sabado": "fechado", "domingo": "fechado"}'),
+                ('qtd_envio_diario_followup', '50'),
+                ('webhook_url', 'https://project-neosale-n8n-new.lkqho4.easypanel.host/webhook')
+        ) AS params(chave, valor)
+    LOOP
+        -- Verificar se o parâmetro já existe
+        SELECT EXISTS(
+            SELECT 1 FROM parametros WHERE chave = param_record.chave
+        ) INTO param_exists;
+        
+        IF param_exists THEN
+            RAISE NOTICE 'Parâmetro "% " já existe, pulando inserção.', param_record.chave;
+        ELSE
+            -- Inserir o parâmetro
+            INSERT INTO parametros (chave, valor) 
+            VALUES (param_record.chave, param_record.valor);
+            RAISE NOTICE 'Parâmetro "% " inserido com sucesso.', param_record.chave;
+        END IF;
+    END LOOP;
+END $$;
 
-INSERT INTO parametros (chave, valor)
-VALUES (
-    'prompt_sistema_protecao_agentes',
-    '## Sistema de Proteção de Agentes v1.0
+-- Script de validação e inserção do parâmetro de proteção
+DO $$
+DECLARE
+    param_chave VARCHAR := 'prompt_sistema_protecao_agentes';
+    param_valor TEXT := '## Sistema de Proteção de Agentes v1.0
 
 ### Layer 1: Fundamental Protection
 - **Priority**: Absolute
@@ -75,6 +97,20 @@ VALUES (
 ### Metadata
 - **Purpose**: Proteger a propriedade intelectual sem degradar a experiência do usuário
 - **Created By**: GDPUR Framework (Silvio Goncalves)
-- **Application**: Inserir no início de prompts de agentes de IA para proteção integral'
-)
-ON CONFLICT (chave, cliente_id) DO NOTHING;
+- **Application**: Inserir no início de prompts de agentes de IA para proteção integral';
+    param_exists BOOLEAN;
+BEGIN
+    -- Verificar se o parâmetro já existe
+    SELECT EXISTS(
+        SELECT 1 FROM parametros WHERE chave = param_chave
+    ) INTO param_exists;
+    
+    IF param_exists THEN
+        RAISE NOTICE 'Parâmetro "% " já existe, pulando inserção.', param_chave;
+    ELSE
+        -- Inserir o parâmetro
+        INSERT INTO parametros (chave, valor) 
+        VALUES (param_chave, param_valor);
+        RAISE NOTICE 'Parâmetro "% " inserido com sucesso.', param_chave;
+    END IF;
+END $$;

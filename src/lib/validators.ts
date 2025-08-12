@@ -163,20 +163,18 @@ export type CreateLeadInput = z.infer<typeof createLeadSchema>
 // Validator para criação de parâmetro
 export const createParametroSchema = z.object({
   chave: z.string().min(1, 'Chave é obrigatória'),
-  valor: z.string().min(1, 'Valor é obrigatório'),
-  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  valor: z.string().optional(),
   embedding: z.array(z.number()).optional()
-})
+});
 
 // Validator para atualização de parâmetro
 export const updateParametroSchema = z.object({
   chave: z.string().min(1, 'Chave é obrigatória').optional(),
-  valor: z.string().min(1, 'Valor é obrigatório').optional(),
-  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
+  valor: z.string().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
-})
+});
 
 export type CreateParametroInput = z.infer<typeof createParametroSchema>
 export type UpdateParametroInput = z.infer<typeof updateParametroSchema>
@@ -686,3 +684,41 @@ export type CreateChatHistoryInput = z.infer<typeof createChatHistorySchema>
 export type UpdateChatHistoryInput = z.infer<typeof updateChatHistorySchema>
 export type SessionIdParam = z.infer<typeof sessionIdParamSchema>
 export type NumericIdParam = z.infer<typeof numericIdParamSchema>
+
+// Validators para configurações de follow-up
+export const createConfiguracaoFollowupSchema = z.object({
+  dia_horario_envio: z.object({
+    segunda: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    terca: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    quarta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    quinta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    sexta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    sabado: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
+    domingo: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"')
+  }).optional(),
+  qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
+  em_execucao: z.boolean().optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  embedding: z.array(z.number()).optional()
+})
+
+export const updateConfiguracaoFollowupSchema = z.object({
+  dia_horario_envio: z.object({
+    segunda: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    terca: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    quarta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    quinta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    sexta: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    sabado: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
+    domingo: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional()
+  }).optional(),
+  qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
+  em_execucao: z.boolean().optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
+  embedding: z.array(z.number()).optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+export type CreateConfiguracaoFollowupInput = z.infer<typeof createConfiguracaoFollowupSchema>
+export type UpdateConfiguracaoFollowupInput = z.infer<typeof updateConfiguracaoFollowupSchema>

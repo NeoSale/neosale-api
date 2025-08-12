@@ -139,10 +139,17 @@ export class ControleEnviosController {
   // POST /api/controle-envios/:data/incrementar - Incrementar quantidade enviada
   static async incrementarQuantidade(req: Request, res: Response) {
     try {
-      const { data } = req.params
+      const { data, cliente_id } = req.params
       const { incremento = 1 } = req.body
       
-      console.log('📋 POST /api/controle-envios/:data/incrementar - Data:', data, 'Incremento:', incremento)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório'
+        });
+      }
+      
+      console.log('📋 POST /api/controle-envios/:data/incrementar - Data:', data, 'Cliente:', cliente_id, 'Incremento:', incremento)
       
       // Validar formato da data
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/
@@ -161,7 +168,7 @@ export class ControleEnviosController {
         })
       }
       
-      const controleAtualizado = await ControleEnviosService.incrementarQuantidadeEnviada(data, incremento)
+      const controleAtualizado = await ControleEnviosService.incrementarQuantidadeEnviada(data, incremento, cliente_id)
       
       return res.json({
         success: true,
@@ -176,12 +183,12 @@ export class ControleEnviosController {
   // GET /api/controle-envios/hoje/cliente/:cliente_id - Buscar controle de hoje por cliente
   static async getControleEnvioHoje(req: Request, res: Response) {
     try {
-      const { cliente_id } = req.params;
+      const cliente_id = req.headers['cliente_id'] as string;
       
       if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'cliente_id é obrigatório'
+          message: 'cliente_id é obrigatório no cabeçalho da requisição'
         });
       }
       
@@ -208,8 +215,16 @@ export class ControleEnviosController {
   static async alterarQuantidadeEnviadaHoje(req: Request, res: Response) {
     try {
       const { quantidade } = req.body
+      const cliente_id = req.headers.cliente_id as string
       
-      console.log('📋 PUT /api/controle-envios/hoje/quantidade - Alterando quantidade para:', quantidade)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        });
+      }
+      
+      console.log('📋 PUT /api/controle-envios/hoje/quantidade - Alterando quantidade para:', quantidade, 'Cliente:', cliente_id)
       
       // Validar quantidade
       if (typeof quantidade !== 'number' || quantidade < 0) {
@@ -224,7 +239,7 @@ export class ControleEnviosController {
       const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit'})
       const hoje = brasilTime.split('/').reverse().join('-') // YYYY-MM-DD
       
-      const controleAtualizado = await ControleEnviosService.alterarQuantidadeEnviada(hoje, quantidade)
+      const controleAtualizado = await ControleEnviosService.alterarQuantidadeEnviada(hoje, quantidade, cliente_id)
       
       return res.json({
         success: true,
@@ -240,8 +255,16 @@ export class ControleEnviosController {
   static async alterarLimiteDiario(req: Request, res: Response) {
     try {
       const { limite } = req.body
+      const cliente_id = req.headers.cliente_id as string
       
-      console.log('📋 PUT /api/controle-envios/limite-diario - Alterando limite para:', limite)
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        });
+      }
+      
+      console.log('📋 PUT /api/controle-envios/limite-diario - Alterando limite para:', limite, 'Cliente:', cliente_id)
       
       // Validar limite
       if (typeof limite !== 'number' || limite < 0) {
@@ -251,7 +274,7 @@ export class ControleEnviosController {
         })
       }
       
-      const controleAtualizado = await ControleEnviosService.alterarLimiteDiario(limite)
+      const controleAtualizado = await ControleEnviosService.alterarLimiteDiario(limite, cliente_id)
       
       return res.json({
         success: true,

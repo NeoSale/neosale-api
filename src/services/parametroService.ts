@@ -10,127 +10,156 @@ export interface Parametro {
 }
 
 export class ParametroService {
-  static async getAll(clienteId?: string): Promise<Parametro[]> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
+  static async getAll(): Promise<Parametro[]> {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
+      }
+
+      const { data, error } = await supabase
+        .from('parametros')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar parâmetros:', error);
+        throw new Error(`Erro ao buscar parâmetros: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erro no serviço getAll:', error);
+      throw error;
     }
-
-    let query = supabase
-      .from('parametros')
-      .select('*')
-      .order('created_at', { ascending: true });
-
-    if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      throw new Error(`Erro ao buscar parâmetros: ${error.message}`);
-    }
-
-    return data || [];
   }
 
   static async getById(id: string): Promise<Parametro | null> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
-    }
-
-    const { data, error } = await supabase
-      .from('parametros')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
       }
-      throw new Error(`Erro ao buscar parâmetro: ${error.message}`);
-    }
 
-    return data;
+      const { data, error } = await supabase
+        .from('parametros')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Não encontrado
+        }
+        console.error('Erro ao buscar parâmetro por ID:', error);
+        throw new Error(`Erro ao buscar parâmetro: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro no serviço getById:', error);
+      throw error;
+    }
   }
 
   static async getByChave(chave: string): Promise<Parametro | null> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
-    }
-
-    const { data, error } = await supabase
-      .from('parametros')
-      .select('*')
-      .eq('chave', chave)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
       }
-      throw new Error(`Erro ao buscar parâmetro por chave: ${error.message}`);
-    }
 
-    return data;
+      const { data, error } = await supabase
+        .from('parametros')
+        .select('*')
+        .eq('chave', chave)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Não encontrado
+        }
+        console.error('Erro ao buscar parâmetro por chave:', error);
+        throw new Error(`Erro ao buscar parâmetro por chave: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro no serviço getByChave:', error);
+      throw error;
+    }
   }
 
-  static async create(input: CreateParametroInput): Promise<Parametro> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
+  static async create(parametroData: CreateParametroInput): Promise<Parametro> {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
+      }
+
+      const { data, error } = await supabase
+        .from('parametros')
+        .insert([parametroData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar parâmetro:', error);
+        throw new Error(`Erro ao criar parâmetro: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro no serviço create:', error);
+      throw error;
     }
-
-    const { data, error } = await supabase
-      .from('parametros')
-      .insert({
-        chave: input.chave,
-        valor: input.valor,
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Erro ao criar parâmetro: ${error.message}`);
-    }
-
-    return data;
   }
 
-  static async update(id: string, input: UpdateParametroInput): Promise<Parametro> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
+  static async update(id: string, updateData: UpdateParametroInput): Promise<Parametro | null> {
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
+      }
+
+      const { data, error } = await supabase
+        .from('parametros')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null; // Não encontrado
+        }
+        console.error('Erro ao atualizar parâmetro:', error);
+        throw new Error(`Erro ao atualizar parâmetro: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro no serviço update:', error);
+      throw error;
     }
-
-    const { data, error } = await supabase
-      .from('parametros')
-      .update({
-        ...input,
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Erro ao atualizar parâmetro: ${error.message}`);
-    }
-
-    return data;
   }
 
   static async delete(id: string): Promise<void> {
-    if (!supabase) {
-      throw new Error('Supabase client não está inicializado');
-    }
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client não está inicializado');
+      }
 
-    const { error } = await supabase
-      .from('parametros')
-      .delete()
-      .eq('id', id);
+      const { error } = await supabase
+        .from('parametros')
+        .delete()
+        .eq('id', id);
 
-    if (error) {
-      throw new Error(`Erro ao deletar parâmetro: ${error.message}`);
+      if (error) {
+        console.error('Erro ao deletar parâmetro:', error);
+        throw new Error(`Erro ao deletar parâmetro: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Erro no serviço delete:', error);
+      throw error;
     }
   }
 }

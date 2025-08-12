@@ -1,0 +1,183 @@
+import { Request, Response } from 'express'
+import { ConfiguracaoFollowupService } from '../services/configuracaofollowupservice'
+import { createConfiguracaoFollowupSchema, updateConfiguracaoFollowupSchema, idParamSchema } from '../lib/validators'
+import { z } from 'zod'
+
+export class ConfiguracaoFollowupController {
+  static async getAll(req: Request, res: Response) {
+    try {
+      const configuracoes = await ConfiguracaoFollowupService.getAll()
+      res.json({
+        success: true,
+        data: configuracoes,
+        message: 'Configurações de follow-up recuperadas com sucesso'
+      })
+    } catch (error) {
+      console.error('Erro ao buscar configurações de follow-up:', error)
+      res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+
+  static async getById(req: Request, res: Response) {
+    try {
+      const { id } = idParamSchema.parse(req.params)
+      
+      const configuracao = await ConfiguracaoFollowupService.getById(id)
+      
+      if (!configuracao) {
+        return res.status(404).json({
+          success: false,
+          message: 'Configuração de follow-up não encontrada'
+        })
+      }
+
+      return res.json({
+        success: true,
+        data: configuracao,
+        message: 'Configuração de follow-up recuperada com sucesso'
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
+        })
+      }
+
+      console.error('Erro ao buscar configuração de follow-up por ID:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+
+  static async getByClienteId(req: Request, res: Response) {
+    try {
+      const { cliente_id } = z.object({ cliente_id: z.string().uuid() }).parse(req.params)
+      
+      const configuracao = await ConfiguracaoFollowupService.getByClienteId(cliente_id)
+      
+      if (!configuracao) {
+        return res.status(404).json({
+          success: false,
+          message: 'Configuração de follow-up não encontrada para este cliente'
+        })
+      }
+
+      return res.json({
+        success: true,
+        data: configuracao,
+        message: 'Configuração de follow-up recuperada com sucesso'
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
+        })
+      }
+
+      console.error('Erro ao buscar configuração de follow-up por cliente_id:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+
+  static async create(req: Request, res: Response) {
+    try {
+      const validatedData = createConfiguracaoFollowupSchema.parse(req.body)
+      
+      const novaConfiguracao = await ConfiguracaoFollowupService.create(validatedData)
+      
+      return res.status(201).json({
+        success: true,
+        data: novaConfiguracao,
+        message: 'Configuração de follow-up criada com sucesso'
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
+        })
+      }
+
+      console.error('Erro ao criar configuração de follow-up:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+
+  static async update(req: Request, res: Response) {
+    try {
+      const { id } = idParamSchema.parse(req.params)
+      const validatedData = updateConfiguracaoFollowupSchema.parse(req.body)
+      
+      const configuracaoAtualizada = await ConfiguracaoFollowupService.update(id, validatedData)
+      
+      return res.json({
+        success: true,
+        data: configuracaoAtualizada,
+        message: 'Configuração de follow-up atualizada com sucesso'
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
+        })
+      }
+
+      console.error('Erro ao atualizar configuração de follow-up:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+
+  static async delete(req: Request, res: Response) {
+    try {
+      const { id } = idParamSchema.parse(req.params)
+      
+      await ConfiguracaoFollowupService.delete(id)
+      
+      return res.json({
+        success: true,
+        message: 'Configuração de follow-up deletada com sucesso'
+      })
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
+        })
+      }
+
+      console.error('Erro ao deletar configuração de follow-up:', error)
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      })
+    }
+  }
+}
