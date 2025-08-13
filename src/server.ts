@@ -97,7 +97,7 @@ app.get('/', (req, res) => {
       referencias: `${BASE_URL}/api/referencias`,
       parametros: `${BASE_URL}/api/parametros`,
       mensagens: `${BASE_URL}/api/mensagens`,
-      followups: `${BASE_URL}/api/followups`,
+      followup: `${BASE_URL}/api/followup`,
       configuracoes: `${BASE_URL}/api/configuracoes`,
       configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
       provedores: `${BASE_URL}/api/provedores`,
@@ -119,7 +119,7 @@ app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api/referencias', referenciaRoutes)
 app.use('/api/parametros', parametroRoutes)
 app.use('/api/mensagens', mensagemRoutes)
-app.use('/api/followups', followupRoutes)
+app.use('/api/followup', followupRoutes)
 app.use('/api/configuracoes', configuracoesRoutes)
 app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
 app.use('/api/provedores', provedorRoutes)

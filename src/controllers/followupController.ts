@@ -166,20 +166,40 @@ export class FollowupController {
   }
 
   // Buscar followups com embedding
-  static async buscarComEmbedding(req: Request, res: Response): Promise<Response> {
+  // Buscar leads para envio de mensagens
+  static async buscarLeadsParaEnvio(req: Request, res: Response): Promise<Response> {
     try {
-      const followups = await FollowupService.buscarComEmbedding()
+      const cliente_id = req.headers.cliente_id as string;
+      const { quantidade = 10 } = req.query;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'cliente_id é obrigatório no header'
+        });
+      }
+
+      const quantidadeNum = parseInt(quantidade as string, 10);
+      if (isNaN(quantidadeNum) || quantidadeNum <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'quantidade deve ser um número positivo'
+        });
+      }
+
+      const leads = await FollowupService.buscarLeadsParaEnvio(cliente_id, quantidadeNum);
       
       return res.json({
         success: true,
-        data: followups
-      })
+        data: leads,
+        total: leads?.length || 0
+      });
     } catch (error: any) {
-      console.error('❌ Erro no controller ao buscar followups com embedding:', error)
-      return res.status(400).json({
+      console.error('❌ Erro no controller ao buscar leads para envio:', error);
+      return res.status(500).json({
         success: false,
-        error: error.message || 'Erro ao buscar followups com embedding'
-      })
+        error: error.message || 'Erro ao buscar leads para envio'
+      });
     }
   }
 }

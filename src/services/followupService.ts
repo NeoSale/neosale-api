@@ -278,4 +278,78 @@ export class FollowupService {
     console.log('✅ Followups com embedding encontrados:', followups?.length)
     return followups
   }
+
+  // Buscar leads para envio de mensagens com priorização
+  static async buscarLeadsParaEnvio(clienteId: string, quantidade: number) {
+    FollowupService.checkSupabaseConnection();
+    console.log('🔄 Buscando leads para envio:', { clienteId, quantidade });
+
+    // Query complexa que prioriza:
+    // 1. Leads com followup anterior que precisam da próxima mensagem (ordenados por data da última followup + período)
+    // 2. Leads sem followup ainda (ordenados por data de criação)
+    const { data: leadsParaEnvio, error } = await supabase!
+      .rpc('buscar_leads_para_followup', {
+        p_cliente_id: clienteId,
+        p_limite: quantidade
+      });
+
+    if (error) {
+      console.error('❌ Erro ao buscar leads para envio:', error);
+      throw error;
+    }
+
+    // Transformar os dados no formato solicitado
+    const leadsFormatados = await Promise.all(
+      (leadsParaEnvio || []).map(async (lead: any) => {
+        const resultado: any = {
+          lead: {
+            id: lead.lead_id,
+            nome: lead.lead_nome,
+            telefone: lead.lead_telefone,
+            email: lead.lead_email
+          },
+          mensagem: {
+            id: lead.mensagem_id,
+            nome: lead.mensagem_nome,
+            texto: lead.mensagem_texto
+          },
+          tem_followup_anterior: lead.tem_followup_anterior
+        };
+
+        // Se tem followup anterior, buscar mensagens anteriores
+        if (lead.tem_followup_anterior) {
+          const { data: mensagensAnteriores, error: errorMensagens } = await supabase!
+            .from('followup')
+            .select(`
+              mensagem:id_mensagem(
+                id,
+                nome,
+                texto_mensagem,
+                ordem
+              ),
+              created_at
+            `)
+            .eq('id_lead', lead.lead_id)
+            .eq('status', 'sucesso')
+            .order('created_at', { ascending: true });
+
+          if (!errorMensagens && mensagensAnteriores) {
+            resultado.mensagens_anteriores = mensagensAnteriores.map((item: any) => ({
+              mensagem: {
+                id: item.mensagem.id,
+                nome: item.mensagem.nome,
+                texto: item.mensagem.texto_mensagem,
+                created_at: item.created_at
+              }
+            }));
+          }
+        }
+
+        return resultado;
+      })
+    );
+
+    console.log('✅ Leads para envio encontrados:', leadsFormatados?.length);
+    return leadsFormatados;
+  }
 }

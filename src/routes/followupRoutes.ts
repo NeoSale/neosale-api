@@ -106,10 +106,10 @@ const router = Router()
 
 /**
  * @swagger
- * /api/followups:
+ * /api/followup:
  *   get:
  *     summary: Listar followups com paginação
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: query
  *         name: page
@@ -155,7 +155,7 @@ const router = Router()
  *                       type: integer
  *   post:
  *     summary: Criar novo followup
- *     tags: [Followups]
+ *     tags: [Followup]
  *     requestBody:
  *       required: true
  *       content:
@@ -180,12 +180,15 @@ const router = Router()
 router.get('/', FollowupController.listar)
 router.post('/', FollowupController.criar)
 
+// Rota específica deve vir antes das rotas com parâmetros
+router.get('/leads-para-envio', FollowupController.buscarLeadsParaEnvio)
+
 /**
  * @swagger
- * /api/followups/{id}:
+ * /api/followup/{id}:
  *   get:
  *     summary: Buscar followup por ID
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: path
  *         name: id
@@ -210,7 +213,7 @@ router.post('/', FollowupController.criar)
  *         description: Followup não encontrado
  *   put:
  *     summary: Atualizar followup
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: path
  *         name: id
@@ -237,11 +240,13 @@ router.post('/', FollowupController.criar)
  *                   type: boolean
  *                 data:
  *                   $ref: '#/components/schemas/Followup'
- *                 message:
- *                   type: string
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Followup não encontrado
  *   delete:
  *     summary: Deletar followup
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: path
  *         name: id
@@ -269,10 +274,10 @@ router.delete('/:id', FollowupController.deletar)
 
 /**
  * @swagger
- * /api/followups/lead/{leadId}:
+ * /api/followup/lead/{leadId}:
  *   get:
  *     summary: Buscar followups por lead
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: path
  *         name: leadId
@@ -300,10 +305,10 @@ router.get('/lead/:leadId', FollowupController.buscarPorLead)
 
 /**
  * @swagger
- * /api/followups/status/{status}:
+ * /api/followup/status/{status}:
  *   get:
  *     summary: Buscar followups por status
- *     tags: [Followups]
+ *     tags: [Followup]
  *     parameters:
  *       - in: path
  *         name: status
@@ -329,15 +334,36 @@ router.get('/lead/:leadId', FollowupController.buscarPorLead)
  */
 router.get('/status/:status', FollowupController.buscarPorStatus)
 
+
+
 /**
  * @swagger
- * /api/followups/embedding:
+ * /api/followup/leads-para-envio:
  *   get:
- *     summary: Buscar followups com embedding
- *     tags: [Followups]
+ *     summary: Buscar leads para envio de mensagens
+ *     description: |
+ *       Busca leads priorizados para envio de mensagens de followup:
+ *       1. Leads com followup anterior que precisam da próxima mensagem (ordenados por data da próxima mensagem)
+ *       2. Leads sem followup ainda (ordenados por data de criação)
+ *     tags: [Followup]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *       - in: query
+ *         name: quantidade
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 10
+ *         description: Quantidade de leads a retornar
  *     responses:
  *       200:
- *         description: Followups com embedding
+ *         description: Leads encontrados para envio
  *         content:
  *           application/json:
  *             schema:
@@ -348,8 +374,47 @@ router.get('/status/:status', FollowupController.buscarPorStatus)
  *                 data:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Followup'
+ *                     type: object
+ *                     properties:
+ *                       lead_id:
+ *                         type: string
+ *                         format: uuid
+ *                       lead_nome:
+ *                         type: string
+ *                       lead_telefone:
+ *                         type: string
+ *                       lead_email:
+ *                         type: string
+ *                       lead_empresa:
+ *                         type: string
+ *                       lead_created_at:
+ *                         type: string
+ *                         format: date-time
+ *                       mensagem_id:
+ *                         type: string
+ *                         format: uuid
+ *                       mensagem_nome:
+ *                         type: string
+ *                       mensagem_texto:
+ *                         type: string
+ *                       mensagem_ordem:
+ *                         type: integer
+ *                       ultima_followup_data:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                       proxima_mensagem_data:
+ *                         type: string
+ *                         format: date-time
+ *                       tem_followup_anterior:
+ *                         type: boolean
+ *                       prioridade:
+ *                         type: integer
+ *                 total:
+ *                   type: integer
+ *       400:
+ *         description: Parâmetros inválidos
+ *       500:
+ *         description: Erro interno do servidor
  */
-router.get('/embedding', FollowupController.buscarComEmbedding)
-
 export default router

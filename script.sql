@@ -72,7 +72,6 @@ create table leads (
   etapa_funil_id uuid references etapas_funil(id),
   status_negociacao_id uuid references status_negociacao(id),
   qualificacao_id uuid references qualificacao(id),
-  followup_id uuid references followup(id),
   deletado boolean DEFAULT false,
   created_at timestamp default now()
 );
@@ -122,8 +121,6 @@ insert into leads (nome, telefone, email, empresa, cargo, origem_id, status_agen
   ('Marcos Pereira', '(11) 91111-4567', 'marcos.pereira@hotmail.com', 'TechVision', 'CEO', (select id from origens_leads where nome = 'inbound'), true, (select id from mensagens limit 1 offset 2), (select id from etapas_funil where nome = 'fechamento'), (select id from status_negociacao where nome = 'fechado'), '2024-01-23 08:15:00'),
   ('Juliana Souza', '(11) 90000-8901', 'juliana.souza@yahoo.com.br', 'DevOps Inc', 'Engenheira DevOps', (select id from origens_leads where nome = 'outbound'), false, null, (select id from etapas_funil where nome = 'lead'), (select id from status_negociacao where nome = 'perdido'), '2024-01-24 12:50:00');
 
--- Atualizar leads com followup_id após inserir os followups
-update leads set followup_id = (select id from followup where id_lead = leads.id limit 1);
 
 create table controle_envios_diarios (
   id uuid primary key default gen_random_uuid(),

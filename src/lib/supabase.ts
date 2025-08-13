@@ -61,7 +61,6 @@ export interface Lead {
   origem_id: string
   status_agendamento: boolean
   agendado_em?: string
-  followup_id: string
   etapa_funil_id?: string
   status_negociacao_id?: string
   qualificacao_id?: string

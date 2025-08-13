@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS leads (
   etapa_funil_id uuid REFERENCES etapas_funil(id),
   status_negociacao_id uuid REFERENCES status_negociacao(id),
   qualificacao_id uuid REFERENCES qualificacao(id),
-  followup_id uuid REFERENCES followup(id),
   deletado boolean DEFAULT false,
   ai_habilitada boolean DEFAULT true, -- indica se a IA está habilitada para este lead
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
@@ -43,24 +42,3 @@ CREATE INDEX IF NOT EXISTS idx_leads_qualificacao ON leads(qualificacao_id);
 CREATE INDEX IF NOT EXISTS idx_leads_deletado ON leads(deletado);
 CREATE INDEX IF NOT EXISTS idx_leads_cliente_id ON leads(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_leads_embedding ON leads USING ivfflat (embedding vector_cosine_ops);
-
--- Add foreign key constraint to followup table for id_lead
--- Note: First clean up orphaned records, then add constraint
-DO $$
-BEGIN
-    -- Remove orphaned followup records that reference non-existent leads
-    DELETE FROM followup 
-    WHERE id_lead IS NOT NULL 
-    AND id_lead NOT IN (SELECT id FROM leads WHERE id IS NOT NULL);
-    
-    -- Add constraint if it doesn't exist
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'fk_followup_lead' 
-        AND table_name = 'followup'
-    ) THEN
-        ALTER TABLE followup 
-        ADD CONSTRAINT fk_followup_lead 
-        FOREIGN KEY (id_lead) REFERENCES leads(id);
-    END IF;
-END $$;
