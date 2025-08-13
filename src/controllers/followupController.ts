@@ -170,7 +170,7 @@ export class FollowupController {
   static async buscarLeadsParaEnvio(req: Request, res: Response): Promise<Response> {
     try {
       const cliente_id = req.headers.cliente_id as string;
-      const { quantidade = 10 } = req.query;
+      const quantidade = req.query.quantidade as string;
       
       if (!cliente_id) {
         return res.status(400).json({
