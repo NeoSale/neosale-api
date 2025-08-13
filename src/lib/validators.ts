@@ -103,9 +103,7 @@ export const createFollowupSchema = z.object({
     errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
   }),
   erro: z.string().optional(),
-  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória'),
-  embedding: z.array(z.number()).optional(),
-  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido')
+  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória')
 })
 
 // Validator para atualização de followup
@@ -117,7 +115,6 @@ export const updateFollowupSchema = z.object({
   }).optional(),
   erro: z.string().optional(),
   mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória').optional(),
-  embedding: z.array(z.number()).optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'

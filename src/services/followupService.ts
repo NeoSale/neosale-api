@@ -124,8 +124,7 @@ export class FollowupService {
       id_lead: data.id_lead,
       status: data.status,
       erro: data.erro,
-      mensagem_enviada: data.mensagem_enviada,
-      embedding: data.embedding
+      mensagem_enviada: data.mensagem_enviada
     };
 
     if (data.cliente_id) {
@@ -166,7 +165,7 @@ export class FollowupService {
     if (data.status) updateData.status = data.status
     if (data.erro !== undefined) updateData.erro = data.erro
     if (data.mensagem_enviada) updateData.mensagem_enviada = data.mensagem_enviada
-    if (data.embedding) updateData.embedding = data.embedding
+
     
     let query = supabase!
       .from('followup')

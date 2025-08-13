@@ -81,8 +81,17 @@ export class FollowupController {
   // Criar novo followup
   static async criar(req: Request, res: Response): Promise<Response> {
     try {
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
       const data = createFollowupSchema.parse(req.body)
-      const followup = await FollowupService.criar(data)
+      const followup = await FollowupService.criar({ ...data, cliente_id })
       
       return res.status(201).json({
         success: true,

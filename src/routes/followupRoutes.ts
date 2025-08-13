@@ -32,11 +32,6 @@ const router = Router()
  *         mensagem_enviada:
  *           type: string
  *           description: Texto da mensagem que foi enviada
- *         embedding:
- *           type: array
- *           items:
- *             type: number
- *           description: Embedding para LLM
  *         created_at:
  *           type: string
  *           format: date-time
@@ -71,11 +66,6 @@ const router = Router()
  *         mensagem_enviada:
  *           type: string
  *           description: Texto da mensagem que foi enviada
- *         embedding:
- *           type: array
- *           items:
- *             type: number
- *           description: Embedding para LLM
  *     UpdateFollowup:
  *       type: object
  *       properties:
@@ -97,11 +87,6 @@ const router = Router()
  *         mensagem_enviada:
  *           type: string
  *           description: Texto da mensagem que foi enviada
- *         embedding:
- *           type: array
- *           items:
- *             type: number
- *           description: Embedding para LLM
  */
 
 /**
@@ -154,14 +139,22 @@ const router = Router()
  *                     totalPages:
  *                       type: integer
  *   post:
- *     summary: Criar novo followup
- *     tags: [Followup]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/CreateFollowup'
+  *     summary: Criar novo followup
+  *     tags: [Followup]
+  *     parameters:
+  *       - in: header
+  *         name: cliente_id
+  *         required: true
+  *         schema:
+  *           type: string
+  *           format: uuid
+  *         description: ID do cliente
+  *     requestBody:
+  *       required: true
+  *       content:
+  *         application/json:
+  *           schema:
+  *             $ref: '#/components/schemas/CreateFollowup'
  *     responses:
  *       201:
  *         description: Followup criado com sucesso
