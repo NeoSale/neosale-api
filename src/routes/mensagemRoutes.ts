@@ -1,6 +1,7 @@
 import { Router } from 'express';
 const { body, param, query } = require('express-validator');
 import { mensagemController } from '../controllers/mensagemController';
+import { validateClienteId } from '../middleware/validate-cliente-id';
 
 const router = Router();
 
@@ -126,6 +127,14 @@ const router = Router();
  *   post:
  *     summary: Criar nova mensagem
  *     tags: [Mensagens]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     requestBody:
  *       required: true
  *       content:
@@ -145,6 +154,7 @@ const router = Router();
  *         description: Erro interno do servidor
  */
 router.post('/',
+  validateClienteId,
   [
     body('nome')
       .optional()
@@ -180,6 +190,14 @@ router.post('/',
  *     summary: Listar todas as mensagens (incluindo inativas)
  *     tags: [Mensagens]
  *     description: Retorna todas as mensagens cadastradas, incluindo as ativas e inativas, ordenadas por status (ativas primeiro) e depois por ordem
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Lista de todas as mensagens (ativas e inativas)
@@ -192,7 +210,7 @@ router.post('/',
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/', mensagemController.listarTodas);
+router.get('/', validateClienteId, mensagemController.listarTodas);
 
 /**
  * @swagger
@@ -200,6 +218,14 @@ router.get('/', mensagemController.listarTodas);
  *   get:
  *     summary: Listar todas as mensagens (incluindo inativas)
  *     tags: [Mensagens]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Lista de todas as mensagens
@@ -212,7 +238,7 @@ router.get('/', mensagemController.listarTodas);
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/todas', mensagemController.listarTodasIncluindoInativas);
+router.get('/todas', validateClienteId, mensagemController.listarTodasIncluindoInativas);
 
 /**
  * @swagger
@@ -221,6 +247,13 @@ router.get('/todas', mensagemController.listarTodasIncluindoInativas);
  *     summary: Buscar mensagens por texto
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: query
  *         name: texto
  *         required: true
@@ -242,6 +275,7 @@ router.get('/todas', mensagemController.listarTodasIncluindoInativas);
  *         description: Erro interno do servidor
  */
 router.get('/buscar',
+  validateClienteId,
   [
     query('texto')
       .notEmpty()
@@ -257,6 +291,13 @@ router.get('/buscar',
  *     summary: Buscar mensagem por ID
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: path
  *         name: id
  *         required: true
@@ -277,6 +318,7 @@ router.get('/buscar',
  *         description: Erro interno do servidor
  */
 router.get('/:id',
+  validateClienteId,
   [
     param('id')
       .isUUID()
@@ -292,6 +334,13 @@ router.get('/:id',
  *     summary: Atualizar mensagem
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: path
  *         name: id
  *         required: true
@@ -320,6 +369,7 @@ router.get('/:id',
  *         description: Erro interno do servidor
  */
 router.put('/:id',
+  validateClienteId,
   [
     param('id')
       .isUUID()
@@ -359,6 +409,13 @@ router.put('/:id',
  *     summary: Deletar mensagem (desativar)
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: path
  *         name: id
  *         required: true
@@ -375,6 +432,7 @@ router.put('/:id',
  *         description: Erro interno do servidor
  */
 router.delete('/:id',
+  validateClienteId,
   [
     param('id')
       .isUUID()
@@ -390,6 +448,13 @@ router.delete('/:id',
  *     summary: Duplicar uma mensagem existente
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: path
  *         name: id
  *         required: true
@@ -410,6 +475,7 @@ router.delete('/:id',
  *         description: Erro interno do servidor
  */
 router.post('/:id/duplicar',
+  validateClienteId,
   [
     param('id')
       .isUUID()
@@ -425,6 +491,13 @@ router.post('/:id/duplicar',
  *     summary: Ativar ou desativar uma mensagem
  *     tags: [Mensagens]
  *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
  *       - in: path
  *         name: id
  *         required: true
@@ -466,6 +539,7 @@ router.post('/:id/duplicar',
  *         description: Erro interno do servidor
  */
 router.patch('/:id/ativar-desativar',
+  validateClienteId,
   [
     param('id')
       .isUUID()

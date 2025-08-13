@@ -2,8 +2,9 @@
 -- Description: Final consolidated function to search leads for followup with all fixes
 -- Dependencies: 011_create_followup, 012_create_leads, 007_create_mensagens
 
--- Drop function if exists
+-- Drop function if exists (force recreation)
 DROP FUNCTION IF EXISTS buscar_leads_para_followup(uuid, integer) CASCADE;
+DROP FUNCTION IF EXISTS buscar_leads_para_followup CASCADE;
 
 CREATE OR REPLACE FUNCTION buscar_leads_para_followup(
     p_cliente_id uuid,
@@ -14,10 +15,12 @@ RETURNS TABLE (
     lead_nome text,
     lead_telefone text,
     lead_email text,
+    lead_created_at timestamp,
     mensagem_id uuid,
     mensagem_nome text,
     mensagem_texto text,
     mensagem_ordem integer,
+    mensagem_created_at timestamp,
     tem_followup_anterior boolean,
     prioridade integer
 )
@@ -46,10 +49,12 @@ BEGIN
             l.nome as lead_nome,
             l.telefone as lead_telefone,
             l.email as lead_email,
+            l.created_at as lead_created_at,
             m_proxima.id as mensagem_id,
             m_proxima.nome as mensagem_nome,
             m_proxima.texto_mensagem as mensagem_texto,
             m_proxima.ordem as mensagem_ordem,
+            m_proxima.created_at as mensagem_created_at,
             true as tem_followup_anterior,
             1 as prioridade,
             luf.ultimo_envio
@@ -78,10 +83,12 @@ BEGIN
             l.nome as lead_nome,
             l.telefone as lead_telefone,
             l.email as lead_email,
+            l.created_at as lead_created_at,
             m.id as mensagem_id,
             m.nome as mensagem_nome,
             m.texto_mensagem as mensagem_texto,
             m.ordem as mensagem_ordem,
+            m.created_at as mensagem_created_at,
             false as tem_followup_anterior,
             2 as prioridade,
             l.created_at as ultimo_envio
@@ -102,10 +109,12 @@ BEGIN
         resultado.lead_nome::text,
         resultado.lead_telefone::text,
         resultado.lead_email::text,
+        resultado.lead_created_at::timestamp,
         resultado.mensagem_id::uuid,
         resultado.mensagem_nome::text,
         resultado.mensagem_texto::text,
         resultado.mensagem_ordem::integer,
+        resultado.mensagem_created_at::timestamp,
         resultado.tem_followup_anterior::boolean,
         resultado.prioridade::integer
     FROM (

@@ -49,6 +49,10 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *           type: string
  *           description: URL do webhook para receber eventos
  *           example: "https://evo.consultor-ia.io/webhook/whatsapp/instanceName"
+ *         apiKey:
+ *           type: string
+ *           description: Chave de API da instância Evolution API
+ *           example: "B6D711FCDE4D4FD5936544120E713976"
  *         cliente_id:
  *           type: string
  *           format: uuid

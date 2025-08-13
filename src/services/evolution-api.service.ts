@@ -642,6 +642,8 @@ class EvolutionApiService {
                 status: item.instance.status,
                 profilePictureUrl: item.instance.profilePictureUrl,
                 profileStatus: item.instance.profileStatus,
+                apiKey: item.instance.apikey,
+                serverUrl: item.instance.serverUrl,
                 settings: settings,
               },
               createdAt: new Date().toISOString(),

@@ -298,6 +298,9 @@ export class FollowupService {
       throw error;
     }
 
+    console.log('🔍 Debug - Dados retornados pela RPC:', JSON.stringify(leadsParaEnvio?.[0], null, 2));
+    console.log('🔍 Debug - Campos disponíveis:', Object.keys(leadsParaEnvio?.[0] || {}));
+
     // Transformar os dados no formato solicitado
     const leadsFormatados = await Promise.all(
       (leadsParaEnvio || []).map(async (lead: any) => {
@@ -306,12 +309,14 @@ export class FollowupService {
             id: lead.lead_id,
             nome: lead.lead_nome,
             telefone: lead.lead_telefone,
-            email: lead.lead_email
+            email: lead.lead_email,
+            created_at: lead.lead_created_at
           },
           mensagem: {
             id: lead.mensagem_id,
             nome: lead.mensagem_nome,
-            texto: lead.mensagem_texto
+            texto: lead.mensagem_texto,
+            created_at: lead.mensagem_created_at
           },
           tem_followup_anterior: lead.tem_followup_anterior
         };

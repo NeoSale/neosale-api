@@ -698,6 +698,7 @@ export const createConfiguracaoFollowupSchema = z.object({
   }).optional(),
   qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
   em_execucao: z.boolean().optional(),
+  ativo: z.boolean().optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   embedding: z.array(z.number()).optional()
 })
@@ -714,6 +715,7 @@ export const updateConfiguracaoFollowupSchema = z.object({
   }).optional(),
   qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
   em_execucao: z.boolean().optional(),
+  ativo: z.boolean().optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {

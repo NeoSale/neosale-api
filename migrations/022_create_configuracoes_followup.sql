@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS configuracoes_followup (
   dia_horario_envio jsonb NOT NULL DEFAULT '{"segunda": "08:00-18:00", "terca": "08:00-18:00", "quarta": "08:00-18:00", "quinta": "08:00-18:00", "sexta": "08:00-18:00", "sabado": "08:00-12:00", "domingo": "fechado"}',
   qtd_envio_diario integer NOT NULL DEFAULT 50,
   em_execucao boolean NOT NULL DEFAULT false,
+  ativo boolean NOT NULL DEFAULT false,
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp without time zone DEFAULT now(),

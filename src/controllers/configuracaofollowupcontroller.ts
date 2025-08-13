@@ -173,4 +173,35 @@ export class ConfiguracaoFollowupController {
       })
     }
   }
+
+  static async getByAtivo(req: Request, res: Response) {
+    try {
+      const { ativo } = req.query;
+      
+      if (ativo === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: 'Parâmetro ativo é obrigatório'
+        });
+      }
+      
+      // Converter string para boolean
+      const ativoBoolean = ativo === 'true';
+      
+      const configuracoes = await ConfiguracaoFollowupService.getByAtivo(ativoBoolean);
+      
+      return res.json({
+        success: true,
+        data: configuracoes,
+        message: `Configurações de follow-up ${ativoBoolean ? 'ativas' : 'inativas'} recuperadas com sucesso`
+      });
+    } catch (error) {
+      console.error('Erro ao buscar configurações por status ativo:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
 }

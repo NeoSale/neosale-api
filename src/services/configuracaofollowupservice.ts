@@ -14,10 +14,15 @@ export interface ConfiguracaoFollowup {
   }
   qtd_envio_diario: number
   em_execucao: boolean
+  ativo: boolean
   cliente_id: string
   embedding?: number[]
   created_at: string
   updated_at: string
+  cliente?: {
+    id: string
+    nome: string
+  }
 }
 
 export class ConfiguracaoFollowupService {
@@ -171,6 +176,36 @@ export class ConfiguracaoFollowupService {
       }
     } catch (error) {
       console.error('Erro no serviço delete:', error)
+      throw error
+    }
+  }
+
+  static async getByAtivo(ativo: boolean): Promise<ConfiguracaoFollowup[]> {
+    try {
+      if (!supabase) {
+        throw new Error('Cliente Supabase não inicializado')
+      }
+
+      const { data, error } = await supabase
+        .from('configuracoes_followup')
+        .select(`
+          *,
+          cliente:clientes(
+            id,
+            nome
+          )
+        `)
+        .eq('ativo', ativo)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Erro ao buscar configurações de follow-up por status ativo:', error)
+        throw new Error(`Erro ao buscar configurações de follow-up por status ativo: ${error.message}`)
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Erro no serviço getByAtivo:', error)
       throw error
     }
   }

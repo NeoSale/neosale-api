@@ -72,10 +72,25 @@ const router = Router()
  *           type: boolean
  *           example: false
  *           description: Indica se o follow-up está em execução
+ *         ativo:
+ *           type: boolean
+ *           example: true
+ *           description: Indica se a configuração está ativa
  *         cliente_id:
  *           type: string
  *           format: uuid
  *           description: ID do cliente proprietário da configuração
+ *         cliente:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               format: uuid
+ *               description: ID do cliente
+ *             nome:
+ *               type: string
+ *               description: Nome do cliente
+ *           description: Informações do cliente (disponível apenas em alguns endpoints)
  *         embedding:
  *           type: array
  *           items:
@@ -94,6 +109,7 @@ const router = Router()
  *         - dia_horario_envio
  *         - qtd_envio_diario
  *         - em_execucao
+ *         - ativo
  *         - cliente_id
  *         - created_at
  *         - updated_at
@@ -112,6 +128,10 @@ const router = Router()
  *           type: boolean
  *           example: false
  *           description: Indica se o follow-up está em execução
+ *         ativo:
+ *           type: boolean
+ *           example: true
+ *           description: Indica se a configuração está ativa
  *         cliente_id:
  *           type: string
  *           format: uuid
@@ -138,6 +158,10 @@ const router = Router()
  *           type: boolean
  *           example: false
  *           description: Indica se o follow-up está em execução
+ *         ativo:
+ *           type: boolean
+ *           example: true
+ *           description: Indica se a configuração está ativa
  *         cliente_id:
  *           type: string
  *           format: uuid
@@ -243,6 +267,52 @@ const router = Router()
  *                   example: "Mensagem de erro detalhada"
  */
 router.get('/', ConfiguracaoFollowupController.getAll)
+
+// Rota para buscar configurações de follow-up por status ativo
+router.get('/ativo', ConfiguracaoFollowupController.getByAtivo)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/ativo:
+ *   get:
+ *     summary: Buscar configurações de follow-up por status ativo
+ *     description: Retorna todas as configurações de follow-up filtradas por status ativo
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: query
+ *         name: ativo
+ *         required: true
+ *         schema:
+ *           type: boolean
+ *         description: Status ativo das configurações (true para ativas, false para inativas)
+ *         example: true
+ *     responses:
+ *       200:
+ *         description: Configurações encontradas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: Parâmetro ativo é obrigatório
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 
 /**
  * @swagger

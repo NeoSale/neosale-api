@@ -12,7 +12,10 @@ export const mensagemController = {
         return;
       }
 
-      const mensagem = await mensagemService.criar(req.body);
+      const cliente_id = req.headers.cliente_id as string;
+      const mensagemData = { ...req.body, cliente_id };
+      
+      const mensagem = await mensagemService.criar(mensagemData);
       res.status(201).json(mensagem);
     } catch (error) {
       console.error('Erro ao criar mensagem:', error);
@@ -23,12 +26,7 @@ export const mensagemController = {
   // Listar todas as mensagens (incluindo inativas) por cliente
   async listarTodas(req: Request, res: Response): Promise<void> {
     try {
-      const { cliente_id } = req.params;
-      
-      if (!cliente_id) {
-        res.status(400).json({ error: 'cliente_id é obrigatório' });
-        return;
-      }
+      const cliente_id = req.headers.cliente_id as string;
       
       const mensagens = await mensagemService.listarTodasIncluindoInativas(cliente_id);
       res.json(mensagens);
@@ -49,13 +47,14 @@ export const mensagemController = {
     try {
       const { id } = req.params;
       const { ativo } = req.body;
+      const cliente_id = req.headers.cliente_id as string;
       
       if (typeof ativo !== 'boolean') {
         res.status(400).json({ error: 'Campo ativo deve ser um valor booleano' });
         return;
       }
       
-      const mensagem = await mensagemService.ativarDesativar(id, ativo);
+      const mensagem = await mensagemService.ativarDesativar(id, ativo, cliente_id);
       
       if (!mensagem) {
         res.status(404).json({ error: 'Mensagem não encontrada' });
@@ -75,12 +74,8 @@ export const mensagemController = {
   // Buscar mensagem por ID e cliente
   async buscarPorId(req: Request, res: Response): Promise<void> {
     try {
-      const { id, cliente_id } = req.params;
-      
-      if (!cliente_id) {
-        res.status(400).json({ error: 'cliente_id é obrigatório' });
-        return;
-      }
+      const { id } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
       
       const mensagem = await mensagemService.buscarPorId(id, cliente_id);
       
@@ -106,7 +101,10 @@ export const mensagemController = {
       }
 
       const { id } = req.params;
-      const mensagem = await mensagemService.atualizar(id, req.body);
+      const cliente_id = req.headers.cliente_id as string;
+      const mensagemData = { ...req.body, cliente_id };
+      
+      const mensagem = await mensagemService.atualizar(id, mensagemData);
       
       if (!mensagem) {
         res.status(404).json({ error: 'Mensagem não encontrada' });
@@ -124,7 +122,9 @@ export const mensagemController = {
   async deletar(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const sucesso = await mensagemService.deletar(id);
+      const cliente_id = req.headers.cliente_id as string;
+      
+      const sucesso = await mensagemService.deletar(id, cliente_id);
       
       if (!sucesso) {
         res.status(404).json({ error: 'Mensagem não encontrada' });
@@ -142,12 +142,7 @@ export const mensagemController = {
   async buscarPorTexto(req: Request, res: Response): Promise<void> {
     try {
       const { texto } = req.query;
-      const { cliente_id } = req.params;
-      
-      if (!cliente_id) {
-        res.status(400).json({ error: 'cliente_id é obrigatório' });
-        return;
-      }
+      const cliente_id = req.headers.cliente_id as string;
       
       if (!texto || typeof texto !== 'string') {
         res.status(400).json({ error: 'Parâmetro texto é obrigatório' });
@@ -166,7 +161,9 @@ export const mensagemController = {
   async duplicar(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const mensagemDuplicada = await mensagemService.duplicar(id);
+      const cliente_id = req.headers.cliente_id as string;
+      
+      const mensagemDuplicada = await mensagemService.duplicar(id, cliente_id);
       
       res.status(201).json(mensagemDuplicada);
     } catch (error) {

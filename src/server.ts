@@ -6,7 +6,7 @@ dotenv.config()
 // Isso resolve problemas de conectividade com alguns serviços em ambientes corporativos
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-console.log('🚀 Iniciando servidor...')
+console.log('🚀 Iniciando servidor...') // Restart
 
 import express from 'express'
 import cors from 'cors'

@@ -128,7 +128,7 @@ export const mensagemService = {
     return mensagens || [];
   },
 
-  async ativarDesativar(id: string, ativo: boolean): Promise<Mensagem | null> {
+  async ativarDesativar(id: string, ativo: boolean, clienteId: string): Promise<Mensagem | null> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
@@ -140,6 +140,7 @@ export const mensagemService = {
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('cliente_id', clienteId)
       .select()
       .single();
 
@@ -196,6 +197,7 @@ export const mensagemService = {
         .from('mensagens')
         .select('*')
         .eq('id', id)
+        .eq('cliente_id', data.cliente_id)
         .single();
       
       if (mensagemAtual) {
@@ -208,6 +210,7 @@ export const mensagemService = {
       .from('mensagens')
       .update(updateData)
       .eq('id', id)
+      .eq('cliente_id', data.cliente_id)
       .select()
       .single();
 
@@ -221,7 +224,7 @@ export const mensagemService = {
     return mensagem;
   },
 
-  async deletar(id: string): Promise<boolean> {
+  async deletar(id: string, clienteId: string): Promise<boolean> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
@@ -231,6 +234,7 @@ export const mensagemService = {
       .from('mensagens')
       .select('id')
       .eq('id', id)
+      .eq('cliente_id', clienteId)
       .single();
 
     if (!mensagemExistente) {
@@ -241,7 +245,8 @@ export const mensagemService = {
     const { error } = await supabase
       .from('mensagens')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('cliente_id', clienteId);
 
     if (error) {
       throw new Error(`Erro ao deletar mensagem: ${error.message}`);
@@ -275,13 +280,13 @@ export const mensagemService = {
     return mensagens || [];
   },
 
-  async duplicar(id: string): Promise<Mensagem> {
+  async duplicar(id: string, clienteId: string): Promise<Mensagem> {
     if (!supabase) {
       throw new Error('Supabase não configurado');
     }
     
     // Primeiro busca a mensagem original
-    const mensagemOriginal = await this.buscarPorId(id);
+    const mensagemOriginal = await this.buscarPorId(id, clienteId);
     
     if (!mensagemOriginal) {
       throw new Error('Mensagem não encontrada');
@@ -296,7 +301,8 @@ export const mensagemService = {
       nome: novoNome,
       intervalo_numero: mensagemOriginal.intervalo_numero,
       intervalo_tipo: mensagemOriginal.intervalo_tipo,
-      texto_mensagem: mensagemOriginal.texto_mensagem
+      texto_mensagem: mensagemOriginal.texto_mensagem,
+      cliente_id: clienteId
       // ordem será automaticamente definida pelo método criar
     };
     

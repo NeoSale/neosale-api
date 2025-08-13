@@ -24,10 +24,3 @@ CREATE INDEX IF NOT EXISTS idx_mensagens_ordem ON mensagens(ordem);
 CREATE INDEX IF NOT EXISTS idx_mensagens_ativo ON mensagens(ativo);
 CREATE INDEX IF NOT EXISTS idx_mensagens_cliente_id ON mensagens(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_mensagens_embedding ON mensagens USING ivfflat (embedding vector_cosine_ops);
-
--- Insert initial data (template messages without specific client)
-INSERT INTO mensagens (nome, intervalo_numero, intervalo_tipo, texto_mensagem, ordem, ativo, cliente_id) VALUES
-  ('Primeira mensagem', 1, 'minutos', 'Olá! Esta é a primeira mensagem do follow-up.', 1, true, NULL),
-  ('Segunda mensagem', 5, 'minutos', 'Esta é a segunda mensagem, enviada 5 minutos após a primeira.', 2, true, NULL),
-  ('Terceira mensagem', 1, 'horas', 'Esta é a terceira mensagem, enviada 1 hora após a segunda.', 3, true, NULL)
-ON CONFLICT DO NOTHING;
