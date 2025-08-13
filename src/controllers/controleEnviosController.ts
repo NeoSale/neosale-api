@@ -139,17 +139,26 @@ export class ControleEnviosController {
   // POST /api/controle-envios/:data/incrementar - Incrementar quantidade enviada
   static async incrementarQuantidade(req: Request, res: Response) {
     try {
-      const { data, cliente_id } = req.params
-      const { incremento = 1 } = req.body
+      const { data, incremento } = req.params
+      const cliente_id = req.headers.cliente_id as string
       
       if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'cliente_id é obrigatório'
+          message: 'cliente_id é obrigatório no header'
         });
       }
       
-      console.log('📋 POST /api/controle-envios/:data/incrementar - Data:', data, 'Cliente:', cliente_id, 'Incremento:', incremento)
+      // Converter incremento para número e validar
+      const incrementoNum = parseInt(incremento, 10)
+      if (isNaN(incrementoNum) || incrementoNum < 1) {
+        return res.status(400).json({
+          success: false,
+          error: 'Incremento deve ser um número positivo'
+        })
+      }
+      
+      console.log('📋 POST /api/controle-envios/:data/incrementar - Data:', data, 'Cliente:', cliente_id, 'Incremento:', incrementoNum)
       
       // Validar formato da data
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/
@@ -160,15 +169,7 @@ export class ControleEnviosController {
         })
       }
       
-      // Validar incremento
-      if (typeof incremento !== 'number' || incremento < 1) {
-        return res.status(400).json({
-          success: false,
-          error: 'Incremento deve ser um número positivo'
-        })
-      }
-      
-      const controleAtualizado = await ControleEnviosService.incrementarQuantidadeEnviada(data, incremento, cliente_id)
+      const controleAtualizado = await ControleEnviosService.incrementarQuantidadeEnviada(data, incrementoNum, cliente_id)
       
       return res.json({
         success: true,

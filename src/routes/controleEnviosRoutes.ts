@@ -305,7 +305,7 @@ router.get('/:data/status/cliente/:cliente_id', ControleEnviosController.getStat
 
 /**
  * @swagger
- * /api/controle-envios/{data}/incrementar/cliente/{cliente_id}:
+ * /api/controle-envios/{data}/incrementar/{incremento}:
  *   post:
  *     summary: Incrementa a quantidade de mensagens enviadas para um cliente
  *     tags: [Controle de Envios]
@@ -319,25 +319,20 @@ router.get('/:data/status/cliente/:cliente_id', ControleEnviosController.getStat
  *           example: "2024-01-15"
  *         description: Data no formato YYYY-MM-DD
  *       - in: path
+ *         name: incremento
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           example: 1
+ *         description: Quantidade a incrementar
+ *       - in: header
  *         name: cliente_id
  *         required: true
  *         schema:
  *           type: string
  *           format: uuid
  *         description: ID do cliente
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               incremento:
- *                 type: integer
- *                 minimum: 1
- *                 default: 1
- *                 description: Quantidade a incrementar - padrão 1
- *             example:
- *               incremento: 1
  *     responses:
  *       200:
  *         description: Quantidade incrementada com sucesso
@@ -357,6 +352,6 @@ router.get('/:data/status/cliente/:cliente_id', ControleEnviosController.getStat
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/:data/incrementar/cliente/:cliente_id', ControleEnviosController.incrementarQuantidade)
+router.post('/:data/incrementar/:incremento', ControleEnviosController.incrementarQuantidade)
 
 export { router as controleEnviosRoutes }
