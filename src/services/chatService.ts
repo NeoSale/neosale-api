@@ -10,6 +10,35 @@ export class ChatService {
     }
   }
 
+  // Criar uma nova mensagem de chat (apenas gravar na tabela)
+  static async createSimpleChatHistory(data: CreateChatHistoryRequest): Promise<ChatHistoryResponse> {
+    ChatService.checkSupabaseConnection();
+    console.log('🔄 Criando nova mensagem de chat simples para session_id:', data.session_id);
+
+    try {
+      // Gravar apenas na tabela n8n_chat_histories
+      const { data: chatHistory, error } = await supabase!
+        .from('n8n_chat_histories')
+        .insert({
+          session_id: data.session_id,
+          message: data.message
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erro ao criar mensagem de chat:', error);
+        throw error;
+      }
+
+      console.log('✅ Mensagem de chat criada com sucesso (simples):', chatHistory.id);
+      return chatHistory;
+    } catch (error: any) {
+      console.error('❌ Erro no ChatService.createSimpleChatHistory:', error);
+      throw error;
+    }
+  }
+
   // Criar uma nova mensagem de chat
   static async createChatHistory(data: CreateChatHistoryRequest): Promise<ChatHistoryResponse> {
     ChatService.checkSupabaseConnection();

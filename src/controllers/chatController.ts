@@ -32,7 +32,23 @@ export class ChatController {
     });
   }
 
-  // POST /api/chat - Criar nova mensagem de chat
+  // POST /api/chat - Criar nova mensagem de chat (apenas gravar na tabela)
+  static async createSimpleChatHistory(req: Request, res: Response) {
+    try {
+      const validatedData = createChatHistorySchema.parse(req.body);
+      const chatHistory = await ChatService.createSimpleChatHistory(validatedData as { session_id: string; message: any });
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Mensagem de chat criada com sucesso',
+        data: chatHistory
+      });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
+  // POST /api/chat/sendText - Criar nova mensagem de chat com integração
   static async createChatHistory(req: Request, res: Response) {
     try {
       const validatedData = createChatHistorySchema.parse(req.body);

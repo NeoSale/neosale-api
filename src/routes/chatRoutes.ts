@@ -234,7 +234,8 @@ const router = Router();
  * @swagger
  * /api/chat:
  *   post:
- *     summary: Criar nova mensagem de chat
+ *     summary: Criar nova mensagem de chat (apenas gravar na tabela)
+ *     description: Grava uma mensagem na tabela n8n_chat_histories sem integração com Evolution API
  *     tags: [Chat]
  *     requestBody:
  *       required: true
@@ -265,7 +266,45 @@ const router = Router();
  *       500:
  *         description: Erro interno do servidor
  */
-router.post('/', validateRequest(createChatHistorySchema), ChatController.createChatHistory);
+router.post('/', validateRequest(createChatHistorySchema), ChatController.createSimpleChatHistory);
+
+/**
+ * @swagger
+ * /api/chat/sendText:
+ *   post:
+ *     summary: Criar nova mensagem de chat com integração
+ *     description: Grava uma mensagem na tabela n8n_chat_histories e envia via Evolution API
+ *     tags: [Chat]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateChatHistoryRequest'
+ *     responses:
+ *       201:
+ *         description: Mensagem de chat criada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Mensagem de chat criada com sucesso"
+ *                 data:
+ *                   $ref: '#/components/schemas/ChatHistoryResponse'
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/sendText', validateRequest(createChatHistorySchema), ChatController.createChatHistory);
 
 /**
  * @swagger
