@@ -8,7 +8,7 @@ DROP FUNCTION IF EXISTS buscar_leads_para_followup CASCADE;
 
 CREATE OR REPLACE FUNCTION buscar_leads_para_followup(
     p_cliente_id uuid,
-    p_limite integer DEFAULT 10
+    p_limite integer
 )
 RETURNS TABLE (
     lead_id uuid,
@@ -29,17 +29,23 @@ AS $$
 BEGIN
     RETURN QUERY
     WITH leads_com_ultimo_followup AS (
-        -- Buscar o último followup de cada lead
+        -- Buscar o último followup de cada lead com informações da próxima mensagem
         SELECT DISTINCT ON (f.id_lead)
             f.id_lead,
             f.id_mensagem,
             f.created_at as ultimo_envio,
             m.ordem as ultima_ordem,
-            m.intervalo_numero,
-            m.intervalo_tipo
+            m_proxima.intervalo_numero,
+            m_proxima.intervalo_tipo,
+            m_proxima.id as proxima_mensagem_id,
+            m_proxima.ordem as proxima_ordem
         FROM followup f
         INNER JOIN mensagens m ON f.id_mensagem = m.id
+        LEFT JOIN mensagens m_proxima ON m_proxima.ordem = m.ordem + 1 
+            AND m_proxima.ativo = true
+            AND (m_proxima.cliente_id = p_cliente_id OR m_proxima.cliente_id IS NULL)
         WHERE f.status = 'sucesso'
+            AND f.cliente_id = p_cliente_id
         ORDER BY f.id_lead, f.created_at DESC
     ),
     leads_prontos_proxima_mensagem AS (
@@ -50,21 +56,22 @@ BEGIN
             l.telefone as lead_telefone,
             l.email as lead_email,
             l.created_at as lead_created_at,
-            m_proxima.id as mensagem_id,
+            luf.proxima_mensagem_id as mensagem_id,
             m_proxima.nome as mensagem_nome,
             m_proxima.texto_mensagem as mensagem_texto,
-            m_proxima.ordem as mensagem_ordem,
+            luf.proxima_ordem as mensagem_ordem,
             m_proxima.created_at as mensagem_created_at,
             true as tem_followup_anterior,
             1 as prioridade,
             luf.ultimo_envio
         FROM leads l
         INNER JOIN leads_com_ultimo_followup luf ON l.id = luf.id_lead
-        INNER JOIN mensagens m_proxima ON m_proxima.ordem = luf.ultima_ordem + 1
-            AND m_proxima.ativo = true
-            AND (m_proxima.cliente_id = p_cliente_id OR m_proxima.cliente_id IS NULL)
+        INNER JOIN mensagens m_proxima ON m_proxima.id = luf.proxima_mensagem_id
         WHERE l.cliente_id = p_cliente_id
             AND l.deletado = false
+            AND luf.proxima_mensagem_id IS NOT NULL
+            AND luf.intervalo_numero IS NOT NULL
+            AND luf.intervalo_tipo IS NOT NULL
             AND (
                 -- Verificar se já passou o tempo necessário para próxima mensagem
                 CASE luf.intervalo_tipo

@@ -46,3 +46,38 @@ export interface GetLeadsWithLastMessageResponse {
   page?: number;
   limit?: number;
 }
+
+export interface GroupedChatHistoryResponse {
+  session_id: string;
+  message: any;
+  created_at: string;
+  lead: {
+    nome: string;
+    telefone: string;
+    profile_picture_url: string;
+  } | null;
+}
+
+export interface GetGroupedChatHistoriesResponse {
+  data: GroupedChatHistoryResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface ClienteChatResponse {
+  id: string;
+  session_id: string;
+  nome: string;
+  ultima_mensagem: any;
+  data_ultima_mensagem: string;
+  profile_picture_url: string | null;
+  telefone: string | null;
+}
+
+export interface GetClienteChatResponse {
+  data: ClienteChatResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { ChatHistory, CreateChatHistoryRequest, UpdateChatHistoryRequest, ChatHistoryResponse, GetChatHistoriesResponse, GetLeadsWithLastMessageResponse } from '../models/chat.model';
+import { ChatHistory, CreateChatHistoryRequest, UpdateChatHistoryRequest, ChatHistoryResponse, GetChatHistoriesResponse, GetLeadsWithLastMessageResponse, GetGroupedChatHistoriesResponse, GetClienteChatResponse } from '../models/chat.model';
 import evolutionApiService from './evolution-api.service';
 
 export class ChatService {
@@ -269,33 +269,34 @@ export class ChatService {
     try {
       const offset = (page - 1) * limit;
 
-      const { data: chatHistories, error } = await supabase!
+      const { data: allChatHistories, error } = await supabase!
         .from('n8n_chat_histories')
         .select('*')
         .eq('session_id', sessionId)
-        .order('id', { ascending: false })
-        .range(offset, offset + limit - 1);
+        .order('id', { ascending: false });
 
       if (error) {
         console.error('❌ Erro ao buscar mensagens de chat por session_id:', error);
         throw error;
       }
 
-      // Contar total de registros
-      const { count, error: countError } = await supabase!
-        .from('n8n_chat_histories')
-        .select('id', { count: 'exact', head: true })
-        .eq('session_id', sessionId);
+      // Filtrar mensagens que NÃO contenham "Follow Up:" ou "FollowUp:"
+      const filteredChatHistories = (allChatHistories || []).filter((chat: any) => {
+        const messageContent = chat.message?.content || '';
+        console.log('🔍 Verificando mensagem:', messageContent);
+        const hasFollowUp = messageContent.includes('Follow Up:') || messageContent.includes('FollowUp:');
+        console.log('🔍 Contém Follow Up?', hasFollowUp);
+        return !hasFollowUp;
+      });
 
-      if (countError) {
-        console.error('❌ Erro ao contar mensagens de chat por session_id:', countError);
-        throw countError;
-      }
+      // Aplicar paginação após filtrar
+      const chatHistories = filteredChatHistories.slice(offset, offset + limit);
+      const total = filteredChatHistories.length;
 
-      console.log('✅ Mensagens de chat encontradas para session_id:', chatHistories?.length || 0);
+      console.log('✅ Mensagens de chat encontradas para session_id (sem Follow Up):', chatHistories?.length || 0);
       return {
         data: chatHistories || [],
-        total: count || 0,
+        total: total,
         page,
         limit
       };
@@ -379,6 +380,133 @@ export class ChatService {
       console.log('✅ Mensagem de chat deletada com sucesso:', id);
     } catch (error: any) {
       console.error('❌ Erro no ChatService.deleteChatHistory:', error);
+      throw error;
+    }
+  }
+
+  // Buscar registros agrupados por session_id com join na tabela leads
+  static async getAllChatHistoriesByClienteId(
+    clienteId: string,
+    page: number,
+    limit: number
+  ): Promise<GetClienteChatResponse> {
+    ChatService.checkSupabaseConnection();
+    console.log('🔄 Buscando registros de chat agrupados por session_id para cliente_id:', clienteId);
+
+    try {
+      const offset = (page - 1) * limit;
+
+      // Primeira query: buscar histórico de chat
+      // Buscar históricos de chat e filtrar para obter apenas o mais recente de cada session_id
+      const { data: allChatHistories, error: chatError } = await supabase!
+        .from('n8n_chat_histories')
+        .select('session_id, message, created_at')
+        .eq('cliente_id', clienteId)
+        .order('created_at', { ascending: false });
+
+      // Filtrar para obter apenas o registro mais recente de cada session_id
+      const chatHistories = allChatHistories ? 
+        Object.values(
+          allChatHistories.reduce((acc: Record<string, any>, item: any) => {
+            if (!acc[item.session_id] || new Date(item.created_at) > new Date(acc[item.session_id].created_at)) {
+              acc[item.session_id] = item;
+            }
+            return acc;
+          }, {} as Record<string, any>)
+        ) : [];
+
+      if (chatError) {
+        console.error('❌ Erro ao buscar histórico de chat:', chatError);
+        throw chatError;
+      }
+
+      if (!chatHistories || chatHistories.length === 0) {
+        console.log('📭 Nenhum registro de chat encontrado para o cliente:', clienteId);
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit
+        };
+      }
+
+      // Agrupar por session_id e pegar a última mensagem de cada grupo
+      const groupedBySession = chatHistories.reduce((acc: any, record: any) => {
+        const sessionId = record.session_id;
+        
+        if (!acc[sessionId] || new Date(record.created_at) > new Date(acc[sessionId].created_at)) {
+          acc[sessionId] = {
+            session_id: sessionId,
+            message: record.message,
+            created_at: record.created_at
+          };
+        }
+        
+        return acc;
+      }, {});
+
+      // Obter session_ids únicos
+      const sessionIds = Object.keys(groupedBySession);
+
+      if (sessionIds.length === 0) {
+        return {
+          data: [],
+          total: 0,
+          page,
+          limit
+        };
+      }
+
+      // Segunda query: buscar dados dos leads
+      const { data: leads, error: leadsError } = await supabase!
+        .from('leads')
+        .select('id, nome, telefone, profile_picture_url')
+        .in('id', sessionIds)
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false);
+
+      if (leadsError) {
+        console.error('❌ Erro ao buscar dados dos leads:', leadsError);
+        throw leadsError;
+      }
+
+      // Criar mapa de leads por ID
+      const leadsMap = (leads || []).reduce((acc: any, lead: any) => {
+        acc[lead.id] = lead;
+        return acc;
+      }, {});
+
+      // Combinar dados de chat com dados dos leads no formato solicitado
+       const combinedData = Object.values(groupedBySession)
+         .filter((chatRecord: any) => leadsMap[chatRecord.session_id]) // Filtrar apenas registros com lead válido
+         .map((chatRecord: any) => {
+           const lead = leadsMap[chatRecord.session_id];
+           
+           return {
+             id: chatRecord.session_id,
+             session_id: chatRecord.session_id,
+             nome: lead.nome,
+             ultima_mensagem: chatRecord.message,
+             data_ultima_mensagem: chatRecord.created_at,
+             profile_picture_url: lead.profile_picture_url,
+             telefone: lead.telefone
+           };
+         })
+         .sort((a: any, b: any) => new Date(b.data_ultima_mensagem).getTime() - new Date(a.data_ultima_mensagem).getTime());
+
+      // Aplicar paginação
+      const paginatedResults = combinedData.slice(offset, offset + limit);
+      const total = combinedData.length;
+
+      console.log('✅ Registros de chat agrupados encontrados para cliente_id:', paginatedResults.length);
+      return {
+        data: paginatedResults,
+        total,
+        page,
+        limit
+      };
+    } catch (error: any) {
+      console.error('❌ Erro no ChatService.getAllChatHistoriesByClienteId:', error);
       throw error;
     }
   }

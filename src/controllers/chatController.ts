@@ -48,7 +48,7 @@ export class ChatController {
     }
   }
 
-  // GET /api/chat/cliente/:cliente_id - Buscar mensagens por cliente_id
+  // GET /api/chat/cliente/:cliente_id - Buscar todos os registros da tabela n8n_chat_histories pelo cliente_id
   static async getChatHistoriesByClienteId(req: Request, res: Response) {
     try {
       const cliente_id = req.headers['cliente_id'] as string;
@@ -61,11 +61,11 @@ export class ChatController {
         });
       }
 
-      const result = await ChatService.getChatHistoriesByClienteId(cliente_id, page, limit);
+      const result = await ChatService.getAllChatHistoriesByClienteId(cliente_id, page, limit);
       
       return res.status(200).json({
         success: true,
-        message: 'Mensagens de chat encontradas',
+        message: 'Todos os registros de chat encontrados',
         data: result.data,
         pagination: {
           total: result.total || 0,

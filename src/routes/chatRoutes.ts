@@ -101,6 +101,65 @@ const router = Router();
  *               type: integer
  *               example: 2
  *     
+ *     GroupedChatHistoryResponse:
+ *       type: object
+ *       properties:
+ *         session_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da sessão (ID do lead)
+ *           example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *         nome:
+ *           type: string
+ *           description: Nome do lead
+ *           example: "João Silva"
+ *         telefone:
+ *           type: string
+ *           description: Telefone do lead
+ *           example: "+5511999999999"
+ *         profile_picture_url:
+ *           type: string
+ *           description: URL da foto de perfil do lead
+ *           example: "https://example.com/profile.jpg"
+ *         ultima_mensagem:
+ *           type: object
+ *           description: Última mensagem da conversa
+ *           example: {"type":"human","content":"Olá, preciso de ajuda"}
+ *         data_ultima_mensagem:
+ *           type: string
+ *           format: date-time
+ *           description: Data e hora da última mensagem
+ *           example: "2024-01-15T10:30:00Z"
+ *     
+ *     GroupedChatHistoriesListResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: "Registros de chat agrupados encontrados"
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/GroupedChatHistoryResponse'
+ *         pagination:
+ *           type: object
+ *           properties:
+ *             total:
+ *               type: integer
+ *               example: 100
+ *             page:
+ *               type: integer
+ *               example: 1
+ *             limit:
+ *               type: integer
+ *               example: 50
+ *             totalPages:
+ *               type: integer
+ *               example: 2
+ *     
  *     LeadWithLastMessage:
  *       type: object
  *       properties:
@@ -212,7 +271,8 @@ router.post('/', validateRequest(createChatHistorySchema), ChatController.create
  * @swagger
  * /api/chat/cliente:
  *   get:
- *     summary: Buscar mensagens de chat por cliente_id
+ *     summary: Buscar conversas agrupadas por session_id com dados dos leads
+ *     description: Retorna as conversas agrupadas por session_id, incluindo dados do lead (nome, telefone, foto) e a última mensagem de cada conversa
  *     tags: [Chat]
  *     parameters:
  *       - in: header
@@ -240,11 +300,11 @@ router.post('/', validateRequest(createChatHistorySchema), ChatController.create
  *         description: Número de itens por página
  *     responses:
  *       200:
- *         description: Mensagens de chat encontradas
+ *         description: Conversas agrupadas encontradas
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/LeadsWithLastMessageResponse'
+ *               $ref: '#/components/schemas/GroupedChatHistoriesListResponse'
  *       400:
  *         description: cliente_id é obrigatório
  *       500:
