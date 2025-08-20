@@ -4,7 +4,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { migrationRunner } from '../lib/migrations';
+import { migrationRunner } from '../src/lib/migrations';
 
 async function runMigrationsScript() {
   try {

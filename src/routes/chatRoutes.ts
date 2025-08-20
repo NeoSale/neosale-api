@@ -62,6 +62,15 @@ const router = Router();
  *           type: object
  *           description: Conteúdo da mensagem em formato JSON
  *           example: {"type":"ai","content":"Mensagem atualizada","tool_calls":[],"additional_kwargs":{},"response_metadata":{},"invalid_tool_calls":[]}
+ *         status:
+ *           type: string
+ *           enum: [sucesso, erro]
+ *           description: Status da mensagem
+ *           example: "sucesso"
+ *         erro:
+ *           type: string
+ *           description: Descrição do erro (opcional)
+ *           example: "Erro ao processar mensagem"
  *     
  *     ChatHistoryResponse:
  *       allOf:
@@ -522,6 +531,41 @@ router.delete('/:id', validateRequest(numericIdParamSchema, 'params'), ChatContr
 
 /**
  * @swagger
+ * /api/chat/ultima_mensagem/{session_id}:
+ *   get:
+ *     summary: Buscar mensagens por tipo e conteúdo
+ *     description: Busca mensagens de um tipo específico para um session_id com filtro opcional por conteúdo
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: session_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da sessão
+ *       - in: query
+ *         name: message_type
+ *         schema:
+ *           type: string
+ *           default: human
+ *         description: Tipo da mensagem
+ *     responses:
+ *       200:
+ *         description: Mensagens encontradas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ChatHistoriesListResponse'
+ *       400:
+ *         description: Dados inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/ultima_mensagem/:session_id', ChatController.getMessagesBySessionIDType);
+
+/**
+ * @swagger
  * /api/chat/session/{session_id}:
  *   delete:
  *     summary: Deletar todas as mensagens de uma sessão
@@ -555,5 +599,64 @@ router.delete('/:id', validateRequest(numericIdParamSchema, 'params'), ChatContr
  *         description: Erro interno do servidor
  */
 router.delete('/session/:session_id', ChatController.deleteChatHistoriesBySessionId);
+
+/**
+ * @swagger
+ * /api/chat/{session_id}/mark-error:
+ *   post:
+ *     summary: Marcar última mensagem como erro
+ *     description: Marca a última mensagem de um tipo específico (AI ou Human) de uma sessão como erro, atualizando os campos status e erro
+ *     tags: [Chat]
+ *     parameters:
+ *       - in: path
+ *         name: session_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID da sessão (ID do lead)
+ *         example: "aa9d7cb7-aea2-44cd-9862-b6a9659aaef9"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - message_type
+ *             properties:
+ *               message_type:
+ *                 type: string
+ *                 enum: [ai, human]
+ *                 description: Tipo da mensagem a ser marcada como erro
+ *                 example: "ai"
+ *               error_message:
+ *                 type: string
+ *                 description: Mensagem de erro personalizada (opcional)
+ *                 example: "Erro ao processar mensagem do usuário"
+ *     responses:
+ *       200:
+ *         description: Última mensagem marcada como erro com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Última mensagem do tipo 'ai' marcada como erro com sucesso"
+ *                 data:
+ *                   $ref: '#/components/schemas/ChatHistoryResponse'
+ *       400:
+ *         description: session_id inválido ou tipo de mensagem inválido
+ *       404:
+ *         description: Nenhuma mensagem encontrada para esta sessão e tipo
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/:session_id/mark-error', validateRequest(sessionIdParamSchema, 'params'), ChatController.markLastMessageAsError);
 
 export default router;

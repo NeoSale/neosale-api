@@ -7,20 +7,6 @@ const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const path = require('path');
 
-// Configurações das bases de dados
-const databases = {
-  neosale: {
-    name: 'NeoSale',
-    url: 'https://wwkaxmhqwugqklxrywsg.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3a2F4bWhxd3VncWtseHJ5d3NnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2ODA4NTYsImV4cCI6MjA2NTI1Njg1Nn0.1PfV2DkiZDhcIdJPhMdjYSk8m3S1kAnq76zcL2mwTvc'
-  },
-  omie: {
-    name: 'OMIE',
-    url: 'https://kughgxqqljryeconlrfm.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt1Z2hneHFxbGpyeWVjb25scmZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NDQ1NjAsImV4cCI6MjA2NDEyMDU2MH0.wnk4f2BFHHXW2CdE7Nr0ioQhezZmHJj2dbujQ9ijMpo'
-  }
-};
-
 /**
  * Cria cliente Supabase para uma base específica
  * @param {string} dbKey - Chave da base de dados (neosale ou omie)

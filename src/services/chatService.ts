@@ -325,9 +325,7 @@ export class ChatService {
       console.log('✅ Mensagens de chat encontradas para session_id (sem Follow Up):', chatHistories?.length || 0);
       return {
         data: chatHistories || [],
-        total: total,
-        page,
-        limit
+        total: total
       };
     } catch (error: any) {
       console.error('❌ Erro no ChatService.getChatHistoriesBySessionId:', error);
@@ -559,6 +557,136 @@ export class ChatService {
       console.log('✅ Mensagens da sessão deletadas com sucesso:', sessionId);
     } catch (error: any) {
       console.error('❌ Erro no ChatService.deleteChatHistoriesBySessionId:', error);
+      throw error;
+    }
+  }
+
+  // Buscar mensagens por tipo e session_id
+  static async getMessagesBySessionIDType(
+    sessionId: string,
+    messageType?: string
+  ): Promise<GetChatHistoriesResponse> {
+    ChatService.checkSupabaseConnection();
+    console.log('🔄 Buscando última mensagem para session_id:', sessionId, 'tipo:', messageType);
+
+    try {
+      // Buscar a última mensagem da sessão
+      let query = supabase!
+        .from('n8n_chat_histories')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const { data: chatHistories, error } = await query;
+
+      if (error) {
+        console.error('❌ Erro ao buscar mensagens:', error);
+        throw error;
+      }
+
+      console.log(`📊 Mensagens encontradas: ${chatHistories?.length || 0}`);
+
+      let lastMessage = null;
+      
+      if (chatHistories && chatHistories.length > 0) {
+        const msg = chatHistories[0];
+        
+        // Se um tipo específico foi solicitado, verificar se a mensagem corresponde
+        if (messageType) {
+          try {
+            let messageObj = msg.message;
+            if (typeof messageObj === 'string') {
+              messageObj = JSON.parse(messageObj);
+            }
+            if (messageObj && messageObj.type === messageType) {
+              lastMessage = msg;
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Erro ao parsear mensagem:', parseError, 'Mensagem:', msg.message);
+          }
+        } else {
+          // Se nenhum tipo específico foi solicitado, retornar a última mensagem
+          lastMessage = msg;
+        }
+      }
+
+      const result = lastMessage ? [lastMessage] : [];
+      console.log(`✅ Última mensagem encontrada para session_id:`, sessionId, result.length > 0 ? 'Sim' : 'Não');
+
+      return {
+         data: result,
+         total: result.length
+       };
+    } catch (error: any) {
+      console.error('❌ Erro no ChatService.getMessagesBySessionIDType:', error);
+      throw error;
+    }
+  }
+
+  // Marcar a última mensagem como erro
+  static async markLastMessageAsError(sessionId: string, messageType: 'ai' | 'human', errorMessage?: string): Promise<ChatHistoryResponse> {
+    ChatService.checkSupabaseConnection();
+    console.log('🔄 Marcando última mensagem como erro para session_id:', sessionId, 'tipo:', messageType);
+
+    try {
+      // 1. Buscar a última mensagem da sessão do tipo especificado
+      const { data: messages, error: fetchError } = await supabase!
+        .from('n8n_chat_histories')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        console.error('❌ Erro ao buscar mensagens:', fetchError);
+        throw new Error('Erro ao buscar mensagens da sessão');
+      }
+
+      if (!messages || messages.length === 0) {
+        throw new Error('Nenhuma mensagem encontrada para esta sessão');
+      }
+
+      // 2. Filtrar mensagens pelo tipo especificado
+      let lastMessage = null;
+      for (const msg of messages) {
+        try {
+          let messageObj = msg.message;
+          if (typeof messageObj === 'string') {
+            messageObj = JSON.parse(messageObj);
+          }
+          if (messageObj && messageObj.type === messageType) {
+            lastMessage = msg;
+            break;
+          }
+        } catch (parseError) {
+          console.warn('⚠️ Erro ao parsear mensagem:', parseError, 'Mensagem:', msg.message);
+        }
+      }
+
+      if (!lastMessage) {
+        throw new Error(`Nenhuma mensagem do tipo '${messageType}' encontrada para esta sessão`);
+      }
+
+      // 3. Atualizar a mensagem com status de erro
+      const { data: updatedMessage, error: updateError } = await supabase!
+        .from('n8n_chat_histories')
+        .update({
+          status: 'erro',
+          erro: errorMessage || `Erro processando mensagem do tipo ${messageType}`
+        })
+        .eq('id', lastMessage.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('❌ Erro ao atualizar mensagem:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ Última mensagem do tipo', messageType, 'marcada como erro com sucesso:', updatedMessage.id);
+      return updatedMessage;
+    } catch (error: any) {
+      console.error('❌ Erro no ChatService.markLastMessageAsError:', error);
       throw error;
     }
   }

@@ -300,9 +300,9 @@ export class EvolutionApiController {
     try {
       const { instanceName } = req.params;
       
-      const clienteId = await evolutionApiService.getClienteIdByInstanceName(instanceName);
+      const clienteData = await evolutionApiService.getClienteDataByInstanceName(instanceName);
       
-      if (!clienteId) {
+      if (!clienteData) {
         return res.status(404).json({
           success: false,
           message: 'Instance not found'
@@ -311,8 +311,12 @@ export class EvolutionApiController {
 
       return res.json({
         success: true,
-        data: { cliente_id: clienteId },
-        message: 'Cliente ID retrieved successfully'
+        data: {
+          cliente_id: clienteData.cliente_id,
+          nome: clienteData.nome,
+          nickname: clienteData.nickname
+        },
+        message: 'Cliente data retrieved successfully'
       });
     } catch (error: any) {
       console.error('Error in getClienteIdByInstanceName:', error);

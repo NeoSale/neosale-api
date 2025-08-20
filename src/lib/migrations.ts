@@ -50,22 +50,29 @@ export class MigrationRunner {
         return false;
       }
       
-      // Try using the RPC function first
-      const { data, error } = await supabase
-        .rpc('table_exists', { table_name: tableName });
+      // Use direct SQL query to bypass PostgREST cache issues
+      const { data, error } = await supabase.rpc('execute_sql_query', {
+        sql_query: `
+          SELECT EXISTS (
+            SELECT 1 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = '${tableName}'
+          ) as table_exists
+        `
+      });
       
-      if (!error && data !== null) {
-        return data;
+      if (error) {
+        console.error(`❌ Erro ao verificar existência da tabela ${tableName}:`, error);
+        return false;
       }
       
-      // Fallback to direct query method
-      const { error: queryError } = await supabase
-        .from(tableName)
-        .select('*')
-        .limit(1);
-      
-      return !queryError || !queryError.message.includes('does not exist');
+      // Parse JSON result
+      const exists = data && Array.isArray(data) && data.length > 0 && data[0].table_exists === true;
+      console.log(`🔍 Tabela ${tableName} existe: ${exists}`);
+      return exists;
     } catch (error) {
+      console.error(`❌ Erro ao verificar tabela ${tableName}:`, error);
       return false;
     }
   }
@@ -269,20 +276,41 @@ export class MigrationRunner {
         .limit(1);
 
       if (error && error.message.includes('relation "migrations" does not exist')) {
-        console.log('Creating migrations table...');
-        // Read and execute the migrations table creation script
-        const migrationTableScript = fs.readFileSync(
-          path.join(this.migrationsPath, '000_create_migrations_table.sql'),
-          'utf8'
-        );
+        console.log('🔧 Creating migrations table...');
         
-        // For now, we'll log the SQL that needs to be executed manually
-        console.log('Please execute the following SQL manually in your Supabase SQL editor:');
-        console.log('\n' + '='.repeat(50));
-        console.log(migrationTableScript);
-        console.log('='.repeat(50) + '\n');
+        // Try to create the migrations table using direct SQL
+        const createTableSQL = `
+          CREATE TABLE IF NOT EXISTS migrations (
+            id SERIAL PRIMARY KEY,
+            filename VARCHAR(255) NOT NULL UNIQUE,
+            executed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
         
-        return false;
+        const success = await this.executeSQL(createTableSQL);
+        if (success) {
+          console.log('✅ Migrations table created successfully');
+          return true;
+        } else {
+          console.log('❌ Failed to create migrations table automatically');
+          // Read and show the migrations table creation script for manual execution
+          try {
+            const migrationTableScript = fs.readFileSync(
+              path.join(this.migrationsPath, '000_create_migrations_table.sql'),
+              'utf8'
+            );
+            console.log('Please execute the following SQL manually in your Supabase SQL editor:');
+            console.log('\n' + '='.repeat(50));
+            console.log(migrationTableScript);
+            console.log('='.repeat(50) + '\n');
+          } catch (fileError) {
+            console.log('Please execute the following SQL manually in your Supabase SQL editor:');
+            console.log('\n' + '='.repeat(50));
+            console.log(createTableSQL);
+            console.log('='.repeat(50) + '\n');
+          }
+          return false;
+        }
       }
 
       return true;
@@ -493,30 +521,219 @@ export class MigrationRunner {
          return false;
        }
        
-       // Use Supabase RPC to execute raw SQL
-       const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+       // Parse SQL to determine the operation type
+       const sqlUpper = sql.trim().toUpperCase();
        
-       if (error) {
-         // If RPC function doesn't exist, show manual execution instructions
-         if (error.code === 'PGRST202') {
-           console.log('\n⚠️  Automatic execution not available. Please execute the following SQL manually:');
-           console.log('-'.repeat(60));
-           console.log(sql);
-           console.log('-'.repeat(60));
-           console.log('\n📝 To enable automatic execution, run the setup_supabase_functions.sql script in your Supabase SQL Editor.');
-           return false;
-         }
-         
-         console.error('SQL execution error:', error);
+       if (sqlUpper.startsWith('CREATE TABLE')) {
+         return await this.executeCreateTable(sql);
+       } else if (sqlUpper.startsWith('ALTER TABLE')) {
+         return await this.executeAlterTable(sql);
+       } else if (sqlUpper.startsWith('CREATE INDEX')) {
+         return await this.executeCreateIndex(sql);
+       } else if (sqlUpper.startsWith('INSERT INTO')) {
+         return await this.executeInsert(sql);
+       } else if (sqlUpper.startsWith('CREATE OR REPLACE FUNCTION')) {
+         return await this.executeCreateFunction(sql);
+       } else {
+         console.log('⚠️  Unsupported SQL operation. Please execute manually:');
+         console.log('-'.repeat(60));
+         console.log(sql);
+         console.log('-'.repeat(60));
          return false;
        }
-       
-       return true;
      } catch (error) {
        console.error('Error executing SQL:', error);
        return false;
      }
    }
+
+  /**
+   * Execute CREATE TABLE statements using Supabase API
+   */
+  private async executeCreateTable(sql: string): Promise<boolean> {
+    try {
+      // Extract table name and columns from CREATE TABLE statement
+      const tableMatch = sql.match(/CREATE TABLE\s+(\w+)\s*\(/i);
+      if (!tableMatch) {
+        console.error('Could not parse table name from SQL');
+        return false;
+      }
+      
+      const tableName = tableMatch[1];
+      
+      // For CREATE TABLE, we'll use RPC with a fallback
+       try {
+         if (!supabase) {
+           throw new Error('Supabase client not initialized');
+         }
+         const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+        if (error && error.code !== 'PGRST202') {
+          console.error('SQL execution error:', error);
+          return false;
+        }
+        if (error && error.code === 'PGRST202') {
+          throw new Error('RPC not available');
+        }
+        return true;
+      } catch {
+        // Fallback: show manual execution instructions
+        console.log('⚠️  Please execute the following SQL manually in Supabase SQL Editor:');
+        console.log('-'.repeat(60));
+        console.log(sql);
+        console.log('-'.repeat(60));
+        return false;
+      }
+    } catch (error) {
+      console.error('Error executing CREATE TABLE:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Execute ALTER TABLE statements
+   */
+  private async executeAlterTable(sql: string): Promise<boolean> {
+    try {
+      // For ALTER TABLE, we'll use RPC with a fallback
+       try {
+         if (!supabase) {
+           throw new Error('Supabase client not initialized');
+         }
+         const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+        if (error && error.code !== 'PGRST202') {
+          console.error('SQL execution error:', error);
+          return false;
+        }
+        if (error && error.code === 'PGRST202') {
+          throw new Error('RPC not available');
+        }
+        return true;
+      } catch {
+        // Fallback: show manual execution instructions
+        console.log('⚠️  Please execute the following SQL manually in Supabase SQL Editor:');
+        console.log('-'.repeat(60));
+        console.log(sql);
+        console.log('-'.repeat(60));
+        return false;
+      }
+    } catch (error) {
+      console.error('Error executing ALTER TABLE:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Execute CREATE INDEX statements
+   */
+  private async executeCreateIndex(sql: string): Promise<boolean> {
+    try {
+      // For CREATE INDEX, we'll use RPC with a fallback
+       try {
+         if (!supabase) {
+           throw new Error('Supabase client not initialized');
+         }
+         const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+        if (error && error.code !== 'PGRST202') {
+          console.error('SQL execution error:', error);
+          return false;
+        }
+        if (error && error.code === 'PGRST202') {
+          throw new Error('RPC not available');
+        }
+        return true;
+      } catch {
+        // Fallback: show manual execution instructions
+        console.log('⚠️  Please execute the following SQL manually in Supabase SQL Editor:');
+        console.log('-'.repeat(60));
+        console.log(sql);
+        console.log('-'.repeat(60));
+        return false;
+      }
+    } catch (error) {
+      console.error('Error executing CREATE INDEX:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Execute INSERT statements using Supabase client
+   */
+  private async executeInsert(sql: string): Promise<boolean> {
+    try {
+      // Extract table name and values from INSERT statement
+      const insertMatch = sql.match(/INSERT INTO\s+(\w+)/i);
+      if (!insertMatch) {
+        console.error('Could not parse table name from INSERT statement');
+        return false;
+      }
+      
+      const tableName = insertMatch[1];
+      
+      // For simple INSERT statements, try to use Supabase client
+      if (sql.includes('VALUES')) {
+        // Try RPC first, fallback to manual
+         try {
+           if (!supabase) {
+             throw new Error('Supabase client not initialized');
+           }
+           const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+          if (error && error.code !== 'PGRST202') {
+            console.error('SQL execution error:', error);
+            return false;
+          }
+          if (error && error.code === 'PGRST202') {
+            throw new Error('RPC not available');
+          }
+          return true;
+        } catch {
+          // Fallback: show manual execution instructions
+          console.log('⚠️  Please execute the following SQL manually in Supabase SQL Editor:');
+          console.log('-'.repeat(60));
+          console.log(sql);
+          console.log('-'.repeat(60));
+          return false;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error executing INSERT:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Execute CREATE FUNCTION statements
+   */
+  private async executeCreateFunction(sql: string): Promise<boolean> {
+    try {
+      // For CREATE FUNCTION, we'll use RPC with a fallback
+       try {
+         if (!supabase) {
+           throw new Error('Supabase client not initialized');
+         }
+         const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+        if (error && error.code !== 'PGRST202') {
+          console.error('SQL execution error:', error);
+          return false;
+        }
+        if (error && error.code === 'PGRST202') {
+          throw new Error('RPC not available');
+        }
+        return true;
+      } catch {
+        // Fallback: show manual execution instructions
+        console.log('⚠️  Please execute the following SQL manually in Supabase SQL Editor:');
+        console.log('-'.repeat(60));
+        console.log(sql);
+        console.log('-'.repeat(60));
+        return false;
+      }
+    } catch (error) {
+      console.error('Error executing CREATE FUNCTION:', error);
+      return false;
+    }
+  }
 
   /**
    * Analyze a migration and display only the SQL that needs to be executed

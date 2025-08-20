@@ -43,7 +43,7 @@ BEGIN
         INNER JOIN mensagens m ON f.id_mensagem = m.id
         LEFT JOIN mensagens m_proxima ON m_proxima.ordem = m.ordem + 1 
             AND m_proxima.ativo = true
-            AND (m_proxima.cliente_id = p_cliente_id OR m_proxima.cliente_id IS NULL)
+            AND m_proxima.cliente_id = p_cliente_id
         WHERE f.status = 'sucesso'
             AND f.cliente_id = p_cliente_id
         ORDER BY f.id_lead, f.created_at DESC
@@ -75,7 +75,6 @@ BEGIN
             AND (
                 -- Verificar se já passou o tempo necessário para próxima mensagem
                 CASE luf.intervalo_tipo
-                    WHEN 'segundos' THEN luf.ultimo_envio + (luf.intervalo_numero || ' seconds')::interval
                     WHEN 'minutos' THEN luf.ultimo_envio + (luf.intervalo_numero || ' minutes')::interval
                     WHEN 'horas' THEN luf.ultimo_envio + (luf.intervalo_numero || ' hours')::interval
                     WHEN 'dias' THEN luf.ultimo_envio + (luf.intervalo_numero || ' days')::interval
@@ -105,10 +104,10 @@ BEGIN
             AND l.deletado = false
             AND m.ativo = true
             AND m.ordem = 1
-            AND (m.cliente_id = p_cliente_id OR m.cliente_id IS NULL)
+            AND m.cliente_id = p_cliente_id
             AND NOT EXISTS (
                 SELECT 1 FROM followup f 
-                WHERE f.id_lead = l.id AND f.status = 'sucesso'
+                WHERE f.id_lead = l.id
             )
     )
     SELECT 
@@ -129,7 +128,7 @@ BEGIN
         UNION ALL
         SELECT * FROM leads_sem_followup
     ) AS resultado
-    ORDER BY resultado.prioridade ASC, resultado.ultimo_envio ASC
+    ORDER BY resultado.prioridade ASC, resultado.ultimo_envio DESC
     LIMIT p_limite;
 END;
 $$;

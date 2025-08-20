@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS n8n_chat_histories (
     session_id character varying NOT NULL,
     cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE,
     message JSONB NOT NULL,
+    status character varying(10) DEFAULT 'sucesso' CHECK (status IN ('sucesso', 'erro')),
+    erro TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
@@ -50,4 +52,6 @@ COMMENT ON COLUMN n8n_chat_histories.id IS 'Identificador único da mensagem';
 COMMENT ON COLUMN n8n_chat_histories.session_id IS 'ID da sessão (referencia o ID do lead)';
 COMMENT ON COLUMN n8n_chat_histories.cliente_id IS 'ID do cliente (preenchido automaticamente via trigger)';
 COMMENT ON COLUMN n8n_chat_histories.message IS 'Conteúdo da mensagem em formato JSON';
+COMMENT ON COLUMN n8n_chat_histories.status IS 'Status da mensagem (sucesso ou erro)';
+COMMENT ON COLUMN n8n_chat_histories.erro IS 'Descrição do erro, se houver';
 COMMENT ON COLUMN n8n_chat_histories.created_at IS 'Data e hora de criação';

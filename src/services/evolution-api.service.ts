@@ -10,7 +10,7 @@ class EvolutionApiService {
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_EVOLUTION_API_BASE_URL || '';
     this.apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || '';
-    this.timeout = 30000; // 30 seconds
+    this.timeout = Number(process.env.NEXT_PUBLIC_EVOLUTION_API_TIMEOUT) || 0; // 30 seconds
 
     // console.log('Evolution API Service initialized:');
     // console.log('Base URL:', this.baseUrl);
@@ -685,6 +685,49 @@ class EvolutionApiService {
     }
   }
 
+  async getClienteDataByInstanceName(instanceName: string): Promise<{ cliente_id: string; nome: string; nickname: string } | null> {
+    try {
+      console.log(`Getting cliente data by instance name: ${instanceName}`);
+
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+
+      // Primeiro, buscar o cliente_id da instância
+      const { data: instance, error: instanceError } = await supabase
+        .from('evolution_api')
+        .select('cliente_id')
+        .eq('instance_name', instanceName)
+        .single();
+
+      if (instanceError || !instance) {
+        console.log('Instance not found with name:', instanceName);
+        return null;
+      }
+
+      // Depois, buscar os dados do cliente
+      const { data: cliente, error: clienteError } = await supabase
+        .from('clientes')
+        .select('id, nome, nickname')
+        .eq('id', instance.cliente_id)
+        .single();
+
+      if (clienteError || !cliente) {
+        console.log('Cliente not found with id:', instance.cliente_id);
+        return null;
+      }
+
+      return {
+        cliente_id: cliente.id,
+        nome: cliente.nome,
+        nickname: cliente.nickname
+      };
+    } catch (error: any) {
+      console.error('Error in getClienteDataByInstanceName:', error);
+      throw new Error(`Failed to get cliente data by instance name: ${error.message}`);
+    }
+  }
+
   async getBase64FromMediaMessage(instanceName: string, keyId: string, apikey: string): Promise<any> {
     try {
       console.log(`Getting base64 from media message for instance: ${instanceName}, keyId: ${keyId}`);
@@ -781,7 +824,21 @@ class EvolutionApiService {
 
   async sendText(instanceName: string, number: string, text: string, apikey: string): Promise<any> {
     try {
-      console.log(`Sending text message to ${number} via instance: ${instanceName}`);
+      console.log(`🚀 [sendText] Iniciando envio de mensagem`);
+      console.log(`📱 Instance: ${instanceName}`);
+      console.log(`📞 Number: ${number}`);
+      console.log(`📝 Text length: ${text.length}`);
+      console.log(`🔑 API Key configured: ${apikey ? 'YES' : 'NO'}`);
+      console.log(`🌐 Base URL: ${this.baseUrl}`);
+
+      // Verificar se as configurações básicas estão presentes
+      if (!this.baseUrl) {
+        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL não está configurada');
+      }
+
+      if (!apikey) {
+        throw new Error('API Key não foi fornecida');
+      }
 
       // Aplicar as transformações no texto conforme solicitado
       const processedText = text;
@@ -793,27 +850,57 @@ class EvolutionApiService {
       //   .replace(/\n/g, '\\n');
 
       const url = `${this.baseUrl}/message/sendText/${instanceName}`;
+      console.log(`🎯 Request URL: ${url}`);
 
-      const response = await axios.post(url, {
+      const requestData = {
         number: number,
         textMessage: {
           text: processedText
         }
-      }, {
+      };
+      console.log(`📦 Request data:`, JSON.stringify(requestData, null, 2));
+
+      const requestConfig = {
         headers: {
           'Content-Type': 'application/json',
           'apikey': apikey
         },
         timeout: this.timeout
+      };
+      console.log(`⚙️ Request config:`, {
+        headers: {
+          'Content-Type': requestConfig.headers['Content-Type'],
+          'apikey': '[HIDDEN]'
+        },
+        timeout: requestConfig.timeout
       });
 
-      console.log('Text message sent successfully');
+      const response = await axios.post(url, requestData, requestConfig);
+
+      console.log(`✅ Response status: ${response.status}`);
+      console.log(`📄 Response data:`, JSON.stringify(response.data, null, 2));
+      console.log('✅ Text message sent successfully');
       return response.data;
     } catch (error: any) {
-      console.error('Error sending text message:', error.response?.data || error.message);
-
+      console.error('❌ [sendText] Error details:');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      
       if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response statusText:', error.response.statusText);
+        console.error('Response headers:', error.response.headers);
+        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
         throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+
+      if (error.code) {
+        console.error('Error code:', error.code);
+      }
+
+      if (error.config) {
+        console.error('Request config URL:', error.config.url);
+        console.error('Request config method:', error.config.method);
       }
 
       throw new Error(`Failed to send text message: ${error.message}`);

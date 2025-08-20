@@ -297,6 +297,7 @@ export class FollowupService {
       throw error;
     }
 
+    console.log('🔍 Debug - Dados Brutos retornados pela RPC:', leadsParaEnvio);
     console.log('🔍 Debug - Dados retornados pela RPC:', JSON.stringify(leadsParaEnvio?.[0], null, 2));
     console.log('🔍 Debug - Campos disponíveis:', Object.keys(leadsParaEnvio?.[0] || {}));
 

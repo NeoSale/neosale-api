@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import ChatService from '../services/chatService';
-import { createChatHistorySchema, updateChatHistorySchema, sessionIdParamSchema, idParamSchema, paginationSchema } from '../lib/validators';
+import { createChatHistorySchema, updateChatHistorySchema, sessionIdParamSchema, idParamSchema, paginationSchema, UpdateChatHistoryInput } from '../lib/validators';
 
 export class ChatController {
   // Método auxiliar para extrair ID da URL
@@ -109,9 +109,9 @@ export class ChatController {
         data: result.data,
         pagination: {
           total: result.total || 0,
-          page: result.page || 1,
-          limit: result.limit || 50,
-          totalPages: Math.ceil((result.total || 0) / (result.limit || 50))
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil((result.total || 0) / limit)
         }
       });
     } catch (error) {
@@ -123,7 +123,7 @@ export class ChatController {
   static async getChatHistoryById(req: Request, res: Response) {
     try {
       const id = ChatController.extractIdFromUrl(req);
-      idParamSchema.parse({ id: id.toString() });
+      // A validação do ID numérico já é feita na rota com numericIdParamSchema
       
       const chatHistory = await ChatService.getChatHistoryById(id);
       
@@ -148,9 +148,9 @@ export class ChatController {
   static async updateChatHistory(req: Request, res: Response) {
     try {
       const id = ChatController.extractIdFromUrl(req);
-      idParamSchema.parse({ id: id.toString() });
+      // A validação do ID numérico já é feita na rota com numericIdParamSchema
       
-      const validatedData = updateChatHistorySchema.parse(req.body);
+      const validatedData = updateChatHistorySchema.parse(req.body) as UpdateChatHistoryInput;
       const chatHistory = await ChatService.updateChatHistory(id, validatedData);
       
       return res.status(200).json({
@@ -167,7 +167,7 @@ export class ChatController {
   static async deleteChatHistory(req: Request, res: Response) {
     try {
       const id = ChatController.extractIdFromUrl(req);
-      idParamSchema.parse({ id: id.toString() });
+      // A validação do ID numérico já é feita na rota com numericIdParamSchema
       
       await ChatService.deleteChatHistory(id);
       
@@ -190,6 +190,55 @@ export class ChatController {
       return res.status(200).json({
         success: true,
         message: 'Todas as mensagens da sessão foram deletadas com sucesso'
+      });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
+  // GET /api/chat/ultima_mensagem/:session_id - Buscar última mensagem por session_id
+  static async getMessagesBySessionIDType(req: Request, res: Response) {
+    try {
+      const { session_id: sessionId } = sessionIdParamSchema.parse(req.params);
+      const { message_type } = req.query;
+      
+      const result = await ChatService.getMessagesBySessionIDType(sessionId, message_type as string);
+      
+      return res.status(200).json({
+         success: true,
+         message: 'Última mensagem encontrada com sucesso',
+         data: result.data,
+         total: result.total
+       });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
+  // POST /api/chat/:session_id/mark-error - Marcar última mensagem como erro
+  static async markLastMessageAsError(req: Request, res: Response) {
+    try {
+      const { session_id: sessionId } = sessionIdParamSchema.parse(req.params);
+      const { message_type, error_message } = req.body;
+      
+      // Validar o tipo de mensagem
+      if (!message_type || !['ai', 'human'].includes(message_type.toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tipo de mensagem é obrigatório e deve ser "ai" ou "human"'
+        });
+      }
+      
+      const updatedMessage = await ChatService.markLastMessageAsError(
+        sessionId, 
+        message_type.toLowerCase() as 'ai' | 'human', 
+        error_message
+      );
+      
+      return res.status(200).json({
+        success: true,
+        message: `Última mensagem do tipo '${message_type}' marcada como erro com sucesso`,
+        data: updatedMessage
       });
     } catch (error) {
       return ChatController.handleError(res, error);

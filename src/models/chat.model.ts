@@ -13,6 +13,8 @@ export interface CreateChatHistoryRequest {
 
 export interface UpdateChatHistoryRequest {
   message?: any;
+  status?: 'sucesso' | 'erro' | undefined;
+  erro?: string | undefined;
 }
 
 export interface ChatHistoryResponse {
@@ -36,8 +38,6 @@ export interface LeadWithLastMessageResponse {
 export interface GetChatHistoriesResponse {
   data: ChatHistoryResponse[];
   total: number;
-  page?: number;
-  limit?: number;
 }
 
 export interface GetLeadsWithLastMessageResponse {

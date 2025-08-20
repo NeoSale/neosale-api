@@ -667,7 +667,11 @@ export const createChatHistorySchema = z.object({
 
 // Validator para atualização de chat history
 export const updateChatHistorySchema = z.object({
-  message: z.any().optional()
+  message: z.any().optional(),
+  status: z.enum(['sucesso', 'erro'], {
+    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
+  }).optional(),
+  erro: z.string().optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })

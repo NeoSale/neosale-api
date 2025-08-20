@@ -932,7 +932,7 @@ router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evoluti
  * @swagger
  * /api/evolution-api/cliente/{instanceName}:
  *   get:
- *     summary: Get cliente_id by instance name
+ *     summary: Get cliente data by instance name
  *     tags: [Evolution API]
  *     parameters:
  *       - in: path
@@ -943,7 +943,7 @@ router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evoluti
  *         description: Nome da instância
  *     responses:
  *       200:
- *         description: Cliente ID retrieved successfully
+ *         description: Cliente data retrieved successfully
  *         content:
  *           application/json:
  *             schema:
@@ -959,9 +959,15 @@ router.get('/connect/:clientName', evolutionApiController.getQRCode.bind(evoluti
  *                       type: string
  *                       format: uuid
  *                       description: ID do cliente
+ *                     nome:
+ *                       type: string
+ *                       description: Nome do cliente
+ *                     nickname:
+ *                       type: string
+ *                       description: Nickname do cliente
  *                 message:
  *                   type: string
- *                   example: "Cliente ID retrieved successfully"
+ *                   example: "Cliente data retrieved successfully"
  *       404:
  *         description: Instance not found
  *         content:
