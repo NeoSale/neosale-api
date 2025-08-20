@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { CreateClienteInput, UpdateClienteInput } from '../lib/validators';
+import { generateNickname, ensureUniqueNickname } from '../lib/utils';
 
 export interface Cliente {
   id: string;
@@ -42,18 +43,7 @@ export interface ClienteWithRevendedor extends Cliente {
 }
 
 export class ClienteService {
-  // Função para gerar nickname a partir do nome
-  private static generateNickname(nome: string): string {
-    return nome
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^a-z0-9\s-]/g, '') // Remove caracteres especiais exceto espaços e hífens
-      .trim()
-      .replace(/\s+/g, '-') // Substitui espaços por hífens
-      .replace(/-+/g, '-') // Remove hífens duplicados
-      .replace(/^-|-$/g, ''); // Remove hífens do início e fim
-  }
+
   static async getAllClientes(): Promise<ClienteWithRevendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
@@ -266,31 +256,20 @@ export class ClienteService {
       throw new Error('Supabase client não está inicializado');
     }
 
-    // Gerar nickname automaticamente se não foi fornecido
-    let nickname = input.nickname;
-    if (!nickname) {
-      nickname = this.generateNickname(input.nome);
-      
-      // Verificar se o nickname já existe e adicionar sufixo se necessário
-      let counter = 1;
-      let finalNickname = nickname;
-      
-      while (true) {
-        const { data: existingClient } = await supabase
+    // Gerar nickname automaticamente
+    const baseNickname = generateNickname(input.nome);
+    const nickname = await ensureUniqueNickname(
+      baseNickname,
+      async (nick) => {
+        if (!supabase) throw new Error('Supabase client not initialized');
+        const { data } = await supabase
           .from('clientes')
           .select('id')
-          .eq('nickname', finalNickname)
+          .eq('nickname', nick)
           .single();
-        
-        if (!existingClient) {
-          nickname = finalNickname;
-          break;
-        }
-        
-        finalNickname = `${nickname}-${counter}`;
-        counter++;
+        return !!data;
       }
-    }
+    );
 
     const { data, error } = await supabase
       .from('clientes')

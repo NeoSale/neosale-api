@@ -1,17 +1,20 @@
 import { supabase } from '../lib/supabase';
 import { CreateRevendedorInput, UpdateRevendedorInput } from '../lib/validators';
+import { generateNickname, ensureUniqueNickname } from '../lib/utils';
 
 export interface Revendedor {
   id: string;
   nome: string;
   email: string;
   telefone?: string;
+  nickname?: string;
   status: string;
   created_at: string;
   updated_at: string;
 }
 
 export class RevendedorService {
+
   static async getAll(clienteId?: string): Promise<Revendedor[]> {
     if (!supabase) {
       throw new Error('Supabase client não está inicializado');
@@ -116,14 +119,30 @@ export class RevendedorService {
       throw new Error('Supabase client não está inicializado');
     }
 
+    // Gerar nickname automaticamente
+    const baseNickname = generateNickname(input.nome);
+    const nickname = await ensureUniqueNickname(
+      baseNickname,
+      async (nick) => {
+        if (!supabase) throw new Error('Supabase client not initialized');
+        const { data } = await supabase
+          .from('revendedores')
+          .select('id')
+          .eq('nickname', nick)
+          .single();
+        return !!data;
+      }
+    );
+
     const { data, error } = await supabase
       .from('revendedores')
       .insert({
         nome: input.nome,
         email: input.email,
         telefone: input.telefone,
+        nickname: nickname,
         status: input.status ?? 'ativo',
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
+        updated_at: new Date().toISOString()
       })
       .select()
       .single();

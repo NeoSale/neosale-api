@@ -347,9 +347,6 @@ export const createClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
   email: z.string().min(1, 'Email é obrigatório').email('Email deve ter um formato válido').max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().min(1, 'Telefone é obrigatório').max(20, 'Telefone deve ter no máximo 20 caracteres'),
-  nickname: z.string().max(100, 'Nickname deve ter no máximo 100 caracteres')
-    .regex(/^[a-z0-9-]*$/, 'Nickname deve conter apenas letras minúsculas, números e hífens')
-    .optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional().default('ativo'),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido'),
   // Novos campos adicionados
@@ -374,7 +371,6 @@ export const updateClienteSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
   email: z.string().email('Email deve ter um formato válido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().min(1, 'Telefone é obrigatório').max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
-  nickname: z.string().max(100, 'Nickname deve ter no máximo 100 caracteres').regex(/^[a-z0-9-]+$/, 'Nickname deve conter apenas letras minúsculas, números e hífens').optional(),
   status: z.string().max(50, 'Status deve ter no máximo 50 caracteres').optional(),
   revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
   // Novos campos adicionados

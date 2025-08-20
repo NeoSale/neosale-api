@@ -267,18 +267,28 @@ class EvolutionApiService {
         throw new Error('Webhook URL parameter not found');
       }
 
-      // Get client nickname from database
+      // Get revendedor nickname from database through client
       const { data: clientData, error: clientError } = await supabase!
         .from('clientes')
-        .select('nickname')
+        .select('revendedor_id')
         .eq('id', clienteId)
         .single();
 
-      if (clientError || !clientData?.nickname) {
-        throw new Error('Client nickname not found');
+      if (clientError || !clientData?.revendedor_id) {
+        throw new Error('Client revendedor not found');
       }
 
-      const webhookUrl = `${webhookParam.valor}/${clientData.nickname}`;
+      const { data: revendedorData, error: revendedorError } = await supabase!
+        .from('revendedores')
+        .select('nickname')
+        .eq('id', clientData.revendedor_id)
+        .single();
+
+      if (revendedorError || !revendedorData?.nickname) {
+        throw new Error('Revendedor nickname not found');
+      }
+
+      const webhookUrl = `${webhookParam.valor}/${revendedorData.nickname}`;
       const events = ["MESSAGES_UPSERT"]; // Default events to listen for
 
       const url = `${this.baseUrl}/webhook/set/${instanceName}`;
