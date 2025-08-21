@@ -57,6 +57,9 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *           type: string
  *           format: uuid
  *           description: ID do cliente proprietário
+ *         agendamento:
+ *           type: boolean
+ *           description: Indica se a instância está configurada para agendamento
  *         created_at:
  *           type: string
  *           format: date-time
@@ -85,6 +88,10 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *           type: boolean
  *           default: true
  *           description: Se deve gerar QR Code para conexão
+ *         agendamento:
+ *           type: boolean
+ *           default: false
+ *           description: Indica se a instância está configurada para agendamento
  *         settings:
  *           type: object
  *           properties:
@@ -212,6 +219,10 @@ const validateCreateInstance = [
     .optional()
     .isBoolean()
     .withMessage('qrcode must be a boolean'),
+  body('agendamento')
+    .optional()
+    .isBoolean()
+    .withMessage('agendamento must be a boolean'),
   body('settings')
     .optional()
     .isObject()
@@ -247,13 +258,10 @@ const validateCreateInstance = [
   body('webhook_url')
     .optional({ nullable: true })
     .custom((value: any) => {
-      if (value === null || value === undefined || value === '') {
-        return true;
+      if (value !== null && value !== '' && !value.match(/^https?:\/\/.+/)) {
+        throw new Error('webhook_url must be a valid URL starting with http:// or https://');
       }
-      if (typeof value === 'string' && /^https?:\/\/.+/.test(value)) {
-        return true;
-      }
-      throw new Error('webhook_url must be a valid URL or null');
+      return true;
     }),
   body('webhook_events')
     .optional()
@@ -355,6 +363,10 @@ const validateUpdateInstance = [
     .optional()
     .isBoolean()
     .withMessage('qrcode must be a boolean'),
+  body('agendamento')
+    .optional()
+    .isBoolean()
+    .withMessage('agendamento must be a boolean'),
   body('settings')
     .optional()
     .isObject()
@@ -555,6 +567,7 @@ router.get('/name/:instanceName', validateInstanceName, evolutionApiController.g
  *             instance_name: "teste"
  *             integration: "WHATSAPP-BAILEYS"
  *             qrcode: true
+ *             agendamento: false
  *             settings:
  *               reject_call: false
  *               msg_call: ""
@@ -826,6 +839,10 @@ router.put('/restart/:id', validateInstanceId, evolutionApiController.restartIns
  *                 type: boolean
  *                 description: Whether to generate QR code
  *                 example: true
+ *               agendamento:
+ *                 type: boolean
+ *                 description: Whether this instance is for scheduling
+ *                 example: false
  *               settings:
  *                 type: object
  *                 properties:

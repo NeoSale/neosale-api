@@ -1,6 +1,7 @@
 export interface EvolutionApi {
   id: string;
   cliente_id: string;
+  agendamento: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -75,6 +76,7 @@ export interface CreateEvolutionApiRequest {
   instance_name: string;
   integration: 'WHATSAPP-BAILEYS' | 'WHATSAPP-BUSINESS';
   qrcode?: boolean;
+  agendamento?: boolean;
   settings?: {
     reject_call?: boolean;
     msg_call?: string;
@@ -90,6 +92,7 @@ export interface CreateEvolutionApiRequest {
 
 export interface UpdateEvolutionApiRequest {
   instance_name?: string;
+  agendamento?: boolean;
   webhook_url?: string | null;
   webhook_events?: string[];
   settings?: {

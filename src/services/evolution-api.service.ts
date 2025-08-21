@@ -26,7 +26,7 @@ class EvolutionApiService {
 
       const { data: localInstances, error } = await supabase
         .from('evolution_api')
-        .select('id')
+        .select('id, agendamento')
         .eq('cliente_id', clienteId)
         .order('created_at', { ascending: false });
 
@@ -62,7 +62,7 @@ class EvolutionApiService {
 
       const { data: localInstance, error } = await supabase
         .from('evolution_api')
-        .select('id, instance_name')
+        .select('id, instance_name, agendamento')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -150,7 +150,7 @@ class EvolutionApiService {
 
       // 2. Configurar webhook se fornecido
       try {
-        await this.setWebhook(instanceName, clienteId);
+        await this.setWebhook(instanceName, clienteId, instanceData.agendamento ?? false);
         console.log(`Webhook configured for instance: ${instanceId}`);
       } catch (webhookError) {
         console.error('Error configuring webhook:', webhookError);
@@ -169,7 +169,8 @@ class EvolutionApiService {
 
       console.log('Inserting instance into database:', {
         id: instanceId,
-        cliente_id: clienteId
+        cliente_id: clienteId,
+        agendamento: instanceData.agendamento ?? false
       });
 
       const { error } = await supabase
@@ -177,7 +178,8 @@ class EvolutionApiService {
         .insert({
           id: instanceId,
           cliente_id: clienteId,
-          instance_name: instanceName
+          instance_name: instanceName,
+          agendamento: instanceData.agendamento ?? false
         });
 
       if (error) {
@@ -253,14 +255,15 @@ class EvolutionApiService {
     }
   }
 
-  async setWebhook(instanceName: string, clienteId: string): Promise<void> {
+  async setWebhook(instanceName: string, clienteId: string, agendamento: boolean = false): Promise<void> {
     try {
 
-      // Get webhook URL from parameters table
+      // Get webhook URL from parameters table based on agendamento flag
+      const webhookKey = agendamento ? 'webhook_url_agendamento' : 'webhook_url';
       const { data: webhookParam, error: webhookError } = await supabase!
         .from('parametros')
         .select('valor')
-        .eq('chave', 'webhook_url')
+        .eq('chave', webhookKey)
         .single();
 
       if (webhookError || !webhookParam) {
@@ -559,7 +562,7 @@ class EvolutionApiService {
       // Buscar o instance_name no Supabase
       const { data: instanceData, error: fetchError } = await supabase
         .from('evolution_api')
-        .select('instance_name')
+        .select('instance_name, agendamento')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -587,7 +590,30 @@ class EvolutionApiService {
         await this.configureSettings(instanceData.instance_name, settingsData);
       }
 
-      console.log(`Instance ${instanceName} webhook updated successfully`);
+      // Update agendamento field in database if provided
+      if (updateData.agendamento !== undefined) {
+        const { error: updateError } = await supabase
+          .from('evolution_api')
+          .update({ agendamento: updateData.agendamento })
+          .eq('id', instanceId)
+          .eq('cliente_id', clienteId);
+
+        if (updateError) {
+          console.error('Error updating agendamento field:', updateError);
+          throw new Error(`Failed to update agendamento: ${updateError.message}`);
+        }
+
+        // Reconfigure webhook with new agendamento setting
+        try {
+          await this.setWebhook(instanceName, clienteId, updateData.agendamento);
+          console.log(`Webhook reconfigured for instance: ${instanceId} with agendamento: ${updateData.agendamento}`);
+        } catch (webhookError) {
+          console.error('Error reconfiguring webhook:', webhookError);
+          // Don't fail the update if webhook fails
+        }
+      }
+
+      console.log(`Instance ${instanceName} updated successfully`);
 
       // Retornar os dados atualizados
       return {
@@ -627,7 +653,15 @@ class EvolutionApiService {
         throw new Error('Invalid response format from Evolution API');
       }
 
-      
+      // Buscar dados locais das instâncias
+      const { data: localInstances, error } = await supabase!
+        .from('evolution_api')
+        .select('id, agendamento')
+        .in('id', instanceIds);
+
+      if (error) {
+        console.error('Error fetching local instances:', error);
+      }
 
       // Filtrar apenas as instâncias que pertencem ao cliente e mapear para o formato esperado
       const filteredInstances = await Promise.all(
@@ -642,6 +676,9 @@ class EvolutionApiService {
               console.error(`Error fetching settings for instance ${item.instance.instanceName}:`, error);
             }
 
+            // Buscar agendamento do banco local
+            const localInstance = localInstances?.find((local: any) => local.id === item.instance.instanceId);
+
             return {
               instance: {
                 instanceId: item.instance.instanceId,
@@ -655,6 +692,7 @@ class EvolutionApiService {
                 apiKey: item.instance.apikey,
                 serverUrl: item.instance.serverUrl,
                 settings: settings,
+                agendamento: localInstance?.agendamento ?? false,
               },
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
