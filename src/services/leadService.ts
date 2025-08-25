@@ -15,8 +15,8 @@ export class LeadService {
       return numeroLimpo
     }
     
-    // Verifica se o número começa com 55 (DDD 55) e tem 11 ou 12 dígitos
-    if (numeroLimpo.startsWith('55') && (numeroLimpo.length === 11 || numeroLimpo.length === 12)) {
+    // Verifica se o número começa com 55 (DDD 55) e tem 10, 11 ou 12 dígitos
+    if (numeroLimpo.startsWith('55') && (numeroLimpo.length === 10 || numeroLimpo.length === 11 || numeroLimpo.length === 12)) {
       // Adiciona DDI 55 no início
       return '55' + numeroLimpo
     }
