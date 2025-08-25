@@ -3,6 +3,26 @@ import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, Etap
 import { generateLeadEmbedding } from '../lib/embedding'
 import { ReferenciaService } from './referenciaService'
 export class LeadService {
+  // Função para formatar telefone com DDI 55 quando DDD for 55
+  private static formatarTelefone(telefone: string): string {
+    if (!telefone) return telefone
+    
+    // Remove todos os caracteres não numéricos
+    const numeroLimpo = telefone.replace(/\D/g, '')
+    
+    // Se já tem DDI (13 ou 14 dígitos), retorna como está
+    if (numeroLimpo.length === 13 || numeroLimpo.length === 14) {
+      return numeroLimpo
+    }
+    
+    // Verifica se o número começa com 55 (DDD 55) e tem 11 ou 12 dígitos
+    if (numeroLimpo.startsWith('55') && (numeroLimpo.length === 11 || numeroLimpo.length === 12)) {
+      // Adiciona DDI 55 no início
+      return '55' + numeroLimpo
+    }
+    
+    return numeroLimpo
+  }
   // Verificar se Supabase está configurado
   private static checkSupabaseConnection() {
     if (!supabase) {
@@ -16,6 +36,9 @@ export class LeadService {
     console.log('🔄 Criando novo lead:', data.nome)
 
     try {
+      // Formatar telefone com DDI 55 se necessário
+      const telefoneFormatado = LeadService.formatarTelefone(data.telefone)
+      
       // Verificar se telefone já existe e está ativo
       const { data: existingPhones, error: phoneError } = await supabase!
         .from('leads')
@@ -26,7 +49,7 @@ export class LeadService {
           deletado,
           status_negociacao:status_negociacao_id(nome)
         `)
-        .eq('telefone', data.telefone)
+        .eq('telefone', telefoneFormatado)
         .eq('deletado', false)
         .eq('cliente_id', clienteId)
 
@@ -43,7 +66,7 @@ export class LeadService {
       })
 
       if (activePhone) {
-        throw new Error(`Já existe um lead ativo com o telefone ${data.telefone}: ${activePhone.nome}`)
+        throw new Error(`Já existe um lead ativo com o telefone ${telefoneFormatado}: ${activePhone.nome}`)
       }
 
       // Verificar se email já existe (se fornecido)
@@ -84,7 +107,7 @@ export class LeadService {
         .from('leads')
         .insert({
           nome: data.nome,
-          telefone: data.telefone,
+          telefone: telefoneFormatado,
           email: data.email || null,
           empresa: data.empresa || null,
           cargo: data.cargo || null,
@@ -241,11 +264,14 @@ export class LeadService {
 
     for (const leadData of data.leads) {
       try {
+        // Formatar telefone com DDI 55 se necessário
+        const telefoneFormatado = LeadService.formatarTelefone(leadData.telefone)
+        
         // Verificar se telefone já existe
         const { data: existingPhone, error: phoneError } = await supabase!
           .from('leads')
           .select('id, nome, telefone')
-          .eq('telefone', leadData.telefone)
+          .eq('telefone', telefoneFormatado)
           .eq('deletado', false)
           .eq('cliente_id', clienteId)
           .single()
@@ -256,7 +282,7 @@ export class LeadService {
         }
 
         if (existingPhone) {
-          console.log('⚠️ Lead com telefone já existe:', leadData.telefone, '- pulando')
+          console.log('⚠️ Lead com telefone já existe:', telefoneFormatado, '- pulando')
           skipped.push({ ...leadData, motivo: 'Telefone já existe na base de leads' })
 
           continue
@@ -267,7 +293,7 @@ export class LeadService {
           .from('leads')
           .insert({
             nome: leadData.nome,
-            telefone: leadData.telefone,
+            telefone: telefoneFormatado,
             email: leadData.email,
             empresa: leadData.empresa,
             cargo: leadData.cargo,
@@ -798,8 +824,13 @@ export class LeadService {
         throw new Error('Não é possível atualizar um lead excluído')
       }
 
-      // Gerar embedding se houver dados para atualizar
+      // Formatar telefone se estiver sendo atualizado
       const updateData = { ...data }
+      if (updateData.telefone) {
+        updateData.telefone = LeadService.formatarTelefone(updateData.telefone)
+      }
+      
+      // Gerar embedding se houver dados para atualizar
       if (Object.keys(updateData).length > 0 && !updateData.embedding) {
         // Buscar dados atuais do lead para gerar embedding completo
         const { data: leadAtual } = await supabase!

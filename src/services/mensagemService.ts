@@ -43,12 +43,13 @@ export const mensagemService = {
       throw new Error('Supabase não configurado');
     }
     
-    // Se ordem não foi fornecida, buscar a próxima ordem disponível
+    // Se ordem não foi fornecida, buscar a próxima ordem disponível por cliente
     let ordem = data.ordem;
     if (ordem === undefined) {
       const { data: ultimaMensagem } = await supabase
         .from('mensagens')
         .select('ordem')
+        .eq('cliente_id', data.cliente_id)
         .order('ordem', { ascending: false })
         .limit(1)
         .single();
@@ -185,25 +186,59 @@ export const mensagemService = {
       throw new Error('Supabase não configurado');
     }
     
+    // Buscar dados atuais da mensagem
+    const { data: mensagemAtual } = await supabase
+      .from('mensagens')
+      .select('*')
+      .eq('id', id)
+      .eq('cliente_id', data.cliente_id)
+      .single();
+    
+    if (!mensagemAtual) {
+      return null; // Mensagem não encontrada
+    }
+    
     const updateData: any = {
       ...data,
       updated_at: new Date().toISOString()
     };
     
+    // Se a ordem está sendo alterada, reorganizar outras mensagens do mesmo cliente
+    if (data.ordem !== undefined && data.ordem !== mensagemAtual.ordem) {
+      const ordemAntiga = mensagemAtual.ordem;
+      const novaOrdem = data.ordem;
+      
+      if (novaOrdem > ordemAntiga) {
+        // Movendo para baixo: decrementar ordem das mensagens entre a posição antiga e nova
+        await supabase
+          .from('mensagens')
+          .update({ 
+            ordem: supabase.rpc('decrement_ordem'),
+            updated_at: new Date().toISOString()
+          })
+          .eq('cliente_id', data.cliente_id)
+          .gt('ordem', ordemAntiga)
+          .lte('ordem', novaOrdem)
+          .neq('id', id);
+      } else {
+        // Movendo para cima: incrementar ordem das mensagens entre a nova posição e antiga
+        await supabase
+          .from('mensagens')
+          .update({ 
+            ordem: supabase.rpc('increment_ordem'),
+            updated_at: new Date().toISOString()
+          })
+          .eq('cliente_id', data.cliente_id)
+          .gte('ordem', novaOrdem)
+          .lt('ordem', ordemAntiga)
+          .neq('id', id);
+      }
+    }
+    
     // Gerar embedding se houver mudanças no conteúdo
     if (data.texto_mensagem || data.nome) {
-      // Buscar dados atuais da mensagem para gerar embedding completo
-      const { data: mensagemAtual } = await supabase
-        .from('mensagens')
-        .select('*')
-        .eq('id', id)
-        .eq('cliente_id', data.cliente_id)
-        .single();
-      
-      if (mensagemAtual) {
-        const dadosCompletos = { ...mensagemAtual, ...data };
-        updateData.embedding = await generateMensagemEmbedding(dadosCompletos);
-      }
+      const dadosCompletos = { ...mensagemAtual, ...data };
+      updateData.embedding = await generateMensagemEmbedding(dadosCompletos);
     }
 
     const { data: mensagem, error } = await supabase

@@ -85,7 +85,7 @@ export class ClienteService {
       `);
 
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
+      query = query.eq('id', clienteId);
     }
 
     const { data, error } = await query.order('nome', { ascending: true });
@@ -115,7 +115,7 @@ export class ClienteService {
       .eq('id', id);
 
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
+      query = query.eq('id', clienteId);
     }
 
     const { data, error } = await query.single();
@@ -148,7 +148,7 @@ export class ClienteService {
       .eq('email', email);
 
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
+      query = query.eq('id', clienteId);
     }
 
     const { data, error } = await query.single();
@@ -181,7 +181,7 @@ export class ClienteService {
       .eq('cnpj', cnpj);
 
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
+      query = query.eq('id', clienteId);
     }
 
     const { data, error } = await query.single();
@@ -239,7 +239,7 @@ export class ClienteService {
       .eq('status', status);
 
     if (clienteId) {
-      query = query.eq('cliente_id', clienteId);
+      query = query.eq('id', clienteId);
     }
 
     const { data, error } = await query.order('nome', { ascending: true });

@@ -39,6 +39,3 @@ BEGIN
             EXECUTE FUNCTION update_evolution_api_updated_at();
     END IF;
 END $$;
-
--- Adicionar campo agendamento se a tabela já existir
-ALTER TABLE evolution_api ADD COLUMN IF NOT EXISTS agendamento BOOLEAN DEFAULT FALSE;
