@@ -57,9 +57,18 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *           type: string
  *           format: uuid
  *           description: ID do cliente proprietário
- *         agendamento:
+ *         id_agente:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ *           description: ID do agente responsável
+ *         followup:
  *           type: boolean
- *           description: Indica se a instância está configurada para agendamento
+ *           description: Indica se a instância está configurada para followup
+ *         qtd_envios_diarios:
+ *           type: integer
+ *           default: 50
+ *           description: Quantidade de envios diários permitidos
  *         created_at:
  *           type: string
  *           format: date-time
@@ -88,10 +97,19 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *           type: boolean
  *           default: true
  *           description: Se deve gerar QR Code para conexão
- *         agendamento:
+ *         id_agente:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ *           description: ID do agente responsável
+ *         followup:
  *           type: boolean
  *           default: false
- *           description: Indica se a instância está configurada para agendamento
+ *           description: Indica se a instância está configurada para followup
+ *         qtd_envios_diarios:
+ *           type: integer
+ *           default: 50
+ *           description: Quantidade de envios diários permitidos
  *         settings:
  *           type: object
  *           properties:
@@ -219,10 +237,18 @@ const validateCreateInstance = [
     .optional()
     .isBoolean()
     .withMessage('qrcode must be a boolean'),
-  body('agendamento')
+  body('id_agente')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('id_agente must be a valid UUID'),
+  body('followup')
     .optional()
     .isBoolean()
-    .withMessage('agendamento must be a boolean'),
+    .withMessage('followup must be a boolean'),
+  body('qtd_envios_diarios')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('qtd_envios_diarios must be a positive integer'),
   body('settings')
     .optional()
     .isObject()
@@ -363,10 +389,18 @@ const validateUpdateInstance = [
     .optional()
     .isBoolean()
     .withMessage('qrcode must be a boolean'),
-  body('agendamento')
+  body('id_agente')
+    .optional({ nullable: true })
+    .isUUID()
+    .withMessage('id_agente must be a valid UUID'),
+  body('followup')
     .optional()
     .isBoolean()
-    .withMessage('agendamento must be a boolean'),
+    .withMessage('followup must be a boolean'),
+  body('qtd_envios_diarios')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('qtd_envios_diarios must be a positive integer'),
   body('settings')
     .optional()
     .isObject()
@@ -567,7 +601,9 @@ router.get('/name/:instanceName', validateInstanceName, evolutionApiController.g
  *             instance_name: "teste"
  *             integration: "WHATSAPP-BAILEYS"
  *             qrcode: true
- *             agendamento: false
+ *             id_agente: null
+ *             followup: false
+ *             qtd_envios_diarios: 50
  *             settings:
  *               reject_call: false
  *               msg_call: ""
@@ -839,10 +875,21 @@ router.put('/restart/:id', validateInstanceId, evolutionApiController.restartIns
  *                 type: boolean
  *                 description: Whether to generate QR code
  *                 example: true
- *               agendamento:
+ *               id_agente:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *                 description: ID of the agent associated with this instance
+ *                 example: null
+ *               followup:
  *                 type: boolean
- *                 description: Whether this instance is for scheduling
+ *                 description: Whether this instance is for follow-up
  *                 example: false
+ *               qtd_envios_diarios:
+ *                 type: integer
+ *                 minimum: 1
+ *                 description: Daily sending limit
+ *                 example: 50
  *               settings:
  *                 type: object
  *                 properties:

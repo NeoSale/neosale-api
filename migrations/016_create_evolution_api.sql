@@ -6,7 +6,9 @@ CREATE TABLE IF NOT EXISTS evolution_api (
     id UUID PRIMARY KEY,
     cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
     instance_name VARCHAR(255),
-    agendamento BOOLEAN DEFAULT FALSE,
+    id_agente UUID REFERENCES agentes(id) ON DELETE SET NULL,
+    followup BOOLEAN DEFAULT FALSE,
+    qtd_envios_diarios INTEGER DEFAULT 50,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -14,6 +16,7 @@ CREATE TABLE IF NOT EXISTS evolution_api (
 -- Criar índices
 CREATE INDEX IF NOT EXISTS idx_evolution_api_cliente_id ON evolution_api(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_evolution_api_instance_name ON evolution_api(instance_name);
+CREATE INDEX IF NOT EXISTS idx_evolution_api_id_agente ON evolution_api(id_agente);
 CREATE INDEX IF NOT EXISTS idx_evolution_api_created_at ON evolution_api(created_at);
 
 -- Add trigger to update updated_at column

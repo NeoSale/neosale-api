@@ -134,9 +134,7 @@ export const createLeadSchema = z.object({
   observacao: z.string().optional(),
   segmento: z.string().optional(),
   erp_atual: z.string().optional(),
-  origem: z.enum(['inbound', 'outbound'], {
-    errorMap: () => ({ message: 'Origem deve ser inbound ou outbound' })
-  }).optional(),
+  origem: z.string().optional(),
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
@@ -721,3 +719,48 @@ export const updateConfiguracaoFollowupSchema = z.object({
 
 export type CreateConfiguracaoFollowupInput = z.infer<typeof createConfiguracaoFollowupSchema>
 export type UpdateConfiguracaoFollowupInput = z.infer<typeof updateConfiguracaoFollowupSchema>
+
+// Validators para TipoAgente
+export const createTipoAgenteSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório').max(50, 'Nome deve ter no máximo 50 caracteres'),
+  ativo: z.boolean().optional().default(true),
+  embedding: z.array(z.number()).optional()
+})
+
+export const updateTipoAgenteSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório').max(50, 'Nome deve ter no máximo 50 caracteres').optional(),
+  ativo: z.boolean().optional(),
+  embedding: z.array(z.number()).optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+export type CreateTipoAgenteInput = z.infer<typeof createTipoAgenteSchema>
+export type UpdateTipoAgenteInput = z.infer<typeof updateTipoAgenteSchema>
+
+// Validators para Agente
+export const createAgenteSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres'),
+  tipo_agente_id: z.string().uuid('tipo_agente_id deve ser um UUID válido'),
+  prompt: z.string().optional(),
+  agendamento: z.boolean().optional().default(false),
+  prompt_agendamento: z.string().optional(),
+  prompt_seguranca: z.string().optional(),
+  ativo: z.boolean().optional().default(true),
+  embedding: z.array(z.number()).optional()
+})
+
+export const updateAgenteSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório').max(100, 'Nome deve ter no máximo 100 caracteres').optional(),
+  tipo_agente_id: z.string().uuid('tipo_agente_id deve ser um UUID válido').optional(),
+  prompt: z.string().optional(),
+  agendamento: z.boolean().optional(),
+  prompt_agendamento: z.string().optional(),
+  prompt_seguranca: z.string().optional(),
+  ativo: z.boolean().optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+export type CreateAgenteInput = z.infer<typeof createAgenteSchema>
+export type UpdateAgenteInput = z.infer<typeof updateAgenteSchema>

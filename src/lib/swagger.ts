@@ -319,9 +319,9 @@ const options: swaggerJSDoc.Options = {
               type: 'object',
               description: 'Dados de conexão'
             },
-            agendamento: {
+            followup: {
               type: 'boolean',
-              description: 'Indica se a instância está configurada para agendamento'
+              description: 'Indica se a instância está configurada para followup'
             },
             created_at: {
               type: 'string',
@@ -355,9 +355,9 @@ const options: swaggerJSDoc.Options = {
               },
               description: 'Eventos do webhook'
             },
-            agendamento: {
+            followup: {
               type: 'boolean',
-              description: 'Indica se a instância está configurada para agendamento (padrão: false)'
+              description: 'Indica se a instância está configurada para followup (padrão: false)'
             },
             settings: {
               type: 'object',
@@ -410,9 +410,9 @@ const options: swaggerJSDoc.Options = {
               },
               description: 'Eventos do webhook'
             },
-            agendamento: {
+            followup: {
               type: 'boolean',
-              description: 'Indica se a instância está configurada para agendamento'
+              description: 'Indica se a instância está configurada para followup'
             },
             settings: {
               type: 'object',

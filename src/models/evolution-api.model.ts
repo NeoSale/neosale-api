@@ -1,7 +1,10 @@
 export interface EvolutionApi {
   id: string;
   cliente_id: string;
-  agendamento: boolean;
+  instance_name?: string;
+  id_agente?: string;
+  followup: boolean;
+  qtd_envios_diarios: number;
   created_at: string;
   updated_at: string;
 }
@@ -31,9 +34,9 @@ export interface EvolutionApiInstanceData {
   id: string;
   name: string;
   connectionStatus: string;
-  ownerJid?: string;
+  owner?: string;
   profileName?: string;
-  profilePicUrl?: string;
+  profilePictureUrl?: string;
   integration: string;
   number?: string;
   businessId?: string;
@@ -47,6 +50,29 @@ export interface EvolutionApiInstanceData {
   serverUrl?: string;
   webhookUrl?: string;
   Chatwoot?: any;
+  // Campos adicionais específicos do sistema
+  followup?: boolean;
+  id_agente?: string;
+  qtd_envios_diarios?: number;
+  // Dados completos do agente
+  agente?: {
+    id: string;
+    nome: string;
+    cliente_id: string;
+    tipo_agente_id: string;
+    prompt?: string;
+    agendamento: boolean;
+    prompt_agendamento?: string;
+    prompt_seguranca?: string;
+    ativo: boolean;
+    created_at: string;
+    updated_at: string;
+    tipo_agente?: {
+      id: string;
+      nome: string;
+      ativo: boolean;
+    };
+  } | null;
   Proxy?: any;
   Rabbitmq?: any;
   Sqs?: any;
@@ -76,7 +102,9 @@ export interface CreateEvolutionApiRequest {
   instance_name: string;
   integration: 'WHATSAPP-BAILEYS' | 'WHATSAPP-BUSINESS';
   qrcode?: boolean;
-  agendamento?: boolean;
+  id_agente?: string;
+  followup?: boolean;
+  qtd_envios_diarios?: number;
   settings?: {
     reject_call?: boolean;
     msg_call?: string;
@@ -92,7 +120,9 @@ export interface CreateEvolutionApiRequest {
 
 export interface UpdateEvolutionApiRequest {
   instance_name?: string;
-  agendamento?: boolean;
+  id_agente?: string;
+  followup?: boolean;
+  qtd_envios_diarios?: number;
   webhook_url?: string | null;
   webhook_events?: string[];
   settings?: {

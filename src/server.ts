@@ -24,6 +24,8 @@ import configuracoesRoutes from './routes/configuracoesRoutes'
 import configuracaoFollowupRoutes from './routes/configuracaoFollowupRoutes'
 import provedorRoutes from './routes/provedorRoutes'
 import tipoAcessoRoutes from './routes/tipoAcessoRoutes'
+import tipoAgenteRoutes from './routes/tipoAgenteRoutes'
+import agenteRoutes from './routes/agenteRoutes'
 import revendedorRoutes from './routes/revendedorRoutes'
 import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
@@ -102,6 +104,8 @@ app.get('/', (req, res) => {
       configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
       provedores: `${BASE_URL}/api/provedores`,
       tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
+      tiposAgente: `${BASE_URL}/api/tipo-agentes`,
+      agentes: `${BASE_URL}/api/agentes`,
       revendedores: `${BASE_URL}/api/revendedores`,
       clientes: `${BASE_URL}/api/clientes`,
       usuarios: `${BASE_URL}/api/usuarios`,
@@ -124,6 +128,8 @@ app.use('/api/configuracoes', configuracoesRoutes)
 app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
 app.use('/api/provedores', provedorRoutes)
 app.use('/api/tipos-acesso', tipoAcessoRoutes)
+app.use('/api/tipo-agentes', tipoAgenteRoutes)
+app.use('/api/agentes', agenteRoutes)
 app.use('/api/revendedores', revendedorRoutes)
 app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)

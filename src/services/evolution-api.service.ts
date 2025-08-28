@@ -26,7 +26,7 @@ class EvolutionApiService {
 
       const { data: localInstances, error } = await supabase
         .from('evolution_api')
-        .select('id, agendamento')
+        .select('id, followup')
         .eq('cliente_id', clienteId)
         .order('created_at', { ascending: false });
 
@@ -62,7 +62,7 @@ class EvolutionApiService {
 
       const { data: localInstance, error } = await supabase
         .from('evolution_api')
-        .select('id, instance_name, agendamento')
+        .select('id, instance_name, id_agente, followup, qtd_envios_diarios')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -150,7 +150,7 @@ class EvolutionApiService {
 
       // 2. Configurar webhook se fornecido
       try {
-        await this.setWebhook(instanceName, clienteId, instanceData.agendamento ?? false);
+        await this.setWebhook(instanceName, clienteId, instanceData.id_agente);
         console.log(`Webhook configured for instance: ${instanceId}`);
       } catch (webhookError) {
         console.error('Error configuring webhook:', webhookError);
@@ -170,7 +170,9 @@ class EvolutionApiService {
       console.log('Inserting instance into database:', {
         id: instanceId,
         cliente_id: clienteId,
-        agendamento: instanceData.agendamento ?? false
+        id_agente: instanceData.id_agente,
+        followup: instanceData.followup ?? false,
+        qtd_envios_diarios: instanceData.qtd_envios_diarios ?? 50
       });
 
       const { error } = await supabase
@@ -179,7 +181,9 @@ class EvolutionApiService {
           id: instanceId,
           cliente_id: clienteId,
           instance_name: instanceName,
-          agendamento: instanceData.agendamento ?? false
+          id_agente: instanceData.id_agente,
+          followup: instanceData.followup ?? false,
+          qtd_envios_diarios: instanceData.qtd_envios_diarios ?? 50
         });
 
       if (error) {
@@ -255,8 +259,22 @@ class EvolutionApiService {
     }
   }
 
-  async setWebhook(instanceName: string, clienteId: string, agendamento: boolean = false): Promise<void> {
+  async setWebhook(instanceName: string, clienteId: string, id_agente?: string): Promise<void> {
     try {
+      let agendamento;
+
+      // Se id_agente foi fornecido, buscar o campo agendamento da tabela agentes
+      if (id_agente) {
+        const { data: agenteData, error: agenteError } = await supabase!
+          .from('agentes')
+          .select('agendamento')
+          .eq('id', id_agente)
+          .single();
+
+        if (!agenteError && agenteData) {
+          agendamento = agenteData.agendamento;
+        }
+      }
 
       // Get webhook URL from parameters table based on agendamento flag
       const webhookKey = agendamento ? 'webhook_url_agendamento' : 'webhook_url';
@@ -562,7 +580,7 @@ class EvolutionApiService {
       // Buscar o instance_name no Supabase
       const { data: instanceData, error: fetchError } = await supabase
         .from('evolution_api')
-        .select('instance_name, agendamento')
+        .select('instance_name, id_agente, followup, qtd_envios_diarios')
         .eq('id', instanceId)
         .eq('cliente_id', clienteId)
         .single();
@@ -590,26 +608,33 @@ class EvolutionApiService {
         await this.configureSettings(instanceData.instance_name, settingsData);
       }
 
-      // Update agendamento field in database if provided
-      if (updateData.agendamento !== undefined) {
+      // Update fields in database if provided
+      const updateFields: any = {};
+      if (updateData.id_agente !== undefined) updateFields.id_agente = updateData.id_agente;
+      if (updateData.followup !== undefined) updateFields.followup = updateData.followup;
+      if (updateData.qtd_envios_diarios !== undefined) updateFields.qtd_envios_diarios = updateData.qtd_envios_diarios;
+
+      if (Object.keys(updateFields).length > 0) {
         const { error: updateError } = await supabase
           .from('evolution_api')
-          .update({ agendamento: updateData.agendamento })
+          .update(updateFields)
           .eq('id', instanceId)
           .eq('cliente_id', clienteId);
 
         if (updateError) {
-          console.error('Error updating agendamento field:', updateError);
-          throw new Error(`Failed to update agendamento: ${updateError.message}`);
+          console.error('Error updating evolution_api fields:', updateError);
+          throw new Error(`Failed to update fields: ${updateError.message}`);
         }
 
-        // Reconfigure webhook with new agendamento setting
-        try {
-          await this.setWebhook(instanceName, clienteId, updateData.agendamento);
-          console.log(`Webhook reconfigured for instance: ${instanceId} with agendamento: ${updateData.agendamento}`);
-        } catch (webhookError) {
-          console.error('Error reconfiguring webhook:', webhookError);
-          // Don't fail the update if webhook fails
+        // Reconfigure webhook with new followup setting if changed
+        if (updateData.followup !== undefined) {
+          try {
+            await this.setWebhook(instanceName, clienteId, updateData.id_agente);
+            console.log(`Webhook reconfigured for instance: ${instanceId} with followup: ${updateData.followup}`);
+          } catch (webhookError) {
+            console.error('Error reconfiguring webhook:', webhookError);
+            // Don't fail the update if webhook fails
+          }
         }
       }
 
@@ -634,7 +659,7 @@ class EvolutionApiService {
     }
   }
 
-  private async fetchInstancesFromEvolutionApi(instanceIds: string[]): Promise<EvolutionApiInstanceData[]> {
+  async fetchInstancesFromEvolutionApi(instanceIds: string[]): Promise<EvolutionApiInstanceData[]> {
     try {
       const response = await axios.get(
         `${this.baseUrl}/instance/fetchInstances`,
@@ -653,11 +678,36 @@ class EvolutionApiService {
         throw new Error('Invalid response format from Evolution API');
       }
 
-      // Buscar dados locais das instâncias
+      // Buscar dados locais das instâncias com dados dos agentes (apenas agentes não deletados)
       const { data: localInstances, error } = await supabase!
         .from('evolution_api')
-        .select('id, agendamento')
-        .in('id', instanceIds);
+        .select(`
+          id, 
+          followup, 
+          id_agente, 
+          qtd_envios_diarios,
+          agente:agentes!inner(
+            id,
+            nome,
+            cliente_id,
+            tipo_agente_id,
+            prompt,
+            agendamento,
+            prompt_agendamento,
+            prompt_seguranca,
+            ativo,
+            deletado,
+            created_at,
+            updated_at,
+            tipo_agente:tipo_agentes(
+              id,
+              nome,
+              ativo
+            )
+          )
+        `)
+        .in('id', instanceIds)
+        .eq('agente.deletado', false);
 
       if (error) {
         console.error('Error fetching local instances:', error);
@@ -676,27 +726,31 @@ class EvolutionApiService {
               console.error(`Error fetching settings for instance ${item.instance.instanceName}:`, error);
             }
 
-            // Buscar agendamento do banco local
+            // Buscar dados locais da instância
             const localInstance = localInstances?.find((local: any) => local.id === item.instance.instanceId);
 
             return {
-              instance: {
-                instanceId: item.instance.instanceId,
-                instanceName: item.instance.instanceName,
-                webhook_wa_business: item.instance.integration.webhook_wa_business,
-                owner: item.instance.owner,
-                profileName: item.instance.profileName,
-                status: item.instance.status,
-                profilePictureUrl: item.instance.profilePictureUrl,
-                profileStatus: item.instance.profileStatus,
-                apiKey: item.instance.apikey,
-                serverUrl: item.instance.serverUrl,
-                settings: settings,
-                agendamento: localInstance?.agendamento ?? false,
-              },
+              id: item.instance.instanceId,
+              name: item.instance.instanceName,
+              connectionStatus: item.instance.status,
+              owner: item.instance.owner,
+              profileName: item.instance.profileName,
+              profilePictureUrl: item.instance.profilePictureUrl,
+              integration: item.instance.integration.integration,
+              token: item.instance.apikey,
+              clientName: '',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-            } as any;
+              serverUrl: item.instance.serverUrl,
+              webhookUrl: item.instance.integration.webhook_wa_business,
+              Setting: settings,
+              // Campos adicionais específicos do sistema
+              followup: localInstance?.followup ?? false,
+              id_agente: localInstance?.id_agente ?? null,
+              qtd_envios_diarios: localInstance?.qtd_envios_diarios ?? 50,
+              // Dados completos do agente
+              agente: localInstance?.agente ?? null,
+            } as EvolutionApiInstanceData;
           })
       );
 
