@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS controle_envios_diarios (
   limite_diario integer NOT NULL DEFAULT 100,
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
   embedding vector(1536), -- campo para embedding da LLM
-  created_at timestamp DEFAULT now(),
-  updated_at timestamp DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Create indexes for better performance

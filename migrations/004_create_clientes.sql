@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS clientes (
   redes_sociais jsonb,
   horario_funcionamento jsonb,
   embedding vector(1536), -- campo para embedding da LLM
-  created_at timestamp DEFAULT now(),
-  updated_at timestamp DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Create indexes for better performance

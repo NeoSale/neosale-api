@@ -7,6 +7,11 @@ export class LeadService {
   private static formatarTelefone(telefone: string): string {
     if (!telefone) return telefone
     
+    // Se o telefone contém '@', retorna como está (formato especial como WhatsApp Business)
+    if (telefone.includes('@lid')) {
+      return telefone
+    }
+    
     // Remove todos os caracteres não numéricos
     const numeroLimpo = telefone.replace(/\D/g, '')
     

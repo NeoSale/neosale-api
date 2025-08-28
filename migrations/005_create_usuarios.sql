@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   cliente_id UUID, -- referência ao cliente proprietário
   ativo boolean NOT NULL DEFAULT true,
   embedding vector(1536), -- campo para embedding da LLM
-  created_at timestamp DEFAULT now(),
-  updated_at timestamp DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Add columns if they don't exist
@@ -24,8 +24,8 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS revendedor_id uuid;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cliente_id UUID;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo boolean DEFAULT true;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS embedding vector(1536);
-ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at timestamp DEFAULT now();
-ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at timestamp DEFAULT now();
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
 
 -- Add foreign key constraints if they don't exist
 DO $add_constraints$

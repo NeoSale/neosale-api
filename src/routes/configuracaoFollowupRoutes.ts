@@ -497,7 +497,7 @@ router.get('/:id', ConfiguracaoFollowupController.getById)
  *               domingo: "fechado"
  *             qtd_envio_diario: 50
  *             em_execucao: false
- *             cliente_id: "123e4567-e89b-12d3-a456-426614174000"
+ *             cliente_id: "f029ad69-3465-454e-ba85-e0cdb75c445f"
  *     responses:
  *       201:
  *         description: Configuração criada com sucesso

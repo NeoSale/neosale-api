@@ -31,7 +31,7 @@ const options: swaggerJSDoc.Options = {
           schema: {
             type: 'string',
             format: 'uuid',
-            default: process.env.DEFAULT_CLIENTE_ID
+            default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
           },
           description: 'ID do cliente para filtrar os dados'
         }

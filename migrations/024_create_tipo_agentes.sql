@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS tipo_agentes (
   nome varchar(50) NOT NULL UNIQUE,
   ativo boolean NOT NULL DEFAULT true,
   embedding vector(1536), -- campo para embedding da LLM
-  created_at timestamp DEFAULT now(),
-  updated_at timestamp DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Create indexes for better performance

@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS mensagens (
   ativo boolean NOT NULL DEFAULT true,
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário (nullable para mensagens padrão)
   embedding vector(1536), -- campo para embedding da LLM
-  created_at timestamp DEFAULT now(),
-  updated_at timestamp DEFAULT now()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Alter existing table to allow NULL in cliente_id if it exists
