@@ -374,6 +374,38 @@ const validateFetchProfilePictureUrl = [
   handleValidationErrors
 ];
 
+const validateSendPresence = [
+  param('instance')
+    .notEmpty()
+    .withMessage('instance is required')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('instance must be between 3 and 50 characters')
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('instance can only contain letters, numbers, underscores and hyphens'),
+  body('number')
+    .notEmpty()
+    .withMessage('number is required')
+    .isString()
+    .withMessage('number must be a string'),
+  body('options')
+    .notEmpty()
+    .withMessage('options is required')
+    .isObject()
+    .withMessage('options must be an object'),
+  body('options.presence')
+    .notEmpty()
+    .withMessage('options.presence is required')
+    .isString()
+    .withMessage('options.presence must be a string')
+    .isIn(['composing', 'recording', 'paused'])
+    .withMessage('options.presence must be one of: composing, recording, paused'),
+  body('options.delay')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('options.delay must be a positive integer'),
+  handleValidationErrors
+];
+
 const validateUpdateInstance = [
   body('instance_name')
     .optional()
@@ -1239,5 +1271,109 @@ router.post('/message/sendText/:instancename', validateSendText, evolutionApiCon
  *         description: Internal server error
  */
 router.post('/chat/fetchProfilePictureUrl/:instance_name', validateFetchProfilePictureUrl, evolutionApiController.fetchProfilePictureUrl.bind(evolutionApiController));
+
+/**
+ * @swagger
+ * /api/evolution-api/chat/sendPresence/{instance}:
+ *   post:
+ *     summary: Enviar presença no chat
+ *     description: Envia uma presença (composing, recording, paused) para um número específico através da instância
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - name: instance
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *           minLength: 3
+ *           maxLength: 50
+ *           pattern: '^[a-zA-Z0-9_-]+$'
+ *         description: Nome da instância
+ *       - name: apikey
+ *         in: header
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Chave de API para autenticação
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - number
+ *               - options
+ *             properties:
+ *               number:
+ *                 type: string
+ *                 description: Número do destinatário (com código do país)
+ *                 example: "5511999999999"
+ *               options:
+ *                 type: object
+ *                 required:
+ *                   - presence
+ *                 properties:
+ *                   presence:
+ *                     type: string
+ *                     enum: [composing, recording, paused]
+ *                     description: Tipo de presença a ser enviada
+ *                     example: "composing"
+ *                   delay:
+ *                     type: integer
+ *                     minimum: 0
+ *                     default: 1000
+ *                     description: Delay em milissegundos
+ *                     example: 1000
+ *           example:
+ *             number: "5511999999999"
+ *             options:
+ *               delay: 1000
+ *               presence: "composing"
+ *     responses:
+ *       200:
+ *         description: Presença enviada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   description: Dados de resposta da Evolution API
+ *                 message:
+ *                   type: string
+ *                   example: "Presence sent successfully"
+ *       400:
+ *         description: Dados inválidos ou header apikey ausente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Header apikey é obrigatório"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.post('/chat/sendPresence/:instance', validateSendPresence, evolutionApiController.sendPresence.bind(evolutionApiController));
 
 export default router;

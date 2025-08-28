@@ -453,6 +453,58 @@ export class EvolutionApiController {
       });
     }
   }
+
+  async sendPresence(req: Request, res: Response) {
+    try {
+      const { instance } = req.params;
+      const { number, options } = req.body;
+      const apikey = req.headers['apikey'] as string;
+      
+      if (!apikey) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header apikey é obrigatório'
+        });
+      }
+
+      if (!number) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campo number é obrigatório'
+        });
+      }
+
+      if (!options || !options.presence) {
+        return res.status(400).json({
+          success: false,
+          message: 'Campo options.presence é obrigatório'
+        });
+      }
+
+      const delay = options.delay;
+      const presence = options.presence;
+
+      const result = await evolutionApiService.sendPresence(
+        instance,
+        number,
+        presence,
+        delay,
+        apikey
+      );
+      
+      return res.json({
+        success: true,
+        data: result,
+        message: 'Presence sent successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in sendPresence:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 }
 
 export const evolutionApiController = new EvolutionApiController();

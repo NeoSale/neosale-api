@@ -1080,6 +1080,84 @@ class EvolutionApiService {
       // Não falhar o envio da mensagem se a atualização do lead falhar
     }
   }
+
+  async sendPresence(instanceName: string, number: string, presence: string, delay: number, apikey: string): Promise<any> {
+    try {
+      console.log(`🚀 [sendPresence] Iniciando envio de presença`);
+      console.log(`📱 Instance: ${instanceName}`);
+      console.log(`📞 Number: ${number}`);
+      console.log(`👁️ Presence: ${presence}`);
+      console.log(`⏱️ Delay: ${delay}ms`);
+      console.log(`🔑 API Key configured: ${apikey ? 'YES' : 'NO'}`);
+      console.log(`🌐 Base URL: ${this.baseUrl}`);
+
+      // Verificar se as configurações básicas estão presentes
+      if (!this.baseUrl) {
+        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL não está configurada');
+      }
+
+      if (!apikey) {
+        throw new Error('API Key não foi fornecida');
+      }
+
+      const url = `${this.baseUrl}/chat/sendPresence/${instanceName}`;
+      console.log(`🎯 Request URL: ${url}`);
+
+      const requestData = {
+        number: number,
+        options: {
+          delay: delay,
+          presence: presence
+        }
+      };
+      console.log(`📦 Request data:`, JSON.stringify(requestData, null, 2));
+
+      const requestConfig = {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apikey
+        },
+        timeout: this.timeout
+      };
+      console.log(`⚙️ Request config:`, {
+        headers: {
+          'Content-Type': requestConfig.headers['Content-Type'],
+          'apikey': '[HIDDEN]'
+        },
+        timeout: requestConfig.timeout
+      });
+
+      const response = await axios.post(url, requestData, requestConfig);
+
+      console.log(`✅ Response status: ${response.status}`);
+      console.log(`📄 Response data:`, JSON.stringify(response.data, null, 2));
+      console.log('✅ Presence sent successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [sendPresence] Error details:');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response statusText:', error.response.statusText);
+        console.error('Response headers:', error.response.headers);
+        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+
+      if (error.code) {
+        console.error('Error code:', error.code);
+      }
+
+      if (error.config) {
+        console.error('Request config URL:', error.config.url);
+        console.error('Request config method:', error.config.method);
+      }
+
+      throw new Error(`Failed to send presence: ${error.message}`);
+    }
+  }
 }
 
 export default new EvolutionApiService();
