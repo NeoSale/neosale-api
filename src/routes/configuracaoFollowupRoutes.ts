@@ -316,6 +316,115 @@ router.get('/ativo', ConfiguracaoFollowupController.getByAtivo)
 
 /**
  * @swagger
+ * /api/configuracoes-followup/{em_execucao}:
+ *   put:
+ *     summary: Atualizar status de execução da configuração de follow-up
+ *     description: Atualiza o status de execução (em_execucao) de uma configuração de follow-up específica do cliente
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: em_execucao
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: ["true", "false"]
+ *         description: Novo status de execução (true ou false)
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente proprietário da configuração
+ *     responses:
+ *       200:
+ *         description: Status de execução atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: Dados de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.put('/:em_execucao', ConfiguracaoFollowupController.updateEmExecucao)
+
+/**
+ * @swagger
+ * /api/configuracoes-followup/{index}:
+ *   put:
+ *     summary: Atualizar índice da configuração de follow-up
+ *     description: Atualiza o índice de uma configuração de follow-up específica do cliente
+ *     tags: [Configurações Follow-up]
+ *     parameters:
+ *       - in: path
+ *         name: index
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Novo valor do índice para a configuração
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente proprietário da configuração
+ *     responses:
+ *       200:
+ *         description: Índice atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/ApiResponse'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
+ *       400:
+ *         description: Dados de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: Configuração não encontrada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.put('/:index', ConfiguracaoFollowupController.updateIndex)
+
+/**
+ * @swagger
  * /api/configuracoes-followup/{id}:
  *   get:
  *     summary: Buscar configuração de follow-up por ID

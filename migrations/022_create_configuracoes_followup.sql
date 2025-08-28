@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS configuracoes_followup (
   qtd_envio_diario integer NOT NULL DEFAULT 50,
   em_execucao boolean NOT NULL DEFAULT false,
   ativo boolean NOT NULL DEFAULT false,
+  "index" integer, -- índice numérico para identificação da configuração de followup
   cliente_id UUID REFERENCES clientes(id) ON DELETE CASCADE, -- referência ao cliente proprietário
   embedding vector(1536), -- campo para embedding da LLM
   created_at timestamp without time zone DEFAULT now(),
@@ -16,11 +17,13 @@ CREATE TABLE IF NOT EXISTS configuracoes_followup (
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_configuracoes_followup_cliente_id ON configuracoes_followup(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_configuracoes_followup_index ON configuracoes_followup("index");
 CREATE INDEX IF NOT EXISTS idx_configuracoes_followup_embedding ON configuracoes_followup USING ivfflat (embedding vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_configuracoes_followup_dia_horario ON configuracoes_followup USING gin (dia_horario_envio);
 
--- Add comment to document the JSON structure
+-- Add comments to document the structure
 COMMENT ON COLUMN configuracoes_followup.dia_horario_envio IS 'JSON com estrutura: {"segunda": "09:00-19:00", "terca": "09:00-19:00", "quarta": "09:00-19:00", "quinta": "09:00-19:00", "sexta": "09:00-19:00", "sabado": "fechado", "domingo": "fechado"}';
+COMMENT ON COLUMN configuracoes_followup."index" IS 'Índice numérico para identificação da configuração de followup';
 
 -- Create trigger to automatically update updated_at on record modification
 CREATE OR REPLACE FUNCTION update_configuracoes_followup_updated_at()

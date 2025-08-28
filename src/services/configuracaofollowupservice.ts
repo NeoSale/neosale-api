@@ -17,6 +17,7 @@ export interface ConfiguracaoFollowup {
   ativo: boolean
   cliente_id: string
   embedding?: number[]
+  index?: number
   created_at: string
   updated_at: string
   cliente?: {
@@ -206,6 +207,62 @@ export class ConfiguracaoFollowupService {
       return data || []
     } catch (error) {
       console.error('Erro no serviço getByAtivo:', error)
+      throw error
+    }
+  }
+
+  static async updateIndex(clienteId: string, index: number): Promise<ConfiguracaoFollowup> {
+    try {
+      if (!supabase) {
+        throw new Error('Cliente Supabase não inicializado')
+      }
+
+      const { data, error } = await supabase
+        .from('configuracoes_followup')
+        .update({
+          index: index,
+          updated_at: new Date().toISOString()
+        })
+        .eq('cliente_id', clienteId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Erro ao atualizar índice da configuração de follow-up:', error)
+        throw new Error(`Erro ao atualizar índice da configuração de follow-up: ${error.message}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Erro no serviço updateIndex:', error)
+      throw error
+    }
+  }
+
+  static async updateEmExecucao(clienteId: string, emExecucao: boolean): Promise<ConfiguracaoFollowup> {
+    try {
+      if (!supabase) {
+        throw new Error('Cliente Supabase não inicializado')
+      }
+
+      const { data, error } = await supabase
+        .from('configuracoes_followup')
+        .update({
+          em_execucao: emExecucao,
+          updated_at: new Date().toISOString()
+        })
+        .eq('cliente_id', clienteId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Erro ao atualizar status de execução da configuração de follow-up:', error)
+        throw new Error(`Erro ao atualizar status de execução da configuração de follow-up: ${error.message}`)
+      }
+
+      return data
+    } catch (error) {
+      console.error('Erro no serviço updateEmExecucao:', error)
       throw error
     }
   }
