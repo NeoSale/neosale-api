@@ -96,13 +96,13 @@ export class AgenteService {
             
             // Mapear para incluir apenas os campos solicitados
             instanciasCompletas = dadosEvolutionApi.map(inst => ({
-              id: inst.id,
-              instance_name: inst.name,
+              instanceId: inst.instanceId,
+              instanceName: inst.instanceName,
               followup: inst.followup,
               qtd_envios_diarios: inst.qtd_envios_diarios,
               profileName: inst.profileName,
               profilePictureUrl: inst.profilePictureUrl,
-              status: inst.connectionStatus,
+              status: inst.status,
               owner: inst.owner
             }));
           } catch (error) {

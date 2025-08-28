@@ -88,7 +88,7 @@ class EvolutionApiService {
 
       // Buscar todas as instâncias do cliente e filtrar por nome
       const allInstances = await this.getAllInstances(clienteId);
-      const instance = allInstances.find(inst => inst.name === instanceName);
+      const instance = allInstances.find(inst => inst.instanceName === instanceName);
 
       return instance || null;
     } catch (error: any) {
@@ -642,16 +642,16 @@ class EvolutionApiService {
 
       // Retornar os dados atualizados
       return {
-        id: instanceId,
-        name: instanceName,
-        connectionStatus: 'updated',
+        instanceId: instanceId,
+        instanceName: instanceName,
+        status: 'updated',
         integration: updateData.integration || 'WHATSAPP-BAILEYS',
-        token: this.apiKey,
+        apiKey: this.apiKey,
         clientName: '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         serverUrl: this.baseUrl,
-        webhookUrl: updateData.webhook_url || ''
+        webhook_wa_business: updateData.webhook_url || ''
       };
     } catch (error: any) {
       console.error('Error updating instance:', error);
@@ -730,19 +730,19 @@ class EvolutionApiService {
             const localInstance = localInstances?.find((local: any) => local.id === item.instance.instanceId);
 
             return {
-              id: item.instance.instanceId,
-              name: item.instance.instanceName,
-              connectionStatus: item.instance.status,
+              instanceId: item.instance.instanceId,
+              instanceName: item.instance.instanceName,
+              status: item.instance.status,
               owner: item.instance.owner,
               profileName: item.instance.profileName,
               profilePictureUrl: item.instance.profilePictureUrl,
               integration: item.instance.integration.integration,
-              token: item.instance.apikey,
+              apiKey: item.instance.apikey,
               clientName: '',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               serverUrl: item.instance.serverUrl,
-              webhookUrl: item.instance.integration.webhook_wa_business,
+              webhook_wa_business: item.instance.integration.webhook_wa_business,
               Setting: settings,
               // Campos adicionais específicos do sistema
               followup: localInstance?.followup ?? false,

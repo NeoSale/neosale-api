@@ -31,16 +31,16 @@ export interface EvolutionApiFetchInstancesResponse {
 
 // Interface for Evolution API response data
 export interface EvolutionApiInstanceData {
-  id: string;
-  name: string;
-  connectionStatus: string;
+  instanceId: string;
+  instanceName: string;
+  status: string;
   owner?: string;
   profileName?: string;
   profilePictureUrl?: string;
   integration: string;
   number?: string;
   businessId?: string;
-  token: string;
+  apiKey: string;
   clientName: string;
   disconnectionReasonCode?: string;
   disconnectionObject?: any;
@@ -48,7 +48,7 @@ export interface EvolutionApiInstanceData {
   createdAt: string;
   updatedAt: string;
   serverUrl?: string;
-  webhookUrl?: string;
+  webhook_wa_business?: string;
   Chatwoot?: any;
   // Campos adicionais específicos do sistema
   followup?: boolean;
