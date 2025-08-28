@@ -3,7 +3,7 @@ import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, Etap
 import { generateLeadEmbedding } from '../lib/embedding'
 import { ReferenciaService } from './referenciaService'
 export class LeadService {
-  // Função para formatar telefone com DDI 55 quando DDD for 55
+  // Função para formatar telefone com DDI 55 quando necessário
   private static formatarTelefone(telefone: string): string {
     if (!telefone) return telefone
     
@@ -15,9 +15,13 @@ export class LeadService {
       return numeroLimpo
     }
     
-    // Verifica se o número começa com 55 (DDD 55) e tem 10, 11 ou 12 dígitos
-    if (numeroLimpo.startsWith('55') && (numeroLimpo.length === 10 || numeroLimpo.length === 11 || numeroLimpo.length === 12)) {
-      // Adiciona DDI 55 no início
+    // Se tem 12 dígitos e começa com 55, já tem DDI, retorna como está
+    if (numeroLimpo.length === 12 && numeroLimpo.startsWith('55')) {
+      return numeroLimpo
+    }
+    
+    // Se tem 10 ou 11 dígitos, adiciona DDI 55 (número brasileiro sem DDI)
+    if (numeroLimpo.length === 10 || numeroLimpo.length === 11) {
       return '55' + numeroLimpo
     }
     
