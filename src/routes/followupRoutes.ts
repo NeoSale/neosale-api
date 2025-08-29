@@ -178,6 +178,118 @@ router.get('/leads-para-envio', FollowupController.buscarLeadsParaEnvio)
 
 /**
  * @swagger
+ * /api/followup/estatisticas-por-dia:
+ *   get:
+ *     summary: Buscar estatísticas de followups por dia
+ *     tags: [Followup]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *     responses:
+ *       200:
+ *         description: Estatísticas encontradas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       data:
+ *                         type: string
+ *                         format: date
+ *                         description: Data no formato YYYY-MM-DD
+ *                       qtd_sucesso:
+ *                         type: integer
+ *                         description: Quantidade de followups com sucesso
+ *                       qtd_erro:
+ *                         type: integer
+ *                         description: Quantidade de followups com erro
+ *                       total:
+ *                         type: integer
+ *                         description: Total de followups no dia
+ *       400:
+ *         description: Erro na requisição
+ */
+router.get('/estatisticas-por-dia', FollowupController.buscarEstatisticasPorDia)
+
+/**
+ * @swagger
+ * /api/followup/detalhes-por-data:
+ *   get:
+ *     summary: Buscar detalhes de followups por data específica
+ *     tags: [Followup]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *       - in: query
+ *         name: data
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Data no formato YYYY-MM-DD
+ *     responses:
+ *       200:
+ *         description: Detalhes encontrados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id_lead:
+ *                         type: string
+ *                         format: uuid
+ *                         description: ID do lead
+ *                       nome_lead:
+ *                         type: string
+ *                         description: Nome do lead
+ *                       telefone_lead:
+ *                         type: string
+ *                         description: Telefone do lead
+ *                       horario:
+ *                         type: string
+ *                         format: date-time
+ *                         description: Horário do envio
+ *                       status:
+ *                         type: string
+ *                         enum: [sucesso, erro]
+ *                         description: Status do followup
+ *                       mensagem_enviada:
+ *                         type: string
+ *                         description: Mensagem que foi enviada
+ *                       mensagem_erro:
+ *                         type: string
+ *                         description: Mensagem de erro (se houver)
+ *       400:
+ *         description: Erro na requisição
+ */
+router.get('/detalhes-por-data', FollowupController.buscarDetalhesPorData)
+
+/**
+ * @swagger
  * /api/followup/{id}:
  *   get:
  *     summary: Buscar followup por ID

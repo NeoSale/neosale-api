@@ -211,4 +211,75 @@ export class FollowupController {
       });
     }
   }
+
+  // Buscar estatísticas de followups por dia
+  static async buscarEstatisticasPorDia(req: Request, res: Response): Promise<Response> {
+    try {
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'cliente_id é obrigatório no header'
+        });
+      }
+      
+      const estatisticas = await FollowupService.getEstatisticasPorDia(cliente_id)
+      
+      return res.json({
+        success: true,
+        data: estatisticas
+      })
+    } catch (error: any) {
+      console.error('❌ Erro no controller ao buscar estatísticas por dia:', error)
+      return res.status(400).json({
+        success: false,
+        error: error.message || 'Erro ao buscar estatísticas por dia'
+      })
+    }
+  }
+
+  // Buscar detalhes de followups por data
+  static async buscarDetalhesPorData(req: Request, res: Response): Promise<Response> {
+    try {
+      const cliente_id = req.headers['cliente_id'] as string;
+      const { data } = req.query;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          error: 'cliente_id é obrigatório no header'
+        });
+      }
+      
+      if (!data || typeof data !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: 'Parâmetro data é obrigatório (formato: YYYY-MM-DD)'
+        });
+      }
+      
+      // Validar formato da data
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(data)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Formato de data inválido. Use YYYY-MM-DD'
+        });
+      }
+      
+      const detalhes = await FollowupService.getDetalhesPorData(cliente_id, data)
+      
+      return res.json({
+        success: true,
+        data: detalhes
+      })
+    } catch (error: any) {
+      console.error('❌ Erro no controller ao buscar detalhes por data:', error)
+      return res.status(400).json({
+        success: false,
+        error: error.message || 'Erro ao buscar detalhes por data'
+      })
+    }
+  }
 }

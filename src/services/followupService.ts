@@ -357,4 +357,119 @@ export class FollowupService {
     console.log('✅ Leads para envio encontrados:', leadsFormatados?.length);
     return leadsFormatados;
   }
+
+  // Buscar estatísticas de followups por dia
+  static async getEstatisticasPorDia(clienteId: string) {
+    FollowupService.checkSupabaseConnection();
+    console.log('🔄 Buscando estatísticas de followups por dia para cliente:', clienteId)
+    
+    // Buscar todos os registros usando paginação
+    let allData: any[] = []
+    let from = 0
+    const pageSize = 1000
+    let hasMore = true
+    
+    while (hasMore) {
+      const { data, error } = await supabase!
+        .from('followup')
+        .select(`
+          created_at,
+          status
+        `)
+        .eq('cliente_id', clienteId)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1)
+      
+      if (error) {
+        console.error('❌ Erro ao buscar estatísticas de followups:', error)
+        throw error
+      }
+      
+      if (data && data.length > 0) {
+        allData = allData.concat(data)
+        from += pageSize
+        hasMore = data.length === pageSize
+      } else {
+        hasMore = false
+      }
+    }
+    
+    // Agrupar por data e status
+    const estatisticas = new Map()
+    
+    allData.forEach(followup => {
+      const data = new Date(followup.created_at).toISOString().split('T')[0] // YYYY-MM-DD
+      
+      if (!estatisticas.has(data)) {
+        estatisticas.set(data, {
+          data,
+          qtd_sucesso: 0,
+          qtd_erro: 0,
+          total: 0
+        })
+      }
+      
+      const stats = estatisticas.get(data)
+      if (followup.status === 'sucesso') {
+        stats.qtd_sucesso++
+      } else if (followup.status === 'erro') {
+        stats.qtd_erro++
+      }
+      stats.total++
+    })
+    
+    const resultado = Array.from(estatisticas.values()).sort((a, b) => b.data.localeCompare(a.data))
+    
+    console.log('✅ Estatísticas de followups encontradas:', resultado.length, 'dias')
+    return resultado
+  }
+
+  // Buscar detalhes de followups por data
+  static async getDetalhesPorData(clienteId: string, data: string) {
+    FollowupService.checkSupabaseConnection();
+    console.log('🔄 Buscando detalhes de followups para cliente:', clienteId, 'data:', data)
+    
+    const dataInicio = `${data}T00:00:00.000Z`
+    const dataFim = `${data}T23:59:59.999Z`
+    
+    const { data: followups, error } = await supabase!
+      .from('followup')
+      .select(`
+        id,
+        status,
+        erro,
+        mensagem_enviada,
+        created_at,
+        lead:id_lead(
+          id,
+          nome,
+          telefone
+        )
+      `)
+      .eq('cliente_id', clienteId)
+      .gte('created_at', dataInicio)
+      .lte('created_at', dataFim)
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      console.error('❌ Erro ao buscar detalhes de followups:', error)
+      throw error
+    }
+    
+    const resultado = followups?.map(followup => {
+      const lead = Array.isArray(followup.lead) ? followup.lead[0] : followup.lead;
+      return {
+        id_lead: lead?.id || null,
+        nome_lead: lead?.nome || 'N/A',
+        telefone_lead: lead?.telefone || 'N/A',
+        horario: followup.created_at,
+        status: followup.status,
+        mensagem_enviada: followup.mensagem_enviada,
+        mensagem_erro: followup.erro || null
+      }
+    }) || []
+    
+    console.log('✅ Detalhes de followups encontrados:', resultado.length, 'registros')
+    return resultado
+  }
 }
