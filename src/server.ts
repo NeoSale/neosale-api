@@ -26,6 +26,7 @@ import provedorRoutes from './routes/provedorRoutes'
 import tipoAcessoRoutes from './routes/tipoAcessoRoutes'
 import tipoAgenteRoutes from './routes/tipoAgenteRoutes'
 import agenteRoutes from './routes/agenteRoutes'
+import historicoPromptRoutes from './routes/historicoPromptRoutes'
 import revendedorRoutes from './routes/revendedorRoutes'
 import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
@@ -35,7 +36,6 @@ import chatRoutes from './routes/chatRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
-import { migrationRunner } from './lib/migrations'
 import packageJson from '../package.json'
 
 const app = express()
@@ -130,6 +130,7 @@ app.use('/api/provedores', provedorRoutes)
 app.use('/api/tipos-acesso', tipoAcessoRoutes)
 app.use('/api/tipo-agentes', tipoAgenteRoutes)
 app.use('/api/agentes', agenteRoutes)
+app.use('/api/historico-prompt', historicoPromptRoutes)
 app.use('/api/revendedores', revendedorRoutes)
 app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)

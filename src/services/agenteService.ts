@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { CreateAgenteInput, UpdateAgenteInput } from '../lib/validators';
 import { ParametroService } from './parametroService';
 import evolutionApiService from './evolution-api.service';
+import { HistoricoPromptService, CreateHistoricoPromptInput } from './historicoPromptService';
 
 export interface Agente {
   id: string;
@@ -351,11 +352,32 @@ export class AgenteService {
       throw new Error(`Erro ao criar agente: ${error.message}`);
     }
 
+    // Criar registro no histórico de prompt
+    try {
+      const historicoInput: CreateHistoricoPromptInput = {
+        agente_id: data.id,
+        cliente_id: agenteData.cliente_id
+      };
+      
+      if (agenteData.prompt) {
+        historicoInput.prompt = agenteData.prompt;
+      }
+      
+      if (agenteData.prompt_agendamento) {
+        historicoInput.prompt_agendamento = agenteData.prompt_agendamento;
+      }
+      
+      await HistoricoPromptService.create(historicoInput);
+    } catch (historicoError) {
+      console.error('Erro ao criar histórico de prompt:', historicoError);
+      // Não falha a criação do agente se houver erro no histórico
+    }
+
     return data;
   }
 
   /**
-   * Atualiza um agente (marca como deletado e cria novo registro)
+   * Atualiza um agente
    */
   static async update(id: string, clienteId: string, agenteData: UpdateAgenteInput): Promise<Agente | null> {
     if (!supabase) {
@@ -393,35 +415,76 @@ export class AgenteService {
       }
     }
 
-    // Marca o registro atual como deletado
-    const { error: deleteError } = await supabase
-      .from('agentes')
-      .update({ 
-        deletado: true,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .eq('cliente_id', clienteId)
-      .eq('deletado', false);
-
-    if (deleteError) {
-      throw new Error(`Erro ao marcar agente como deletado: ${deleteError.message}`);
-    }
-
-    // Cria um novo registro com os dados atualizados
-    const novoAgenteData = {
-      nome: agenteData.nome || agenteExistente.nome,
-      cliente_id: clienteId,
-      tipo_agente_id: agenteData.tipo_agente_id || agenteExistente.tipo_agente_id,
-      prompt: agenteData.prompt !== undefined ? agenteData.prompt : agenteExistente.prompt,
-      agendamento: agenteData.agendamento !== undefined ? agenteData.agendamento : agenteExistente.agendamento,
-      prompt_agendamento: agenteData.prompt_agendamento !== undefined ? agenteData.prompt_agendamento : agenteExistente.prompt_agendamento,
-      prompt_seguranca: agenteData.prompt_seguranca !== undefined ? agenteData.prompt_seguranca : agenteExistente.prompt_seguranca,
-      ativo: agenteData.ativo !== undefined ? agenteData.ativo : agenteExistente.ativo,
-      embedding: agenteExistente.embedding
+    // Prepara os dados para atualização
+    const dadosAtualizacao: any = {
+      updated_at: new Date().toISOString()
     };
 
-    return await this.create(novoAgenteData);
+    // Mapeia apenas os campos que foram fornecidos
+    const camposPermitidos = [
+      'nome',
+      'tipo_agente_id', 
+      'prompt',
+      'agendamento',
+      'prompt_agendamento',
+      'prompt_seguranca',
+      'ativo'
+    ];
+
+    camposPermitidos.forEach(campo => {
+      if (agenteData[campo as keyof UpdateAgenteInput] !== undefined) {
+        dadosAtualizacao[campo] = agenteData[campo as keyof UpdateAgenteInput];
+      }
+    })
+
+    // Atualiza o registro existente
+    const { data, error } = await supabase
+      .from('agentes')
+      .update(dadosAtualizacao)
+      .eq('id', id)
+      .eq('cliente_id', clienteId)
+      .eq('deletado', false)
+      .select(`
+        *,
+        tipo_agente:tipo_agentes(
+          id,
+          nome,
+          ativo
+        )
+      `)
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar agente: ${error.message}`);
+    }
+
+    // Criar registro no histórico de prompt se houve alteração nos prompts
+    if (agenteData.prompt !== undefined || agenteData.prompt_agendamento !== undefined) {
+      try {
+        const historicoInput: CreateHistoricoPromptInput = {
+          agente_id: id,
+          cliente_id: clienteId
+        };
+        
+        const promptValue = agenteData.prompt !== undefined ? agenteData.prompt : data.prompt;
+        const promptAgendamentoValue = agenteData.prompt_agendamento !== undefined ? agenteData.prompt_agendamento : data.prompt_agendamento;
+        
+        if (promptValue) {
+          historicoInput.prompt = promptValue;
+        }
+        
+        if (promptAgendamentoValue) {
+          historicoInput.prompt_agendamento = promptAgendamentoValue;
+        }
+        
+        await HistoricoPromptService.create(historicoInput);
+      } catch (historicoError) {
+        console.error('Erro ao criar histórico de prompt:', historicoError);
+        // Não falha a atualização do agente se houver erro no histórico
+      }
+    }
+
+    return data;
   }
 
   /**
