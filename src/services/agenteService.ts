@@ -190,6 +190,54 @@ export class AgenteService {
   }
 
   /**
+   * Busca agente por instance_name
+   */
+  static async getByInstanceName(instanceName: string, clienteId: string): Promise<Agente | null> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    try {
+      // Primeiro, buscar o id_agente na tabela evolution_api usando instance_name e cliente_id
+      const { data: evolutionData, error: evolutionError } = await supabase
+        .from('evolution_api')
+        .select('id_agente')
+        .eq('instance_name', instanceName)
+        .eq('cliente_id', clienteId)
+        .single();
+
+      if (evolutionError || !evolutionData || !evolutionData.id_agente) {
+        return null;
+      }
+
+      // Agora buscar o agente usando o id_agente encontrado
+      const { data, error } = await supabase
+        .from('agentes')
+        .select(`
+          *,
+          tipo_agente:tipo_agentes(
+            id,
+            nome,
+            ativo
+          )
+        `)
+        .eq('id', evolutionData.id_agente)
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return data as Agente;
+    } catch (error) {
+      console.error('Erro ao buscar agente por instance_name:', error);
+      throw new Error('Erro interno do servidor');
+    }
+  }
+
+  /**
    * Busca agentes ativos de um cliente
    */
   static async getAtivos(clienteId: string): Promise<Agente[]> {

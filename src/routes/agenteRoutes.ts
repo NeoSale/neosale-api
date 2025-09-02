@@ -334,6 +334,48 @@ router.get('/nome/:nome', validateClienteId, AgenteController.getByNome);
 
 /**
  * @swagger
+ * /api/agentes/instance/{instanceName}:
+ *   get:
+ *     summary: Buscar agente por instance name
+ *     tags: [Agente]
+ *     parameters:
+ *       - in: path
+ *         name: instanceName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nome da instância da Evolution API
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *     responses:
+ *       200:
+ *         description: Agente encontrado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Agente'
+ *       400:
+ *         description: Parâmetros inválidos
+ *       404:
+ *         description: Agente não encontrado para esta instância
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/instance/:instanceName', validateClienteId, AgenteController.getByInstanceName);
+
+/**
+ * @swagger
  * /api/agentes/tipo/{tipoAgenteId}:
  *   get:
  *     summary: Busca agentes por tipo de agente

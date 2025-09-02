@@ -93,6 +93,48 @@ export class AgenteController {
     }
   }
 
+  static async getByInstanceName(req: Request, res: Response) {
+    try {
+      const { instanceName } = req.params;
+      const cliente_id = req.headers.cliente_id as string;
+      
+      if (!instanceName) {
+        return res.status(400).json({
+          success: false,
+          message: 'Instance name é obrigatório'
+        });
+      }
+
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Header cliente_id é obrigatório'
+        });
+      }
+
+      const agente = await AgenteService.getByInstanceName(instanceName, cliente_id);
+      
+      if (!agente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Agente não encontrado para esta instância'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: agente
+      });
+    } catch (error) {
+      console.error('Erro ao buscar agente por instance name:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
+
   static async getAtivos(req: Request, res: Response) {
     try {
       const cliente_id = req.headers.cliente_id as string;
