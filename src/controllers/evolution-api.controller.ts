@@ -456,42 +456,25 @@ export class EvolutionApiController {
 
   async sendPresence(req: Request, res: Response) {
     try {
-      const { instance } = req.params;
-      const { number, options } = req.body;
+      const { instanceName } = req.params;
+      const { number, presence, delay } = req.body;
       const apikey = req.headers['apikey'] as string;
-      
-      if (!apikey) {
+
+      if (!instanceName || !number || !presence) {
         return res.status(400).json({
           success: false,
-          message: 'Header apikey é obrigatório'
+          message: 'instanceName, number, and presence are required'
         });
       }
-
-      if (!number) {
-        return res.status(400).json({
-          success: false,
-          message: 'Campo number é obrigatório'
-        });
-      }
-
-      if (!options || !options.presence) {
-        return res.status(400).json({
-          success: false,
-          message: 'Campo options.presence é obrigatório'
-        });
-      }
-
-      const delay = options.delay;
-      const presence = options.presence;
 
       const result = await evolutionApiService.sendPresence(
-        instance,
+        instanceName,
         number,
         presence,
-        delay,
+        delay || 0,
         apikey
       );
-      
+
       return res.json({
         success: true,
         data: result,
@@ -499,6 +482,42 @@ export class EvolutionApiController {
       });
     } catch (error: any) {
       console.error('Error in sendPresence:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
+
+  async findContacts(req: Request, res: Response) {
+    try {
+      const { instanceName } = req.params;
+      const { where } = req.body;
+      const apikey = req.headers['apikey'] as string;
+
+      if (!instanceName) {
+        return res.status(400).json({
+          success: false,
+          message: 'instanceName is required'
+        });
+      }
+
+      if (!where) {
+        return res.status(400).json({
+          success: false,
+          message: 'where filter is required in the request body'
+        });
+      }
+
+      const contacts = await evolutionApiService.findContacts(
+        instanceName,
+        where,
+        apikey
+      );
+
+      return res.json(contacts);
+    } catch (error: any) {
+      console.error('Error in findContacts:', error);
       return res.status(500).json({
         success: false,
         message: error.message || 'Internal server error'

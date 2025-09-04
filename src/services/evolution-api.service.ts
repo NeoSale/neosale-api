@@ -1081,6 +1081,42 @@ class EvolutionApiService {
     }
   }
 
+  async findContacts(instanceName: string, where: { id?: string }, apiKey: string): Promise<any[]> {
+    try {
+      console.log(`Finding contacts for instance: ${instanceName} with filter:`, where);
+
+      const url = `${this.baseUrl}/chat/findContacts/${instanceName}`;
+      
+      const requestConfig = {
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': apiKey || this.apiKey
+        },
+        timeout: this.timeout
+      };
+
+      const response = await axios.post(url, { where }, requestConfig);
+
+      console.log(`✅ Response status: ${response.status}`);
+      console.log(`📄 Found ${response.data.length} contacts`);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ [findContacts] Error details:');
+      console.error('Error type:', error.constructor.name);
+      console.error('Error message:', error.message);
+      
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response statusText:', error.response.statusText);
+        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+      }
+
+      throw new Error(`Failed to find contacts: ${error.message}`);
+    }
+  }
+
   async sendPresence(instanceName: string, number: string, presence: string, delay: number, apikey: string): Promise<any> {
     try {
       console.log(`🚀 [sendPresence] Iniciando envio de presença`);

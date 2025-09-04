@@ -1376,4 +1376,76 @@ router.post('/chat/fetchProfilePictureUrl/:instance_name', validateFetchProfileP
  */
 router.post('/chat/sendPresence/:instance', validateSendPresence, evolutionApiController.sendPresence.bind(evolutionApiController));
 
+/**
+ * @swagger
+ * /api/evolution-api/chat/findContacts/{instanceName}:
+ *   post:
+ *     summary: Buscar contatos do WhatsApp
+ *     tags: [Evolution API]
+ *     parameters:
+ *       - in: path
+ *         name: instanceName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nome da instância
+ *       - in: header
+ *         name: apikey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: API Key da Evolution API
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - where
+ *             properties:
+ *               where:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: ID do contato (telefone)
+ *                     example: "5511999999999"
+ *     responses:
+ *       200:
+ *         description: Lista de contatos encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: ID do contato
+ *                   pushName:
+ *                     type: string
+ *                     description: Nome do contato
+ *                   profilePictureUrl:
+ *                     type: string
+ *                     description: URL da foto do perfil
+ *                   owner:
+ *                     type: string
+ *                     description: Proprietário do contato
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/chat/findContacts/:instanceName', evolutionApiController.findContacts.bind(evolutionApiController));
+
 export default router;
