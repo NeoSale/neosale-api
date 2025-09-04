@@ -32,6 +32,7 @@ import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
 import usuarioAdminRoutes from './routes/usuarioAdminRoutes'
 import evolutionApiRoutes from './routes/evolution-api.routes'
+import n8nChatHistoriesRoutes from './routes/n8nChatHistoriesRoutes'
 import chatRoutes from './routes/chatRoutes'
 
 import adminRoutes from './routes/adminRoutes'
@@ -136,6 +137,7 @@ app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/usuarios-admin', usuarioAdminRoutes)
 app.use('/api/evolution-api', evolutionApiRoutes)
+app.use('/api/n8n_chat_histories', n8nChatHistoriesRoutes)
 app.use('/api/chat', chatRoutes)
 
 app.use('/api/admin', adminRoutes)

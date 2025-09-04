@@ -78,21 +78,6 @@ export class LeadService {
         throw new Error(`Já existe um lead ativo com o telefone ${telefoneFormatado}: ${activePhone.nome}`)
       }
 
-      // Verificar se email já existe (se fornecido)
-      if (data.email) {
-        const { data: existingEmail, error: emailError } = await supabase!
-          .from('leads')
-          .select('id, nome, email')
-          .eq('email', data.email)
-          .eq('deletado', false)
-          .eq('cliente_id', clienteId)
-          .single()
-
-        if (existingEmail && !emailError) {
-          throw new Error(`Já existe um lead com o email ${data.email}: ${existingEmail.nome}`)
-        }
-      }
-
       // Determinar origem_id baseado no campo 'origem' ou usar 'outbound' como padrão
       let origemId = data.origem_id
       if (!origemId) {

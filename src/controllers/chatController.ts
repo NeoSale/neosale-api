@@ -1,13 +1,42 @@
 import { Request, Response } from 'express';
 import ChatService from '../services/chatService';
-import { createChatHistorySchema, updateChatHistorySchema, sessionIdParamSchema, idParamSchema, paginationSchema, UpdateChatHistoryInput } from '../lib/validators';
+import { createChatSendTextSchema } from '../lib/validators';
+import { z } from 'zod';
+
+// Schemas de validação
+const createChatSchema = z.object({
+  lead_id: z.string().uuid('Lead ID deve ser um UUID válido'),
+  tipo: z.enum(['human', 'ai'], { message: 'Tipo deve ser human ou ai' }),
+  mensagem: z.string().min(1, 'Mensagem é obrigatória'),
+  status: z.enum(['sucesso', 'erro']).default('sucesso'),
+  erro: z.string().optional()
+});
+
+const updateChatSchema = z.object({
+  tipo: z.enum(['human', 'ai']).optional(),
+  mensagem: z.string().min(1).optional(),
+  status: z.enum(['sucesso', 'erro']).optional(),
+  erro: z.string().optional()
+}).transform((data) => {
+  // Remove undefined values to match service interface
+  const result: any = {};
+  if (data.tipo !== undefined) result.tipo = data.tipo;
+  if (data.mensagem !== undefined) result.mensagem = data.mensagem;
+  if (data.status !== undefined) result.status = data.status;
+  if (data.erro !== undefined) result.erro = data.erro;
+  return result;
+});
+
+const uuidParamSchema = z.object({
+  id: z.string().uuid('ID deve ser um UUID válido')
+});
+
+const paginationSchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).default(50)
+});
 
 export class ChatController {
-  // Método auxiliar para extrair ID da URL
-  private static extractIdFromUrl(req: Request): number {
-    return parseInt(req.params.id);
-  }
-
   // Método auxiliar para tratar erros
   private static handleError(res: Response, error: any) {
     console.error('❌ Erro no ChatController:', error);
@@ -32,87 +61,56 @@ export class ChatController {
     });
   }
 
-  // POST /api/chat - Criar nova mensagem de chat (apenas gravar na tabela)
-  static async createSimpleChatHistory(req: Request, res: Response) {
+  // POST /api/chat - Criar nova mensagem de chat
+  static async create(req: Request, res: Response) {
     try {
-      const validatedData = createChatHistorySchema.parse(req.body);
-      const chatHistory = await ChatService.createSimpleChatHistory(validatedData as { session_id: string; message: any });
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Mensagem de chat criada com sucesso',
-        data: chatHistory
-      });
-    } catch (error) {
-      return ChatController.handleError(res, error);
-    }
-  }
-
-  // POST /api/chat/sendText - Criar nova mensagem de chat com integração
-  static async createChatHistory(req: Request, res: Response) {
-    try {
-      const validatedData = createChatHistorySchema.parse(req.body);
-      const chatHistory = await ChatService.createChatHistory(validatedData as { session_id: string; message: any });
-      
-      return res.status(201).json({
-        success: true,
-        message: 'Mensagem de chat criada com sucesso',
-        data: chatHistory
-      });
-    } catch (error) {
-      return ChatController.handleError(res, error);
-    }
-  }
-
-  // GET /api/chat/cliente/:cliente_id - Buscar todos os registros da tabela n8n_chat_histories pelo cliente_id
-  static async getChatHistoriesByClienteId(req: Request, res: Response) {
-    try {
+      const validatedData = createChatSchema.parse(req.body);
       const cliente_id = req.headers['cliente_id'] as string;
-      const { page, limit } = paginationSchema.parse(req.query);
       
       if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'cliente_id é obrigatório no header'
+          message: 'Cliente ID é obrigatório no cabeçalho'
         });
       }
-
-      const result = await ChatService.getAllChatHistoriesByClienteId(cliente_id, page, limit);
       
-      return res.status(200).json({
+      const chatData = {
+        ...validatedData,
+        cliente_id
+      };
+      
+      const chat = await ChatService.create(chatData);
+      
+      return res.status(201).json({
         success: true,
-        message: 'Todos os registros de chat encontrados',
-        data: result.data,
-        pagination: {
-          total: result.total || 0,
-          page: result.page || 1,
-          limit: result.limit || 50,
-          totalPages: Math.ceil((result.total || 0) / (result.limit || 50))
-        }
+        message: 'Mensagem de chat criada com sucesso',
+        data: chat
       });
     } catch (error) {
       return ChatController.handleError(res, error);
     }
   }
 
-  // GET /api/chat/session/:session_id - Buscar mensagens por session_id
-  static async getChatHistoriesBySessionId(req: Request, res: Response) {
+  // GET /api/chat - Listar todas as mensagens com paginação
+  static async getAll(req: Request, res: Response) {
     try {
-      const { session_id } = sessionIdParamSchema.parse(req.params);
       const { page, limit } = paginationSchema.parse(req.query);
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      const result = await ChatService.getChatHistoriesBySessionId(session_id, page, limit);
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+      
+      const result = await ChatService.getAll(cliente_id, page, limit);
       
       return res.status(200).json({
         success: true,
-        message: 'Mensagens de chat encontradas',
+        message: 'Mensagens de chat obtidas com sucesso',
         data: result.data,
-        pagination: {
-          total: result.total || 0,
-          page: page,
-          limit: limit,
-          totalPages: Math.ceil((result.total || 0) / limit)
-        }
+        pagination: result.pagination
       });
     } catch (error) {
       return ChatController.handleError(res, error);
@@ -120,14 +118,21 @@ export class ChatController {
   }
 
   // GET /api/chat/:id - Buscar mensagem por ID
-  static async getChatHistoryById(req: Request, res: Response) {
+  static async getById(req: Request, res: Response) {
     try {
-      const id = ChatController.extractIdFromUrl(req);
-      // A validação do ID numérico já é feita na rota com numericIdParamSchema
+      const { id } = uuidParamSchema.parse(req.params);
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      const chatHistory = await ChatService.getChatHistoryById(id);
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
       
-      if (!chatHistory) {
+      const chat = await ChatService.getById(id, cliente_id);
+      
+      if (!chat) {
         return res.status(404).json({
           success: false,
           message: 'Mensagem de chat não encontrada'
@@ -136,40 +141,113 @@ export class ChatController {
       
       return res.status(200).json({
         success: true,
-        message: 'Mensagem de chat encontrada',
-        data: chatHistory
+        message: 'Mensagem de chat obtida com sucesso',
+        data: chat
       });
     } catch (error) {
       return ChatController.handleError(res, error);
     }
   }
 
-  // PUT /api/chat/:id - Atualizar mensagem de chat
-  static async updateChatHistory(req: Request, res: Response) {
+  // GET /api/chat/lead/:leadId - Buscar mensagens por lead
+  static async getByLeadId(req: Request, res: Response) {
     try {
-      const id = ChatController.extractIdFromUrl(req);
-      // A validação do ID numérico já é feita na rota com numericIdParamSchema
+      const { leadId } = z.object({ leadId: z.string().uuid() }).parse(req.params);
+      const { page, limit } = paginationSchema.parse(req.query);
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      const validatedData = updateChatHistorySchema.parse(req.body) as UpdateChatHistoryInput;
-      const chatHistory = await ChatService.updateChatHistory(id, validatedData);
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+      
+      const result = await ChatService.getByLeadId(leadId, cliente_id, page, limit);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Mensagens do lead obtidas com sucesso',
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
+  // POST /api/chat/sendText - Criar nova mensagem de chat com integração
+  static async createChatSendText(req: Request, res: Response) {
+    try {
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+
+      // Adiciona o cliente_id do cabeçalho ao corpo da requisição antes da validação
+      const chatData = {
+        ...req.body,
+        cliente_id
+      };
+      
+      const validatedData = createChatSendTextSchema.parse(chatData);
+
+      const chat = await ChatService.createChatSendText(validatedData);
+      
+      return res.status(201).json({
+        success: true,
+        message: 'Mensagem de chat criada com sucesso',
+        data: chat
+      });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
+  // PUT /api/chat/:id - Atualizar mensagem
+  static async update(req: Request, res: Response) {
+    try {
+      const { id } = uuidParamSchema.parse(req.params);
+      const validatedData = updateChatSchema.parse(req.body);
+      const cliente_id = req.headers['cliente_id'] as string;
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+      
+      const chat = await ChatService.update(id, validatedData, cliente_id);
       
       return res.status(200).json({
         success: true,
         message: 'Mensagem de chat atualizada com sucesso',
-        data: chatHistory
+        data: chat
       });
     } catch (error) {
       return ChatController.handleError(res, error);
     }
   }
 
-  // DELETE /api/chat/:id - Deletar mensagem de chat
-  static async deleteChatHistory(req: Request, res: Response) {
+  // DELETE /api/chat/:id - Deletar mensagem
+  static async delete(req: Request, res: Response) {
     try {
-      const id = ChatController.extractIdFromUrl(req);
-      // A validação do ID numérico já é feita na rota com numericIdParamSchema
+      const { id } = uuidParamSchema.parse(req.params);
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      await ChatService.deleteChatHistory(id);
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+      
+      await ChatService.delete(id, cliente_id);
       
       return res.status(200).json({
         success: true,
@@ -180,65 +258,24 @@ export class ChatController {
     }
   }
 
-  // DELETE /api/chat/session/:session_id - Deletar todas as mensagens de uma sessão
-  static async deleteChatHistoriesBySessionId(req: Request, res: Response) {
+  // DELETE /api/chat/lead/:leadId - Deletar todas as mensagens de um lead
+  static async deleteByLeadId(req: Request, res: Response) {
     try {
-      const { session_id } = sessionIdParamSchema.parse(req.params);
+      const { leadId } = z.object({ leadId: z.string().uuid() }).parse(req.params);
+      const cliente_id = req.headers['cliente_id'] as string;
       
-      await ChatService.deleteChatHistoriesBySessionId(session_id);
-      
-      return res.status(200).json({
-        success: true,
-        message: 'Todas as mensagens da sessão foram deletadas com sucesso'
-      });
-    } catch (error) {
-      return ChatController.handleError(res, error);
-    }
-  }
-
-  // GET /api/chat/ultima_mensagem/:session_id - Buscar última mensagem por session_id
-  static async getMessagesBySessionIDType(req: Request, res: Response) {
-    try {
-      const { session_id: sessionId } = sessionIdParamSchema.parse(req.params);
-      const { message_type } = req.query;
-      
-      const result = await ChatService.getMessagesBySessionIDType(sessionId, message_type as string);
-      
-      return res.status(200).json({
-         success: true,
-         message: 'Última mensagem encontrada com sucesso',
-         data: result.data,
-         total: result.total
-       });
-    } catch (error) {
-      return ChatController.handleError(res, error);
-    }
-  }
-
-  // POST /api/chat/:session_id/mark-error - Marcar última mensagem como erro
-  static async markLastMessageAsError(req: Request, res: Response) {
-    try {
-      const { session_id: sessionId } = sessionIdParamSchema.parse(req.params);
-      const { message_type, error_message } = req.body;
-      
-      // Validar o tipo de mensagem
-      if (!message_type || !['ai', 'human'].includes(message_type.toLowerCase())) {
+      if (!cliente_id) {
         return res.status(400).json({
           success: false,
-          message: 'Tipo de mensagem é obrigatório e deve ser "ai" ou "human"'
+          message: 'Cliente ID é obrigatório no cabeçalho'
         });
       }
       
-      const updatedMessage = await ChatService.markLastMessageAsError(
-        sessionId, 
-        message_type.toLowerCase() as 'ai' | 'human', 
-        error_message
-      );
+      await ChatService.deleteByLeadId(leadId, cliente_id);
       
       return res.status(200).json({
         success: true,
-        message: `Última mensagem do tipo '${message_type}' marcada como erro com sucesso`,
-        data: updatedMessage
+        message: 'Todas as mensagens do lead foram deletadas com sucesso'
       });
     } catch (error) {
       return ChatController.handleError(res, error);
@@ -246,4 +283,4 @@ export class ChatController {
   }
 }
 
-export const chatController = new ChatController();
+export default ChatController;

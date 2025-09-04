@@ -659,6 +659,17 @@ export const createChatHistorySchema = z.object({
   embedding: z.array(z.number()).optional()
 })
 
+export const createChatSendTextSchema = z.object({
+  lead_id: z.string().uuid('lead_id deve ser um UUID válido'),
+  mensagem: z.string().refine((val) => val !== null && val !== undefined, {
+    message: 'Mensagem é obrigatória'
+  }),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  tipo: z.enum(['human', 'ai'], {
+    errorMap: () => ({ message: 'Tipo deve ser human ou ai' })
+  })
+})
+
 // Validator para atualização de chat history
 export const updateChatHistorySchema = z.object({
   message: z.any().optional(),

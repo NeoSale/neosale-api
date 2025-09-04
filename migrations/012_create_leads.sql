@@ -42,3 +42,23 @@ CREATE INDEX IF NOT EXISTS idx_leads_qualificacao ON leads(qualificacao_id);
 CREATE INDEX IF NOT EXISTS idx_leads_deletado ON leads(deletado);
 CREATE INDEX IF NOT EXISTS idx_leads_cliente_id ON leads(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_leads_embedding ON leads USING ivfflat (embedding vector_cosine_ops);
+
+-- Adiciona restrição única para telefone e cliente_id onde deletado=false
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'leads') THEN
+        CREATE UNIQUE INDEX IF NOT EXISTS unique_telefone_cliente_ativo 
+        ON leads (telefone, cliente_id) 
+        WHERE deletado = false;
+    END IF;
+END
+$$;
+
+-- Adiciona comentário explicativo ao índice (se ele existir)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'unique_telefone_cliente_ativo') THEN
+        COMMENT ON INDEX unique_telefone_cliente_ativo IS 'Garante que não pode existir o mesmo telefone com deletado=false mais de uma vez para o mesmo cliente';
+    END IF;
+END
+$$;

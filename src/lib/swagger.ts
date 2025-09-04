@@ -446,6 +446,232 @@ const options: swaggerJSDoc.Options = {
             }
           }
         },
+        Cliente: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID único do cliente'
+            },
+            nome: {
+              type: 'string',
+              description: 'Nome do cliente'
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'Email do cliente'
+            },
+            telefone: {
+              type: 'string',
+              description: 'Telefone do cliente'
+            },
+            nickname: {
+              type: 'string',
+              description: 'Apelido do cliente'
+            },
+            revendedor_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID do revendedor'
+            },
+            status: {
+              type: 'string',
+              description: 'Status do cliente'
+            },
+            nome_responsavel_principal: {
+              type: 'string',
+              description: 'Nome do responsável principal'
+            },
+            cnpj: {
+              type: 'string',
+              description: 'CNPJ do cliente'
+            },
+            cep: {
+              type: 'string',
+              description: 'CEP do cliente'
+            },
+            logradouro: {
+              type: 'string',
+              description: 'Logradouro do cliente'
+            },
+            numero: {
+              type: 'string',
+              description: 'Número do endereço'
+            },
+            complemento: {
+              type: 'string',
+              description: 'Complemento do endereço'
+            },
+            cidade: {
+              type: 'string',
+              description: 'Cidade do cliente'
+            },
+            estado: {
+              type: 'string',
+              description: 'Estado do cliente'
+            },
+            pais: {
+              type: 'string',
+              description: 'País do cliente'
+            },
+            espaco_fisico: {
+              type: 'boolean',
+              description: 'Indica se possui espaço físico'
+            },
+            site_oficial: {
+              type: 'string',
+              description: 'Site oficial do cliente'
+            }
+          }
+        },
+        CreateCliente: {
+          type: 'object',
+          required: ['nome', 'email', 'telefone', 'revendedor_id'],
+          properties: {
+            nome: {
+              type: 'string',
+              description: 'Nome do cliente'
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'Email do cliente'
+            },
+            telefone: {
+              type: 'string',
+              description: 'Telefone do cliente'
+            },
+            nickname: {
+              type: 'string',
+              description: 'Apelido do cliente'
+            },
+            revendedor_id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID do revendedor'
+            },
+            status: {
+              type: 'string',
+              description: 'Status do cliente'
+            },
+            nome_responsavel_principal: {
+              type: 'string',
+              description: 'Nome do responsável principal'
+            },
+            cnpj: {
+              type: 'string',
+              description: 'CNPJ do cliente'
+            },
+            cep: {
+              type: 'string',
+              description: 'CEP do cliente'
+            },
+            logradouro: {
+              type: 'string',
+              description: 'Logradouro do cliente'
+            },
+            numero: {
+              type: 'string',
+              description: 'Número do endereço'
+            },
+            complemento: {
+              type: 'string',
+              description: 'Complemento do endereço'
+            },
+            cidade: {
+              type: 'string',
+              description: 'Cidade do cliente'
+            },
+            estado: {
+              type: 'string',
+              description: 'Estado do cliente'
+            },
+            pais: {
+              type: 'string',
+              description: 'País do cliente'
+            },
+            espaco_fisico: {
+              type: 'boolean',
+              description: 'Indica se possui espaço físico'
+            },
+            site_oficial: {
+              type: 'string',
+              description: 'Site oficial do cliente'
+            }
+          }
+        },
+        UpdateCliente: {
+          type: 'object',
+          properties: {
+            nome: {
+              type: 'string',
+              description: 'Nome do cliente'
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'Email do cliente'
+            },
+            telefone: {
+              type: 'string',
+              description: 'Telefone do cliente'
+            },
+            nickname: {
+              type: 'string',
+              description: 'Apelido do cliente'
+            },
+            status: {
+              type: 'string',
+              description: 'Status do cliente'
+            },
+            nome_responsavel_principal: {
+              type: 'string',
+              description: 'Nome do responsável principal'
+            },
+            cnpj: {
+              type: 'string',
+              description: 'CNPJ do cliente'
+            },
+            cep: {
+              type: 'string',
+              description: 'CEP do cliente'
+            },
+            logradouro: {
+              type: 'string',
+              description: 'Logradouro do cliente'
+            },
+            numero: {
+              type: 'string',
+              description: 'Número do endereço'
+            },
+            complemento: {
+              type: 'string',
+              description: 'Complemento do endereço'
+            },
+            cidade: {
+              type: 'string',
+              description: 'Cidade do cliente'
+            },
+            estado: {
+              type: 'string',
+              description: 'Estado do cliente'
+            },
+            pais: {
+              type: 'string',
+              description: 'País do cliente'
+            },
+            espaco_fisico: {
+              type: 'boolean',
+              description: 'Indica se possui espaço físico'
+            },
+            site_oficial: {
+              type: 'string',
+              description: 'Site oficial do cliente'
+            }
+          }
+        },
         QRCodeResponse: {
           type: 'object',
           properties: {
