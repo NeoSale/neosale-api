@@ -456,19 +456,44 @@ export class EvolutionApiController {
 
   async sendPresence(req: Request, res: Response) {
     try {
-      const { instanceName } = req.params;
-      const { number, presence, delay } = req.body;
+      const { instance } = req.params;
+      const { number, options } = req.body;
       const apikey = req.headers['apikey'] as string;
 
-      if (!instanceName || !number || !presence) {
+      // Validação mais detalhada para ajudar na depuração
+      if (!instance) {
         return res.status(400).json({
           success: false,
-          message: 'instanceName, number, and presence are required'
+          message: 'instance is required'
         });
       }
 
+      if (!number) {
+        return res.status(400).json({
+          success: false,
+          message: 'number is required'
+        });
+      }
+
+      if (!options) {
+        return res.status(400).json({
+          success: false,
+          message: 'options is required'
+        });
+      }
+
+      if (!options.presence) {
+        return res.status(400).json({
+          success: false,
+          message: 'options.presence is required'
+        });
+      }
+      
+      const presence = options.presence;
+      const delay = options.delay || 0;
+
       const result = await evolutionApiService.sendPresence(
-        instanceName,
+        instance,
         number,
         presence,
         delay || 0,
