@@ -656,6 +656,7 @@ export const createChatHistorySchema = z.object({
   message: z.any().refine((val) => val !== null && val !== undefined, {
     message: 'Message é obrigatório'
   }),
+  source: z.string().optional(),
   embedding: z.array(z.number()).optional()
 })
 
@@ -664,6 +665,7 @@ export const createChatSendTextSchema = z.object({
   mensagem: z.string().refine((val) => val !== null && val !== undefined, {
     message: 'Mensagem é obrigatória'
   }),
+  source: z.string().min(1, 'Source é obrigatório'),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   tipo: z.enum(['human', 'ai'], {
     errorMap: () => ({ message: 'Tipo deve ser human ou ai' })

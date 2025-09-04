@@ -30,6 +30,9 @@ const router = Router();
  *         mensagem:
  *           type: string
  *           description: Conteúdo da mensagem
+ *         source:
+ *           type: string
+ *           description: Origem da mensagem
  *         status:
  *           type: string
  *           enum: [sucesso, erro]
@@ -47,6 +50,7 @@ const router = Router();
  *         - lead_id
  *         - tipo
  *         - mensagem
+ *         - source
  *       properties:
  *         lead_id:
  *           type: string
@@ -59,6 +63,9 @@ const router = Router();
  *         mensagem:
  *           type: string
  *           description: Conteúdo da mensagem
+ *         source:
+ *           type: string
+ *           description: Origem da mensagem
  *         status:
  *           type: string
  *           enum: [sucesso, erro]
@@ -76,6 +83,9 @@ const router = Router();
  *         mensagem:
  *           type: string
  *           description: Conteúdo da mensagem
+ *         source:
+ *           type: string
+ *           description: Origem da mensagem
  *         status:
  *           type: string
  *           enum: [sucesso, erro]

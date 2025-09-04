@@ -8,6 +8,7 @@ const createChatSchema = z.object({
   lead_id: z.string().uuid('Lead ID deve ser um UUID válido'),
   tipo: z.enum(['human', 'ai'], { message: 'Tipo deve ser human ou ai' }),
   mensagem: z.string().min(1, 'Mensagem é obrigatória'),
+  source: z.string().min(1, 'Source é obrigatório'),
   status: z.enum(['sucesso', 'erro']).default('sucesso'),
   erro: z.string().optional()
 });
@@ -15,6 +16,7 @@ const createChatSchema = z.object({
 const updateChatSchema = z.object({
   tipo: z.enum(['human', 'ai']).optional(),
   mensagem: z.string().min(1).optional(),
+  source: z.string().optional(),
   status: z.enum(['sucesso', 'erro']).optional(),
   erro: z.string().optional()
 }).transform((data) => {
@@ -22,6 +24,7 @@ const updateChatSchema = z.object({
   const result: any = {};
   if (data.tipo !== undefined) result.tipo = data.tipo;
   if (data.mensagem !== undefined) result.mensagem = data.mensagem;
+  if (data.source !== undefined) result.source = data.source;
   if (data.status !== undefined) result.status = data.status;
   if (data.erro !== undefined) result.erro = data.erro;
   return result;

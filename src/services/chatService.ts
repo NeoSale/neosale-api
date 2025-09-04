@@ -8,6 +8,7 @@ interface Chat {
   cliente_id: string;
   tipo: 'human' | 'ai';
   mensagem: string;
+  source?: string;
   status: 'sucesso' | 'erro';
   erro?: string;
   created_at: string;
@@ -18,6 +19,7 @@ interface CreateChatData {
   cliente_id: string;
   tipo: 'human' | 'ai';
   mensagem: string;
+  source?: string;
   status?: 'sucesso' | 'erro';
   erro?: string | undefined;
 }
@@ -25,6 +27,7 @@ interface CreateChatData {
 interface UpdateChatData {
   tipo?: 'human' | 'ai';
   mensagem?: string;
+  source?: string;
   status?: 'sucesso' | 'erro';
   erro?: string | undefined;
 }
@@ -62,6 +65,7 @@ export class ChatService {
           cliente_id: data.cliente_id,
           tipo: data.tipo,
           mensagem: data.mensagem,
+          source: data.source,
           status: data.status || 'sucesso',
           erro: data.erro
         })
@@ -364,6 +368,7 @@ export class ChatService {
           cliente_id: data.cliente_id,
           tipo: data.tipo,
           mensagem: data.mensagem,
+          source: data.source,
           status: data.status,
           erro: data.erro
         })

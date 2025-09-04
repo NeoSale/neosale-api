@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS chat (
   cliente_id uuid NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
   tipo character varying(10) NOT NULL CHECK (tipo IN ('human', 'ai')),
   mensagem text NOT NULL,
+  source text,
   status character varying(10) DEFAULT 'sucesso' CHECK (status IN ('sucesso', 'erro')),
   erro text,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
@@ -28,6 +29,7 @@ COMMENT ON COLUMN chat.lead_id IS 'Referência ao lead que enviou/recebeu a mens
 COMMENT ON COLUMN chat.cliente_id IS 'Referência ao cliente proprietário do lead';
 COMMENT ON COLUMN chat.tipo IS 'Tipo da mensagem: human (usuário) ou ai (inteligência artificial)';
 COMMENT ON COLUMN chat.mensagem IS 'Conteúdo da mensagem';
+COMMENT ON COLUMN chat.source IS 'Origem da mensagem';
 COMMENT ON COLUMN chat.status IS 'Status da mensagem: sucesso ou erro';
 COMMENT ON COLUMN chat.erro IS 'Descrição do erro, caso status seja erro';
 COMMENT ON COLUMN chat.created_at IS 'Data e hora de criação da mensagem';
