@@ -238,7 +238,7 @@ class EvolutionApiService {
 
     console.log(`Configuring settings for instance: ${instanceName}`);
     console.log('Settings:', settings);
-    
+
     try {
       const settingsResponse = await axios.post(
         `${this.baseUrl}/settings/set/${instanceName}`,
@@ -987,7 +987,7 @@ class EvolutionApiService {
       console.error('❌ [sendText] Error details:');
       console.error('Error type:', error.constructor.name);
       console.error('Error message:', error.message);
-      
+
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response statusText:', error.response.statusText);
@@ -1012,7 +1012,7 @@ class EvolutionApiService {
   async fetchProfilePictureUrl(instanceName: string, number: string, apikey: string): Promise<any> {
     try {
       const url = `${this.baseUrl}/chat/fetchProfilePictureUrl/${instanceName}`;
-      
+
       const response = await axios.post(url, {
         number: number
       }, {
@@ -1086,7 +1086,7 @@ class EvolutionApiService {
       console.log(`Finding contacts for instance: ${instanceName} with filter:`, where);
 
       const url = `${this.baseUrl}/chat/findContacts/${instanceName}`;
-      
+
       const requestConfig = {
         headers: {
           'Content-Type': 'application/json',
@@ -1098,14 +1098,48 @@ class EvolutionApiService {
       const response = await axios.post(url, { where }, requestConfig);
 
       console.log(`✅ Response status: ${response.status}`);
-      console.log(`📄 Found ${response.data.length} contacts`);
       
-      return response.data;
+      // Processar os contatos para garantir o formato padrão
+      let contacts: any[] = [];
+      
+      if (response.data.length > 0) {
+        console.log(`📄 Found ${response.data.length} contacts`);
+        contacts = response.data.map((contact: any) => {
+          return {
+            id: contact.id || '',
+            pushName: contact.pushName || contact.name || '',
+            profilePictureUrl: contact.profilePictureUrl || '',
+            owner: contact.owner || instanceName
+          };
+        });
+      } else if (where.id) {
+        // Se não retornou dados mas temos um ID, tentar buscar a foto do perfil
+        try {
+          console.log(`📸 Contact ${where.id} not found or has no data. Fetching profile picture...`);
+          const pictureResponse = await this.fetchProfilePictureUrl(instanceName, where.id, apiKey || this.apiKey);
+          
+          if (pictureResponse && pictureResponse.profilePictureUrl) {
+            contacts = [{
+              id: where.id,
+              pushName: '',
+              profilePictureUrl: pictureResponse.profilePictureUrl,
+              owner: instanceName
+            }];
+            console.log(`✅ Profile picture fetched successfully for ${where.id}`);
+          }
+        } catch (pictureError: any) {
+          console.error(`❌ Error fetching profile picture for ${where.id}:`, pictureError.message);
+          throw new Error(`Failed to fetch profile picture for contact ${where.id}: ${pictureError.message}`);
+          // Continuar mesmo se falhar ao buscar a foto
+        }
+      }
+      
+      return contacts;
     } catch (error: any) {
       console.error('❌ [findContacts] Error details:');
       console.error('Error type:', error.constructor.name);
       console.error('Error message:', error.message);
-      
+
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response statusText:', error.response.statusText);
@@ -1173,7 +1207,7 @@ class EvolutionApiService {
       console.error('❌ [sendPresence] Error details:');
       console.error('Error type:', error.constructor.name);
       console.error('Error message:', error.message);
-      
+
       if (error.response) {
         console.error('Response status:', error.response.status);
         console.error('Response statusText:', error.response.statusText);
