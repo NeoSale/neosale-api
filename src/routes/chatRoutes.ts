@@ -1,8 +1,39 @@
 import { Router } from 'express';
 import ChatController from '../controllers/chatController';
 import { validateClienteId } from '../middleware/validate-cliente-id';
+import path from 'path';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/chat/realtime-docs:
+ *   get:
+ *     summary: Documentação do WebSocket para atualizações em tempo real
+ *     tags: [Chat]
+ *     description: Retorna uma página HTML com documentação e cliente de teste para o WebSocket
+ *     responses:
+ *       200:
+ *         description: Página HTML com documentação e cliente de teste
+ */
+router.get('/realtime-docs', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/websocket-client.html'));
+});
+
+/**
+ * @swagger
+ * /api/chat/realtime-docs:
+ *   get:
+ *     summary: Documentação do WebSocket para atualizações em tempo real
+ *     tags: [Chat]
+ *     description: Retorna uma página HTML com documentação e cliente de teste para o WebSocket
+ *     responses:
+ *       200:
+ *         description: Página HTML com documentação e cliente de teste
+ */
+router.get('/realtime-docs', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/websocket-client.html'));
+});
 
 /**
  * @swagger

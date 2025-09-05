@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeoSale API - Cliente WebSocket</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #2980b9;
+      margin-top: 30px;
+    }
+    pre {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border: 1px solid #e9ecef;
+    }
+    code {
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      background-color: #f8f9fa;
+      padding: 10px;
+      margin: -15px -15px 15px -15px;
+      border-bottom: 1px solid #ddd;
+      font-weight: bold;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 5px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    button:disabled {
+      background-color: #95a5a6;
+      cursor: not-allowed;
+    }
+    input, select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-right: 5px;
+      width: 250px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .log-container {
+      height: 300px;
+      overflow-y: auto;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .log-entry {
+      margin-bottom: 5px;
+      border-bottom: 1px solid #34495e;
+      padding-bottom: 5px;
+    }
+    .log-entry.received {
+      color: #2ecc71;
+    }
+    .log-entry.sent {
+      color: #3498db;
+    }
+    .log-entry.error {
+      color: #e74c3c;
+    }
+    .log-entry.info {
+      color: #f1c40f;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .status.connected {
+      background-color: #d5f5e3;
+      color: #27ae60;
+    }
+    .status.disconnected {
+      background-color: #fadbd8;
+      color: #c0392b;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      margin-right: 5px;
+      border-top-left-radius: 4px;
+      border-top-right-radius: 4px;
+    }
+    .tab.active {
+      background-color: white;
+      border-color: #ddd;
+      border-bottom-color: white;
+      margin-bottom: -1px;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>NeoSale API - Cliente WebSocket para Chat em Tempo Real</h1>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="client">Cliente de Teste</div>
+      <div class="tab" data-tab="docs">Documentação</div>
+    </div>
+    
+    <div id="client-tab" class="tab-content active">
+      <div id="connection-status" class="status disconnected">
+        Desconectado
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Conexão</div>
+        <div class="form-group">
+          <label for="server-url">URL do Servidor WebSocket:</label>
+          <input type="text" id="server-url" value="ws://localhost:3000/ws" style="width: 300px;">
+          <button id="connect-btn">Conectar</button>
+          <button id="disconnect-btn" disabled>Desconectar</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Inscrição em Lead</div>
+        <div class="form-group">
+          <label for="lead-id">ID do Lead:</label>
+          <input type="text" id="lead-id" placeholder="UUID do Lead">
+          <button id="subscribe-btn" disabled>Inscrever</button>
+          <button id="unsubscribe-btn" disabled>Cancelar Inscrição</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Manter Conexão Ativa</div>
+        <button id="ping-btn" disabled>Enviar Ping</button>
+      </div>
+      
+      <h2>Log de Eventos</h2>
+      <div id="log" class="log-container"></div>
+    </div>
+    
+    <div id="docs-tab" class="tab-content">
+      <h2>Sobre o WebSocket</h2>
+      <p>
+        Este serviço WebSocket permite que o frontend receba atualizações em tempo real quando novas mensagens de chat são criadas, atualizadas ou excluídas no Supabase, sem a necessidade de polling.
+      </p>
+      
+      <h2>Como Usar no Frontend</h2>
+      
+      <h3>1. Conectar ao WebSocket</h3>
+      <pre><code>// Criar conexão WebSocket
+const ws = new WebSocket('ws://seu-servidor:porta/ws');
+
+// Configurar eventos
+ws.onopen = () => {
+  console.log('Conectado ao servidor WebSocket');
+};
+
+ws.onclose = () => {
+  console.log('Desconectado do servidor WebSocket');
+};
+
+ws.onerror = (error) => {
+  console.error('Erro na conexão WebSocket:', error);
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Mensagem recebida:', data);
+  
+  // Processar mensagem recebida
+  switch (data.type) {
+    case 'connection':
+      // Conexão estabelecida
+      break;
+    case 'chat_update':
+      // Atualização de chat recebida
+      break;
+    // Outros tipos de mensagens
+  }
+};</code></pre>
+      
+      <h3>2. Inscrever-se para Receber Atualizações de um Lead</h3>
+      <pre><code>// Inscrever-se para receber atualizações de um lead específico
+ws.send(JSON.stringify({
+  type: 'subscribe',
+  leadId: 'uuid-do-lead'
+}));</code></pre>
+      
+      <h3>3. Cancelar Inscrição</h3>
+      <pre><code>// Cancelar inscrição
+ws.send(JSON.stringify({
+  type: 'unsubscribe'
+}));</code></pre>
+      
+      <h3>4. Manter Conexão Ativa</h3>
+      <pre><code>// Enviar ping a cada 30 segundos para manter a conexão ativa
+setInterval(() => {
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'ping',
+      timestamp: Date.now()
+    }));
+  }
+}, 30000);</code></pre>
+      
+      <h3>5. Processar Atualizações de Chat</h3>
+      <pre><code>ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.type === 'chat_update') {
+    // Atualização de chat recebida
+    const { event, data: chatData } = data;
+    
+    switch (event) {
+      case 'INSERT':
+        // Nova mensagem criada
+        addNewMessage(chatData);
+        break;
+      case 'UPDATE':
+        // Mensagem atualizada
+        updateMessage(chatData);
+        break;
+      case 'DELETE':
+        // Mensagem excluída
+        removeMessage(chatData.id);
+        break;
+    }
+  }
+};</code></pre>
+      
+      <h3>6. Exemplo de Hook React</h3>
+      <pre><code>import { useState, useEffect, useCallback } from 'react';
+
+function useChatRealtime(leadId) {
+  const [messages, setMessages] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [ws, setWs] = useState(null);
+  
+  // Inicializar WebSocket
+  useEffect(() => {
+    const websocket = new WebSocket('ws://seu-servidor:porta/ws');
+    
+    websocket.onopen = () => {
+      setIsConnected(true);
+      
+      // Inscrever-se para receber atualizações do lead
+      if (leadId) {
+        websocket.send(JSON.stringify({
+          type: 'subscribe',
+          leadId
+        }));
+      }
+    };
+    
+    websocket.onclose = () => {
+      setIsConnected(false);
+    };
+    
+    websocket.onerror = (error) => {
+      console.error('Erro na conexão WebSocket:', error);
+    };
+    
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      if (data.type === 'chat_update') {
+        const { event: eventType, data: chatData } = data;
+        
+        setMessages(prevMessages => {
+          switch (eventType) {
+            case 'INSERT':
+              return [...prevMessages, chatData];
+            case 'UPDATE':
+              return prevMessages.map(msg => 
+                msg.id === chatData.id ? chatData : msg
+              );
+            case 'DELETE':
+              return prevMessages.filter(msg => msg.id !== chatData.id);
+            default:
+              return prevMessages;
+          }
+        });
+      }
+    };
+    
+    setWs(websocket);
+    
+    // Limpar ao desmontar
+    return () => {
+      if (websocket.readyState === WebSocket.OPEN) {
+        websocket.close();
+      }
+    };
+  }, [leadId]);
+  
+  // Função para enviar ping
+  const sendPing = useCallback(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'ping',
+        timestamp: Date.now()
+      }));
+    }
+  }, [ws]);
+  
+  // Configurar ping automático
+  useEffect(() => {
+    if (isConnected) {
+      const pingInterval = setInterval(sendPing, 30000);
+      return () => clearInterval(pingInterval);
+    }
+  }, [isConnected, sendPing]);
+  
+  return {
+    messages,
+    isConnected
+  };
+}
+
+export default useChatRealtime;</code></pre>
+    </div>
+  </div>
+
+  <script>
+    // Seleção de elementos
+    const connectBtn = document.getElementById('connect-btn');
+    const disconnectBtn = document.getElementById('disconnect-btn');
+    const subscribeBtn = document.getElementById('subscribe-btn');
+    const unsubscribeBtn = document.getElementById('unsubscribe-btn');
+    const pingBtn = document.getElementById('ping-btn');
+    const serverUrlInput = document.getElementById('server-url');
+    const leadIdInput = document.getElementById('lead-id');
+    const logContainer = document.getElementById('log');
+    const connectionStatus = document.getElementById('connection-status');
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // Variáveis globais
+    let ws = null;
+    let clientId = null;
+    let isSubscribed = false;
+    
+    // Função para adicionar entrada ao log
+    function addLogEntry(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+    
+    // Função para conectar ao WebSocket
+    function connect() {
+      const serverUrl = serverUrlInput.value.trim();
+      if (!serverUrl) {
+        addLogEntry('URL do servidor não pode estar vazia', 'error');
+        return;
+      }
+      
+      try {
+        ws = new WebSocket(serverUrl);
+        
+        ws.onopen = () => {
+          addLogEntry('Conectado ao servidor WebSocket', 'info');
+          connectionStatus.textContent = 'Conectado';
+          connectionStatus.className = 'status connected';
+          
+          // Atualizar estado dos botões
+          connectBtn.disabled = true;
+          disconnectBtn.disabled = false;
+          subscribeBtn.disabled = false;
+          pingBtn.disabled = false;
+        };
+        
+        ws.onclose = () => {
+          addLogEntry('Desconectado do servidor WebSocket', 'info');
+          connectionStatus.textContent = 'Desconectado';
+          connectionStatus.className = 'status disconnected';
+          
+          // Atualizar estado dos botões
+          connectBtn.disabled = false;
+          disconnectBtn.disabled = true;
+          subscribeBtn.disabled = true;
+          unsubscribeBtn.disabled = true;
+          pingBtn.disabled = true;
+          
+          // Resetar variáveis
+          clientId = null;
+          isSubscribed = false;
+        };
+        
+        ws.onerror = (error) => {
+          addLogEntry(`Erro na conexão WebSocket: ${error}`, 'error');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            addLogEntry(`Mensagem recebida: ${JSON.stringify(data, null, 2)}`, 'received');
+            
+            // Processar mensagem
+            if (data.type === 'connection') {
+              clientId = data.clientId;
+              addLogEntry(`ID do cliente: ${clientId}`, 'info');
+            } else if (data.type === 'subscribed') {
+              isSubscribed = true;
+              subscribeBtn.disabled = true;
+              unsubscribeBtn.disabled = false;
+              addLogEntry(`Inscrito para atualizações do lead: ${data.leadId}`, 'info');
+            } else if (data.type === 'unsubscribed') {
+              isSubscribed = false;
+              subscribeBtn.disabled = false;
+              unsubscribeBtn.disabled = true;
+              addLogEntry('Inscrição cancelada', 'info');
+            }
+          } catch (error) {
+            addLogEntry(`Erro ao processar mensagem: ${error}`, 'error');
+          }
+        };
+      } catch (error) {
+        addLogEntry(`Erro ao criar conexão WebSocket: ${error}`, 'error');
+      }
+    }
+    
+    // Função para desconectar do WebSocket
+    function disconnect() {
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+    
+    // Função para inscrever-se em um lead
+    function subscribe() {
+      const leadId = leadIdInput.value.trim();
+      if (!leadId) {
+        addLogEntry('ID do lead não pode estar vazio', 'error');
+        return;
+      }
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: 'subscribe',
+          leadId
+        };
+        
+        ws.send(JSON.stringify(message));
+        addLogEntry(`Mensagem enviada: ${JSON.stringify(message)}`, 'sent');
+      } else {
+        addLogEntry('WebSocket não está conectado', 'error');
+      }
+    }
+    
+    // Função para cancelar inscrição
+    function unsubscribe() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: 'unsubscribe'
+        };
+        
+        ws.send(JSON.stringify(message));
+        addLogEntry(`Mensagem enviada: ${JSON.stringify(message)}`, 'sent');
+      } else {
+        addLogEntry('WebSocket não está conectado', 'error');
+      }
+    }
+    
+    // Função para enviar ping
+    function sendPing() {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        const message = {
+          type: 'ping',
+          timestamp: Date.now()
+        };
+        
+        ws.send(JSON.stringify(message));
+        addLogEntry(`Mensagem enviada: ${JSON.stringify(message)}`, 'sent');
+      } else {
+        addLogEntry('WebSocket não está conectado', 'error');
+      }
+    }
+    
+    // Configurar eventos de clique
+    connectBtn.addEventListener('click', connect);
+    disconnectBtn.addEventListener('click', disconnect);
+    subscribeBtn.addEventListener('click', subscribe);
+    unsubscribeBtn.addEventListener('click', unsubscribe);
+    pingBtn.addEventListener('click', sendPing);
+    
+    // Configurar navegação por abas
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remover classe ativa de todas as abas
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        // Adicionar classe ativa à aba clicada
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+    
+    // Inicializar
+    addLogEntry('Cliente WebSocket inicializado', 'info');
+  </script>
+</body>
+</html>

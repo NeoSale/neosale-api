@@ -14,6 +14,8 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerSpec } from './lib/swagger'
+import http from 'http'
+import path from 'path'
 import { leadRoutes } from './routes/leadRoutes'
 import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import referenciaRoutes from './routes/referenciaRoutes'
@@ -38,9 +40,13 @@ import chatRoutes from './routes/chatRoutes'
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import packageJson from '../package.json'
+import websocketService from './services/websocketService'
 
 const app = express()
 const PORT = process.env.NEXT_PUBLIC_PORT
+
+// Criar servidor HTTP para anexar o WebSocket
+const server = http.createServer(app)
 
 // Detectar automaticamente a URL base
 let BASE_URL = process.env.NEXT_PUBLIC_NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_BASE_URL : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${PORT}`
@@ -59,9 +65,12 @@ app.use(cors({
 // Logging
 app.use(morgan('combined'))
 
-// Parse JSON
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
+// Middleware para processar JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Servir arquivos estáticos da pasta public
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware para processar text/plain como JSON (fix para frontend)
 app.use('/api/leads', (req, res, next) => {
@@ -177,11 +186,15 @@ async function startServer() {
     // await migrationRunner.runMigrations()
     // await migrationRunner.markMigrationsAsExecuted()
     
-    // Iniciar servidor
-    app.listen(PORT, () => {
+    // Iniciar servidor HTTP
+    server.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`)
       console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
       console.log(`❤️ Health check em ${BASE_URL}/health`)
+      console.log(`🔌 WebSocket disponível em ws://localhost:${PORT}`)
+      
+      // Inicializar serviço WebSocket
+      websocketService.initialize(server)
     })
   } catch (error) {
     console.error('❌ Erro ao inicializar servidor:', error)
@@ -191,5 +204,15 @@ async function startServer() {
 
 // Inicializar servidor
 startServer()
+
+// Configurar encerramento gracioso
+process.on('SIGINT', () => {
+  console.log('🛑 Encerrando servidor...')
+  websocketService.shutdown()
+  server.close(() => {
+    console.log('🛑 Servidor HTTP encerrado')
+    process.exit(0)
+  })
+})
 
 export default app
