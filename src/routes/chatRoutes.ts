@@ -23,6 +23,10 @@ const router = Router();
  *           type: string
  *           format: uuid
  *           description: ID do cliente
+ *         instance_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da instância da Evolution API
  *         tipo:
  *           type: string
  *           enum: [human, ai]
@@ -56,6 +60,10 @@ const router = Router();
  *           type: string
  *           format: uuid
  *           description: ID do lead
+ *         instance_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da instância da Evolution API
  *         tipo:
  *           type: string
  *           enum: [human, ai]
@@ -83,6 +91,10 @@ const router = Router();
  *         mensagem:
  *           type: string
  *           description: Conteúdo da mensagem
+ *         instance_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID da instância da Evolution API
  *         source:
  *           type: string
  *           description: Origem da mensagem

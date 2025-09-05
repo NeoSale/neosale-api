@@ -1,11 +1,12 @@
 -- Migration: 027_create_chat
 -- Description: Tabela para armazenar mensagens de chat entre leads e AI
--- Dependencies: 012_create_leads, 004_create_clientes
+-- Dependencies: 012_create_leads, 004_create_clientes, 016_create_evolution_api
 
 CREATE TABLE IF NOT EXISTS chat (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   lead_id uuid NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
   cliente_id uuid NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+  instance_id uuid REFERENCES evolution_api(id) ON DELETE SET NULL,
   tipo character varying(10) NOT NULL CHECK (tipo IN ('human', 'ai')),
   mensagem text NOT NULL,
   source text,
@@ -17,6 +18,7 @@ CREATE TABLE IF NOT EXISTS chat (
 -- Índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_chat_lead_id ON chat(lead_id);
 CREATE INDEX IF NOT EXISTS idx_chat_cliente_id ON chat(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_chat_instance_id ON chat(instance_id);
 CREATE INDEX IF NOT EXISTS idx_chat_tipo ON chat(tipo);
 CREATE INDEX IF NOT EXISTS idx_chat_status ON chat(status);
 CREATE INDEX IF NOT EXISTS idx_chat_created_at ON chat(created_at);
@@ -27,6 +29,7 @@ COMMENT ON TABLE chat IS 'Tabela para armazenar mensagens de chat entre leads e 
 COMMENT ON COLUMN chat.id IS 'Identificador único da mensagem';
 COMMENT ON COLUMN chat.lead_id IS 'Referência ao lead que enviou/recebeu a mensagem';
 COMMENT ON COLUMN chat.cliente_id IS 'Referência ao cliente proprietário do lead';
+COMMENT ON COLUMN chat.instance_id IS 'Referência à instância da Evolution API';
 COMMENT ON COLUMN chat.tipo IS 'Tipo da mensagem: human (usuário) ou ai (inteligência artificial)';
 COMMENT ON COLUMN chat.mensagem IS 'Conteúdo da mensagem';
 COMMENT ON COLUMN chat.source IS 'Origem da mensagem';

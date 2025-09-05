@@ -6,6 +6,7 @@ interface Chat {
   id: string;
   lead_id: string;
   cliente_id: string;
+  instance_id?: string;
   tipo: 'human' | 'ai';
   mensagem: string;
   source?: string;
@@ -17,6 +18,7 @@ interface Chat {
 interface CreateChatData {
   lead_id: string;
   cliente_id: string;
+  instance_id: string;
   tipo: 'human' | 'ai';
   mensagem: string;
   source?: string;
@@ -27,6 +29,7 @@ interface CreateChatData {
 interface UpdateChatData {
   tipo?: 'human' | 'ai';
   mensagem?: string;
+  instance_id?: string;
   source?: string;
   status?: 'sucesso' | 'erro';
   erro?: string | undefined;
@@ -63,6 +66,7 @@ export class ChatService {
         .insert({
           lead_id: data.lead_id,
           cliente_id: data.cliente_id,
+          instance_id: data.instance_id,
           tipo: data.tipo,
           mensagem: data.mensagem,
           source: data.source,
@@ -366,6 +370,7 @@ export class ChatService {
         .insert({
           lead_id: data.lead_id,
           cliente_id: data.cliente_id,
+          instance_id: evolutionData.id, // Usar o ID da instância da Evolution API
           tipo: data.tipo,
           mensagem: data.mensagem,
           source: data.source,

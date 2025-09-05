@@ -32,6 +32,7 @@ import clienteRoutes from './routes/clienteRoutes'
 import usuarioRoutes from './routes/usuarioRoutes'
 import usuarioAdminRoutes from './routes/usuarioAdminRoutes'
 import evolutionApiRoutes from './routes/evolution-api.routes'
+import evolutionApiV2Routes from './routes/evolution-api-v2.routes'
 import n8nChatHistoriesRoutes from './routes/n8nChatHistoriesRoutes'
 import chatRoutes from './routes/chatRoutes'
 
@@ -118,18 +119,18 @@ app.get('/', (req, res) => {
   })
 })
 
-// Rotas
+// Rotas da API
 app.use('/api/leads', leadRoutes)
 app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api/referencias', referenciaRoutes)
 app.use('/api/parametros', parametroRoutes)
 app.use('/api/mensagens', mensagemRoutes)
-app.use('/api/followup', followupRoutes)
+app.use('/api/followups', followupRoutes)
 app.use('/api/configuracoes', configuracoesRoutes)
-app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
+app.use('/api/configuracao-followup', configuracaoFollowupRoutes)
 app.use('/api/provedores', provedorRoutes)
 app.use('/api/tipos-acesso', tipoAcessoRoutes)
-app.use('/api/tipo-agentes', tipoAgenteRoutes)
+app.use('/api/tipos-agente', tipoAgenteRoutes)
 app.use('/api/agentes', agenteRoutes)
 app.use('/api/historico-prompt', historicoPromptRoutes)
 app.use('/api/revendedores', revendedorRoutes)
@@ -137,7 +138,8 @@ app.use('/api/clientes', clienteRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 app.use('/api/usuarios-admin', usuarioAdminRoutes)
 app.use('/api/evolution-api', evolutionApiRoutes)
-app.use('/api/n8n_chat_histories', n8nChatHistoriesRoutes)
+app.use('/api/evolution-api-v2', evolutionApiV2Routes)
+app.use('/api/n8n-chat-histories', n8nChatHistoriesRoutes)
 app.use('/api/chat', chatRoutes)
 
 app.use('/api/admin', adminRoutes)
