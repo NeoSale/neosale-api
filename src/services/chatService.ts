@@ -97,46 +97,16 @@ export class ChatService {
     try {
       const offset = (page - 1) * limit;
 
-      // Buscar apenas leads que tenham mensagens na tabela chat
-      const { data: leadsWithChat, error: leadsError } = await supabase!
-        .from('chat')
-        .select('lead_id, cliente_id')
-        .eq('cliente_id', cliente_id)
-        .order('created_at', { ascending: false });
-
-      if (leadsError) {
-        console.error('❌ Erro ao buscar leads com chat:', leadsError);
-        throw new Error(`Erro ao buscar leads com chat: ${leadsError.message}`);
-      }
-
-      if (!leadsWithChat || leadsWithChat.length === 0) {
-        return {
-          data: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false
-          }
-        };
-      }
-
-      // Extrair IDs únicos de leads que têm mensagens
-      const uniqueLeadIds = [...new Set(leadsWithChat.map(item => item.lead_id))];
-
-      // Buscar informações dos leads que têm mensagens
-      const { data: allLeads, error: leadsInfoError } = await supabase!
+      // Primeiro, buscar todos os leads ativos do cliente
+      const { data: allLeads, error: leadsError } = await supabase!
         .from('leads')
         .select('id, nome, profile_picture_url, telefone')
         .eq('cliente_id', cliente_id)
-        .eq('deletado', false)
-        .in('id', uniqueLeadIds);
+        .eq('deletado', false);
 
-      if (leadsInfoError) {
-        console.error('❌ Erro ao buscar informações dos leads:', leadsInfoError);
-        throw new Error(`Erro ao buscar informações dos leads: ${leadsInfoError.message}`);
+      if (leadsError) {
+        console.error('❌ Erro ao buscar leads:', leadsError);
+        throw new Error(`Erro ao buscar leads: ${leadsError.message}`);
       }
 
       if (!allLeads || allLeads.length === 0) {
@@ -167,26 +137,22 @@ export class ChatService {
 
         if (messageError && messageError.code !== 'PGRST116') {
           console.error('❌ Erro ao buscar última mensagem para lead:', lead.id, messageError);
-          continue; // Pular este lead se não conseguir obter a última mensagem
         }
 
-        // Só adicionar leads que tenham mensagens
-        if (lastMessage) {
-          const leadData = {
-            id: lead.id,
-            nome: lead.nome,
-            ultima_mensagem: lastMessage.mensagem || null,
-            data_ultima_mensagem: lastMessage.created_at || null,
-            profile_picture_url: lead.profile_picture_url || null,
-            telefone: lead.telefone || null
-          };
+        const leadData = {
+          id: lead.id,
+          nome: lead.nome,
+          ultima_mensagem: lastMessage?.mensagem || null,
+          data_ultima_mensagem: lastMessage?.created_at || null,
+          profile_picture_url: lead.profile_picture_url || null,
+          telefone: lead.telefone || null
+        };
 
-          // Se não existe lead com esse nome ou se a mensagem atual é mais recente
-          if (!leadsByName.has(lead.nome) ||
-            (lastMessage.created_at && leadsByName.get(lead.nome).data_ultima_mensagem &&
-              new Date(lastMessage.created_at) > new Date(leadsByName.get(lead.nome).data_ultima_mensagem))) {
-            leadsByName.set(lead.nome, leadData);
-          }
+        // Se não existe lead com esse nome ou se a mensagem atual é mais recente
+        if (!leadsByName.has(lead.nome) ||
+          (lastMessage?.created_at && leadsByName.get(lead.nome).data_ultima_mensagem &&
+            new Date(lastMessage.created_at) > new Date(leadsByName.get(lead.nome).data_ultima_mensagem))) {
+          leadsByName.set(lead.nome, leadData);
         }
       }
 
