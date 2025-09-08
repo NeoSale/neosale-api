@@ -6,7 +6,6 @@ interface Chat {
   id: string;
   lead_id: string;
   cliente_id: string;
-  instance_id?: string;
   tipo: 'human' | 'ai';
   mensagem: string;
   source?: string;
@@ -18,7 +17,6 @@ interface Chat {
 interface CreateChatData {
   lead_id: string;
   cliente_id: string;
-  instance_id: string;
   tipo: 'human' | 'ai';
   mensagem: string;
   source?: string;
@@ -29,7 +27,6 @@ interface CreateChatData {
 interface UpdateChatData {
   tipo?: 'human' | 'ai';
   mensagem?: string;
-  instance_id?: string;
   source?: string;
   status?: 'sucesso' | 'erro';
   erro?: string | undefined;
@@ -66,7 +63,6 @@ export class ChatService {
         .insert({
           lead_id: data.lead_id,
           cliente_id: data.cliente_id,
-          instance_id: data.instance_id,
           tipo: data.tipo,
           mensagem: data.mensagem,
           source: data.source,
@@ -311,9 +307,9 @@ export class ChatService {
         throw new Error('Telefone ou instance_name não disponível');
       }
 
-      // 2. Buscar dados da instância na evolution_api pelo instance_name
+      // 2. Buscar dados da instância na evolution_api_v2 pelo instance_name
       const { data: evolutionData, error: evolutionError } = await supabase!
-        .from('evolution_api')
+        .from('evolution_api_v2')
         .select('id')
         .eq('instance_name', instance_name)
         .eq('cliente_id', data.cliente_id)
