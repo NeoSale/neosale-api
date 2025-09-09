@@ -900,7 +900,7 @@ class EvolutionApiV2Service {
 
       // Verificar se as configurações básicas estão presentes
       if (!this.baseUrl) {
-        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL não está configurada');
+        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL_V2 não está configurada');
       }
 
       if (!apikey) {
@@ -1117,7 +1117,7 @@ class EvolutionApiV2Service {
 
       // Verificar se as configurações básicas estão presentes
       if (!this.baseUrl) {
-        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL não está configurada');
+        throw new Error('NEXT_PUBLIC_EVOLUTION_API_BASE_URL_V2 não está configurada');
       }
 
       if (!apikey) {

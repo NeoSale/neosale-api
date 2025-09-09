@@ -206,8 +206,24 @@ export class AgenteService {
         .eq('cliente_id', clienteId)
         .single();
 
+      let agenteId = evolutionData?.id_agente;
+
       if (evolutionError || !evolutionData || !evolutionData.id_agente) {
-        return null;
+        // Se não encontrar na tabela evolution_api, buscar na evolution_api_v2
+        const { data: evolutionV2Data, error: evolutionV2Error } = await supabase
+          .from('evolution_api_v2')
+          .select('id_agente')
+          .eq('instance_name', instanceName)
+          .eq('cliente_id', clienteId)
+          .single();
+
+        // Usar o id_agente encontrado na tabela evolution_api_v2
+        agenteId = evolutionV2Data?.id_agente;
+
+        if (evolutionV2Error || !evolutionV2Data || !evolutionV2Data.id_agente) {
+          return null;
+        }
+        
       }
 
       // Agora buscar o agente usando o id_agente encontrado
@@ -221,7 +237,7 @@ export class AgenteService {
             ativo
           )
         `)
-        .eq('id', evolutionData.id_agente)
+        .eq('id', agenteId)
         .eq('cliente_id', clienteId)
         .eq('deletado', false)
         .single();
