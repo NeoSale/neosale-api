@@ -907,23 +907,12 @@ class EvolutionApiV2Service {
         throw new Error('API Key não foi fornecida');
       }
 
-      // Aplicar as transformações no texto conforme solicitado
-      const processedText = text;
-      // const processedText = this.removeMarkdown(text)
-      //   .replace(/\\/g, "\\\\")
-      //   .replace(/"/g, '\\"')
-      //   .replace(/\//g, '\\/')
-      //   .replace(/\t/g, '\\t')
-      //   .replace(/\n/g, '\\n');
-
       const url = `${this.baseUrl}/message/sendText/${instanceName}`;
       console.log(`🎯 Request URL: ${url}`);
 
       const requestData = {
         number: number,
-        textMessage: {
-          text: processedText
-        }
+        text: text
       };
       console.log(`📦 Request data:`, JSON.stringify(requestData, null, 2));
 
@@ -1140,10 +1129,8 @@ class EvolutionApiV2Service {
 
       const requestData = {
         number: number,
-        options: {
-          delay: delay,
-          presence: presence
-        }
+        delay: delay,
+        presence: presence
       };
       console.log(`📦 Request data:`, JSON.stringify(requestData, null, 2));
 

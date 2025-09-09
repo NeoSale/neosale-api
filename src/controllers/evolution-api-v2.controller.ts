@@ -373,7 +373,7 @@ export class EvolutionApiV2Controller {
   async sendText(req: Request, res: Response) {
     try {
       const { instancename } = req.params;
-      const { number, textMessage } = req.body;
+      const { number, text } = req.body;
       const apikey = req.headers['apikey'] as string;
       
       if (!apikey) {
@@ -383,17 +383,17 @@ export class EvolutionApiV2Controller {
         });
       }
 
-      if (!number || !textMessage?.text) {
+      if (!number || !text) {
         return res.status(400).json({
           success: false,
-          message: 'Campos number e textMessage.text são obrigatórios'
+          message: 'Campos number e text são obrigatórios'
         });
       }
 
       const result = await evolutionApiServiceV2.sendText(
         instancename,
         number,
-        textMessage.text,
+        text,
         apikey
       );
 
@@ -457,7 +457,7 @@ export class EvolutionApiV2Controller {
   async sendPresence(req: Request, res: Response) {
     try {
       const { instance } = req.params;
-      const { number, options } = req.body;
+      const { number, presence, delay } = req.body;
       const apikey = req.headers['apikey'] as string;
 
       // Validação mais detalhada para ajudar na depuração
@@ -475,23 +475,20 @@ export class EvolutionApiV2Controller {
         });
       }
 
-      if (!options) {
+      if (!presence) {
         return res.status(400).json({
           success: false,
-          message: 'options is required'
+          message: 'presence is required'
         });
       }
 
-      if (!options.presence) {
+      if (!delay) {
         return res.status(400).json({
           success: false,
-          message: 'options.presence is required'
+          message: 'delay is required'
         });
       }
       
-      const presence = options.presence;
-      const delay = options.delay || 0;
-
       const result = await evolutionApiServiceV2.sendPresence(
         instance,
         number,

@@ -166,25 +166,20 @@ const handleValidationErrors = (req: any, res: any, next: any) => {
  *                 $ref: '#/components/schemas/EvolutionApiV2Instance'
  *         message:
  *           type: string
- *     SendTextRequest:
+ *     SendTextRequestV2:
  *       type: object
  *       required:
  *         - number
- *         - textMessage
+ *         - text
  *       properties:
  *         number:
  *           type: string
  *           description: Número do destinatário (com código do país)
  *           example: "5511999999999"
- *         textMessage:
- *           type: object
- *           required:
- *             - text
- *           properties:
- *             text:
- *               type: string
- *               description: Texto da mensagem (será processado para remover markdown e escapar caracteres especiais)
- *               example: "Olá! Esta é uma mensagem de teste."
+ *         text:
+ *           type: string
+ *           description: Texto da mensagem (será processado para remover markdown e escapar caracteres especiais)
+ *           example: "Olá! Esta é uma mensagem de teste."
  *     SendTextResponse:
  *       type: object
  *       properties:
@@ -345,16 +340,11 @@ const validateSendText = [
     .withMessage('number is required')
     .isString()
     .withMessage('number must be a string'),
-  body('textMessage')
+  body('text')
     .notEmpty()
-    .withMessage('textMessage is required')
-    .isObject()
-    .withMessage('textMessage must be an object'),
-  body('textMessage.text')
-    .notEmpty()
-    .withMessage('textMessage.text is required')
+    .withMessage('text is required')
     .isString()
-    .withMessage('textMessage.text must be a string'),
+    .withMessage('text must be a string'),
   handleValidationErrors
 ];
 
@@ -387,22 +377,17 @@ const validateSendPresence = [
     .withMessage('number is required')
     .isString()
     .withMessage('number must be a string'),
-  body('options')
+  body('presence')
     .notEmpty()
-    .withMessage('options is required')
-    .isObject()
-    .withMessage('options must be an object'),
-  body('options.presence')
-    .notEmpty()
-    .withMessage('options.presence is required')
+    .withMessage('presence is required')
     .isString()
-    .withMessage('options.presence must be a string')
+    .withMessage('presence must be a string')
     .isIn(['composing', 'recording', 'paused'])
-    .withMessage('options.presence must be one of: composing, recording, paused'),
-  body('options.delay')
+    .withMessage('presence must be one of: composing, recording, paused'),
+  body('delay')
     .optional()
     .isInt({ min: 0 })
-    .withMessage('options.delay must be a positive integer'),
+    .withMessage('delay must be a positive integer'),
   handleValidationErrors
 ];
 
@@ -1215,7 +1200,7 @@ router.post('/getBase64FromMediaMessage/:instance_name', validateGetBase64FromMe
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/SendTextRequest'
+ *             $ref: '#/components/schemas/SendTextRequestV2'
  *     responses:
  *       200:
  *         description: Mensagem enviada com sucesso
@@ -1327,9 +1312,8 @@ router.post('/chat/fetchProfilePictureUrl/:instance_name', validateFetchProfileP
  *                     example: 1000
  *           example:
  *             number: "5511999999999"
- *             options:
- *               delay: 1000
- *               presence: "composing"
+ *             delay: 1000
+ *             presence: "composing"
  *     responses:
  *       200:
  *         description: Presença enviada com sucesso
