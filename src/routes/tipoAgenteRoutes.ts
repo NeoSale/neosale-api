@@ -73,7 +73,7 @@ const router = Router();
 
 /**
  * @swagger
- * /api/tipo-agentes:
+ * /api/tipos-agente:
  *   get:
  *     summary: Lista todos os tipos de agente
  *     tags: [TipoAgente]
@@ -102,7 +102,7 @@ router.get('/', TipoAgenteController.getAll);
 
 /**
  * @swagger
- * /api/tipo-agentes/ativos:
+ * /api/tipos-agente/ativos:
  *   get:
  *     summary: Lista todos os tipos de agente ativos
  *     tags: [TipoAgente]
@@ -131,7 +131,7 @@ router.get('/ativos', TipoAgenteController.getAtivos);
 
 /**
  * @swagger
- * /api/tipo-agentes/{id}:
+ * /api/tipos-agente/{id}:
  *   get:
  *     summary: Busca um tipo de agente por ID
  *     tags: [TipoAgente]
@@ -167,7 +167,7 @@ router.get('/:id', TipoAgenteController.getById);
 
 /**
  * @swagger
- * /api/tipo-agentes/nome/{nome}:
+ * /api/tipos-agente/nome/{nome}:
  *   get:
  *     summary: Busca um tipo de agente por nome
  *     tags: [TipoAgente]
@@ -202,7 +202,7 @@ router.get('/nome/:nome', TipoAgenteController.getByNome);
 
 /**
  * @swagger
- * /api/tipo-agentes:
+ * /api/tipos-agente:
  *   post:
  *     summary: Cria um novo tipo de agente
  *     tags: [TipoAgente]
@@ -239,7 +239,7 @@ router.post('/', TipoAgenteController.create);
 
 /**
  * @swagger
- * /api/tipo-agentes/{id}:
+ * /api/tipos-agente/{id}:
  *   put:
  *     summary: Atualiza um tipo de agente
  *     tags: [TipoAgente]
@@ -286,7 +286,7 @@ router.put('/:id', TipoAgenteController.update);
 
 /**
  * @swagger
- * /api/tipo-agentes/{id}:
+ * /api/tipos-agente/{id}:
  *   delete:
  *     summary: Deleta um tipo de agente
  *     tags: [TipoAgente]

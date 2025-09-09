@@ -106,7 +106,7 @@ app.get('/', (req, res) => {
       configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
       provedores: `${BASE_URL}/api/provedores`,
       tiposAcesso: `${BASE_URL}/api/tipos-acesso`,
-      tiposAgente: `${BASE_URL}/api/tipo-agentes`,
+      tiposAgente: `${BASE_URL}/api/tipos-agente`,
       agentes: `${BASE_URL}/api/agentes`,
       revendedores: `${BASE_URL}/api/revendedores`,
       clientes: `${BASE_URL}/api/clientes`,
