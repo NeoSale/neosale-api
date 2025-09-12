@@ -667,7 +667,6 @@ export const createChatSendTextSchema = z.object({
   }),
   source: z.string().min(1, 'Source é obrigatório'),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
-  instance_id: z.string().uuid('instance_id deve ser um UUID válido'),
   tipo: z.enum(['human', 'ai'], {
     errorMap: () => ({ message: 'Tipo deve ser human ou ai' })
   })

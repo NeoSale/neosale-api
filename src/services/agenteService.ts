@@ -75,7 +75,7 @@ export class AgenteService {
         }
 
         const { data: instanciasLocais, error: instanciasError } = await supabase
-          .from('evolution_api')
+          .from('evolution_api_v2')
           .select('id, instance_name, followup, qtd_envios_diarios')
           .eq('cliente_id', clienteId)
           .eq('id_agente', agente.id);

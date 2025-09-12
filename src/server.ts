@@ -35,6 +35,8 @@ import evolutionApiRoutes from './routes/evolution-api.routes'
 import evolutionApiV2Routes from './routes/evolution-api-v2.routes'
 import n8nChatHistoriesRoutes from './routes/n8nChatHistoriesRoutes'
 import chatRoutes from './routes/chatRoutes'
+import documentoRoutes from './routes/documentoRoutes'
+import baseRoutes from './routes/baseRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -54,7 +56,7 @@ app.use(cors({
   origin: '*',
   credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'cliente-id', 'X-Requested-With']
 }))
 
 // Logging
@@ -141,6 +143,8 @@ app.use('/api/evolution-api', evolutionApiRoutes)
 app.use('/api/evolution-api-v2', evolutionApiV2Routes)
 app.use('/api/n8n-chat-histories', n8nChatHistoriesRoutes)
 app.use('/api/chat', chatRoutes)
+app.use('/api/documentos', documentoRoutes)
+app.use('/api/base', baseRoutes)
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec));

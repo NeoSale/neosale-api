@@ -13,7 +13,7 @@ class EvolutionApiV2Service {
     this.apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY_V2 || '';
     this.timeout = Number(process.env.NEXT_PUBLIC_EVOLUTION_API_TIMEOUT_V2) || 0; // 30 seconds
 
-    // console.log('Evolution API Service initialized:');
+    // console.log('Evolution API V2 Service initialized:');
     // console.log('Base URL:', this.baseUrl);
     // console.log('API Key:', this.apiKey ? '[CONFIGURED]' : '[NOT CONFIGURED]');
   }
@@ -41,7 +41,7 @@ class EvolutionApiV2Service {
         return [];
       }
 
-      // 2. Buscar dados completos da Evolution API
+      // 2. Buscar dados completos da Evolution API V2
       const instanceIds = localInstances.map(instance => instance.id);
       const evolutionApiData = await this.fetchInstancesFromEvolutionApi(instanceIds);
 
@@ -73,7 +73,7 @@ class EvolutionApiV2Service {
         return null;
       }
 
-      // 2. Buscar dados da Evolution API
+      // 2. Buscar dados da Evolution API V2
       const evolutionApiData = await this.fetchInstancesFromEvolutionApi([instanceId]);
 
       return evolutionApiData.length > 0 ? evolutionApiData[0] : null;
@@ -115,10 +115,10 @@ class EvolutionApiV2Service {
       );
 
       const createdInstance = responseCreate.data;
-      console.log('Evolution API create response:', JSON.stringify(createdInstance, null, 2));
+      console.log('Evolution API V2 create response:', JSON.stringify(createdInstance, null, 2));
 
       if (!createdInstance || !createdInstance.instance || !createdInstance.instance.instanceName) {
-        throw new Error('Invalid response from Evolution API');
+        throw new Error('Invalid response from Evolution API V2');
       }
 
       const instanceId = createdInstance.instance.instanceId;
@@ -133,7 +133,7 @@ class EvolutionApiV2Service {
         // Não falhar a criação da instância se o webhook falhar
       }
 
-      // Configure settings in Evolution API
+      // Configure settings in Evolution API V2
       if (instance.Setting) {
         await this.configureSettings(instance.instanceName, instance.Setting);
       }
@@ -164,7 +164,7 @@ class EvolutionApiV2Service {
 
       if (error) {
         console.error('Error saving instance to database:', error);
-        // Tentar deletar a instância da Evolution API se falhar ao salvar no banco
+        // Tentar deletar a instância da Evolution API V2 se falhar ao salvar no banco
         try {
           await this.deleteInstance(instanceId, clienteId);
         } catch (deleteError) {
@@ -347,9 +347,9 @@ class EvolutionApiV2Service {
         throw new Error('Instance name not found');
       }
 
-      // 2. Deletar da Evolution API usando instanceName
+      // 2. Deletar da Evolution API V2 usando instanceName
       try {
-        console.log(`Calling Evolution API to delete instance: ${instanceName}`);
+        console.log(`Calling Evolution API V2 to delete instance: ${instanceName}`);
         await axios.delete(
           `${this.baseUrl}/instance/delete/${instanceName}`,
           {
@@ -360,10 +360,10 @@ class EvolutionApiV2Service {
             timeout: this.timeout
           }
         );
-        console.log(`Instance ${instanceName} deleted from Evolution API successfully`);
+        console.log(`Instance ${instanceName} deleted from Evolution API V2 successfully`);
       } catch (apiError: any) {
-        console.warn('Error deleting from Evolution API (continuing with local deletion):', apiError.message);
-        // Continua com a exclusão local mesmo se falhar na Evolution API
+        console.warn('Error deleting from Evolution API V2 (continuing with local deletion):', apiError.message);
+        // Continua com a exclusão local mesmo se falhar na Evolution API V2
       }
 
       // 3. Deletar da tabela local
@@ -405,7 +405,7 @@ class EvolutionApiV2Service {
         throw new Error('Instance not found or does not belong to client');
       }
 
-      // 2. Chamar Evolution API para conectar e obter QR Code
+      // 2. Chamar Evolution API V2 para conectar e obter QR Code
       const response = await axios.get(
         `${this.baseUrl}/instance/connect/${localInstance.instance_name}`,
         {
@@ -434,7 +434,7 @@ class EvolutionApiV2Service {
         throw new Error('Instance not found or does not belong to client');
       }
 
-      // Conectar na Evolution API
+      // Conectar na Evolution API V2
       const response = await axios.get(
         `${this.baseUrl}/instance/connect/${instanceId}`,
         {
@@ -447,7 +447,7 @@ class EvolutionApiV2Service {
       );
 
       const connectionData = response.data;
-      console.log('Evolution API connect response:', JSON.stringify(connectionData, null, 2));
+      console.log('Evolution API V2 connect response:', JSON.stringify(connectionData, null, 2));
 
       return {
         qrCode: connectionData.base64 || connectionData.qrcode,
@@ -481,9 +481,9 @@ class EvolutionApiV2Service {
       }
 
       const instanceName = instanceData.instance_name;
-      console.log(`Calling Evolution API logout for instance: ${instanceName}`);
+      console.log(`Calling Evolution API V2 logout for instance: ${instanceName}`);
 
-      // Chamar o endpoint logout/{instanceName} DELETE da Evolution API
+      // Chamar o endpoint logout/{instanceName} DELETE da Evolution API V2
       try {
         await axios.delete(
           `${this.baseUrl}/instance/logout/${instanceName}`,
@@ -495,9 +495,9 @@ class EvolutionApiV2Service {
             timeout: this.timeout
           }
         );
-        console.log(`Instance ${instanceName} disconnected successfully from Evolution API`);
+        console.log(`Instance ${instanceName} disconnected successfully from Evolution API V2`);
       } catch (apiError: any) {
-        console.error('Error calling Evolution API logout:', apiError.response?.data || apiError.message);
+        console.error('Error calling Evolution API V2 logout:', apiError.response?.data || apiError.message);
         // Continuar mesmo se a API falhar, pois pode ser que a instância já esteja desconectada
       }
 
@@ -530,9 +530,9 @@ class EvolutionApiV2Service {
       }
 
       const instanceName = instanceData.instance_name;
-      console.log(`Calling Evolution API restart for instance: ${instanceName}`);
+      console.log(`Calling Evolution API V2 restart for instance: ${instanceName}`);
 
-      // Chamar o endpoint /instance/restart/{instance} PUT da Evolution API
+      // Chamar o endpoint /instance/restart/{instance} PUT da Evolution API V2
       await axios.post(
         `${this.baseUrl}/instance/restart/${instanceName}`,
         {},
@@ -571,7 +571,7 @@ class EvolutionApiV2Service {
         throw new Error('Instance not found or does not belong to client');
       }
 
-      console.log(`Updating Evolution API instance: ${instanceData.instance_name}`);
+      console.log(`Updating Evolution API V2 instance: ${instanceData.instance_name}`);
 
       if (updateData.Setting) {
         await this.configureSettings(instanceData.instance_name, updateData.Setting);
@@ -644,7 +644,7 @@ class EvolutionApiV2Service {
       const allInstances: EvolutionApiFetchInstancesResponseV2[] = response.data;
 
       if (!Array.isArray(allInstances)) {
-        throw new Error('Invalid response format from Evolution API');
+        throw new Error('Invalid response format from Evolution API V2');
       }
 
       // Buscar dados locais das instâncias com dados dos agentes (apenas agentes não deletados)
@@ -721,8 +721,8 @@ class EvolutionApiV2Service {
 
       return filteredInstances;
     } catch (error: any) {
-      console.error('Error fetching instances from Evolution API:', error);
-      throw new Error(`Failed to fetch instances from Evolution API: ${error.response?.data?.message || error.message}`);
+      console.error('Error fetching instances from Evolution API V2:', error);
+      throw new Error(`Failed to fetch instances from Evolution API V2: ${error.response?.data?.message || error.message}`);
     }
   }
 
@@ -800,7 +800,7 @@ class EvolutionApiV2Service {
       console.log(`Getting base64 from media message for instance: ${instanceName}, keyId: ${keyId}`);
 
       if (!this.baseUrl) {
-        throw new Error('Evolution API base URL not configured');
+        throw new Error('Evolution API V2 base URL not configured');
       }
 
       const url = `${this.baseUrl}/chat/getBase64FromMediaMessage/${instanceName}`;
@@ -826,10 +826,10 @@ class EvolutionApiV2Service {
         timeout: this.timeout
       });
 
-      console.log('Evolution API response status:', response.status);
+      console.log('Evolution API V2 response status:', response.status);
 
       if (response.status !== 200 && response.status !== 201) {
-        throw new Error(`Evolution API returned status ${response.status}`);
+        throw new Error(`Evolution API V2 returned status ${response.status}`);
       }
 
       return response.data;
@@ -837,7 +837,7 @@ class EvolutionApiV2Service {
       console.error('Error in getBase64FromMediaMessage:', error.message);
 
       if (error.response) {
-        console.error('Evolution API error details:');
+        console.error('Evolution API V2 error details:');
         console.error('Status:', error.response.status);
         console.error('Status Text:', error.response.statusText);
         console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
@@ -848,45 +848,15 @@ class EvolutionApiV2Service {
           throw new Error('Message not found - The message ID may be invalid or the message may have expired');
         }
 
-        throw new Error(`Evolution API error: ${error.response.data?.message || error.response.data?.response?.message || error.response.statusText}`);
+        throw new Error(`Evolution API V2 error: ${error.response.data?.message || error.response.data?.response?.message || error.response.statusText}`);
       }
 
       if (error.code === 'ECONNREFUSED') {
-        throw new Error('Unable to connect to Evolution API server');
+        throw new Error('Unable to connect to Evolution API V2 server');
       }
 
       throw new Error(`Failed to get base64 from media message: ${error.message}`);
     }
-  }
-
-  private removeMarkdown(text: string): string {
-    return text
-      // Remove headers
-      .replace(/^#{1,6}\s+/gm, '')
-      // Remove bold and italic
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/__([^_]+)__/g, '$1')
-      .replace(/_([^_]+)_/g, '$1')
-      // Remove strikethrough
-      .replace(/~~([^~]+)~~/g, '$1')
-      // Remove code blocks
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/`([^`]+)`/g, '$1')
-      // Remove links
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      // Remove images
-      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
-      // Remove horizontal rules
-      .replace(/^---+$/gm, '')
-      // Remove blockquotes
-      .replace(/^>\s+/gm, '')
-      // Remove list markers
-      .replace(/^[\s]*[-*+]\s+/gm, '')
-      .replace(/^[\s]*\d+\.\s+/gm, '')
-      // Clean up extra whitespace
-      .replace(/\n\s*\n/g, '\n')
-      .trim();
   }
 
   async sendText(instanceName: string, number: string, text: string, apikey: string): Promise<any> {
@@ -926,7 +896,7 @@ class EvolutionApiV2Service {
       console.log(`⚙️ Request config:`, {
         headers: {
           'Content-Type': requestConfig.headers['Content-Type'],
-          'apikey': '[HIDDEN]'
+          'apikey': apikey
         },
         timeout: requestConfig.timeout
       });
@@ -947,7 +917,7 @@ class EvolutionApiV2Service {
         console.error('Response statusText:', error.response.statusText);
         console.error('Response headers:', error.response.headers);
         console.error('Response data:', JSON.stringify(error.response.data, null, 2));
-        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        throw new Error(`Evolution API V2 error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       }
 
       if (error.code) {
@@ -1098,7 +1068,7 @@ class EvolutionApiV2Service {
         console.error('Response status:', error.response.status);
         console.error('Response statusText:', error.response.statusText);
         console.error('Response data:', JSON.stringify(error.response.data, null, 2));
-        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        throw new Error(`Evolution API V2 error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       }
 
       throw new Error(`Failed to find contacts: ${error.message}`);
@@ -1165,7 +1135,7 @@ class EvolutionApiV2Service {
         console.error('Response statusText:', error.response.statusText);
         console.error('Response headers:', error.response.headers);
         console.error('Response data:', JSON.stringify(error.response.data, null, 2));
-        throw new Error(`Evolution API error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        throw new Error(`Evolution API V2 error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
       }
 
       if (error.code) {

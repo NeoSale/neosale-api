@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import evolutionApiService from './evolution-api.service';
+import evolutionApiServiceV2 from './evolution-api-v2.service';
 
 // Interfaces para a nova tabela chat
 interface Chat {
@@ -323,7 +323,7 @@ export class ChatService {
       console.log('🔗 Instância Evolution API encontrada:', instance_name);
 
       // Usar a apiKey global do serviço Evolution API
-      const apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY || '';
+      const apiKey = process.env.NEXT_PUBLIC_EVOLUTION_API_KEY_V2 || '';
       if (!apiKey) {
         console.log('⚠️ API Key da Evolution API não configurada');
         throw new Error('API Key da Evolution API não configurada');
@@ -346,16 +346,16 @@ export class ChatService {
       // 4. Chamar o endpoint sendText
       try {
         console.log('📤 Enviando mensagem via Evolution API...');
-        await evolutionApiService.sendText(
+        await evolutionApiServiceV2.sendText(
           instance_name,
           telefone,
           messageText,
           apiKey
         );
-        console.log('✅ Mensagem enviada com sucesso via Evolution API');
+        console.log('✅ Mensagem enviada com sucesso via Evolution API V2');
         data.status = 'sucesso';
       } catch (sendError: any) {
-        console.error('❌ Erro ao enviar mensagem via Evolution API:', sendError.message);
+        console.error('❌ Erro ao enviar mensagem via Evolution API V2:', sendError.message);
         data.status = 'erro';
         data.erro = sendError.message;
       }
@@ -366,7 +366,6 @@ export class ChatService {
         .insert({
           lead_id: data.lead_id,
           cliente_id: data.cliente_id,
-          instance_id: evolutionData.id, // Usar o ID da instância da Evolution API
           tipo: data.tipo,
           mensagem: data.mensagem,
           source: data.source,

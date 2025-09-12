@@ -62,3 +62,27 @@ BEGIN
     END IF;
 END
 $$;
+
+create or replace function public.match_lead(
+  filter jsonb,
+  match_count integer,
+  query_embedding vector
+)
+returns table (
+  metadata jsonb,
+  similarity float
+)
+language plpgsql
+as $$
+begin
+  return query
+  select
+    to_jsonb(l.*) - 'embedding' as metadata,
+    1 - (l.embedding <=> query_embedding) as similarity
+  from public.leads l
+  where l.embedding is not null
+    and (to_jsonb(l.*) - 'embedding') @> filter
+  order by l.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
