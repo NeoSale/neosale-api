@@ -709,6 +709,10 @@ class EvolutionApiV2Service {
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
               Setting: settings,
+              // Campos obrigatórios da Evolution API
+              serverUrl: this.baseUrl,
+              apiKey: item.token,
+              clientName: item.name, // Usando o nome da instância como clientName
               // Campos adicionais específicos do sistema
               followup: localInstance?.followup ?? false,
               id_agente: localInstance?.id_agente ?? null,
@@ -1152,4 +1156,4 @@ class EvolutionApiV2Service {
   }
 }
 
-export default new EvolutionApiV2Service(); 
+export default new EvolutionApiV2Service();

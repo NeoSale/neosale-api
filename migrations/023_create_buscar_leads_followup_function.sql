@@ -29,7 +29,7 @@ AS $$
 BEGIN
     RETURN QUERY
     WITH leads_com_ultimo_followup AS (
-        -- Buscar o último followup de cada lead com informações da próxima mensagem
+        -- Buscar o último followup de cada lead com informações da próxima mensagem ativa
         SELECT DISTINCT ON (f.id_lead)
             f.id_lead,
             f.id_mensagem,
@@ -41,8 +41,21 @@ BEGIN
             m_proxima.ordem as proxima_ordem
         FROM followup f
         INNER JOIN mensagens m ON f.id_mensagem = m.id
-        LEFT JOIN mensagens m_proxima ON m_proxima.ordem = m.ordem + 1 
-            AND m_proxima.ativo = true
+        LEFT JOIN (
+            SELECT DISTINCT ON (m1.cliente_id, m2.ordem) 
+                m1.ordem as ordem_atual,
+                m2.id,
+                m2.ordem,
+                m2.intervalo_numero,
+                m2.intervalo_tipo,
+                m2.cliente_id
+            FROM mensagens m1
+            INNER JOIN mensagens m2 ON m2.cliente_id = m1.cliente_id 
+                AND m2.ordem > m1.ordem 
+                AND m2.ativo = true
+            WHERE m1.ativo = true
+            ORDER BY m1.cliente_id, m2.ordem ASC, m1.ordem
+        ) m_proxima ON m_proxima.ordem_atual = m.ordem 
             AND m_proxima.cliente_id = p_cliente_id
         WHERE f.status = 'sucesso'
             AND f.cliente_id = p_cliente_id
@@ -83,7 +96,7 @@ BEGIN
             )
     ),
     leads_sem_followup AS (
-        -- Leads que nunca receberam mensagem (primeira mensagem)
+        -- Leads que nunca receberam mensagem (primeira mensagem ativa disponível)
         SELECT 
             l.id as lead_id,
             l.nome as lead_nome,
@@ -99,12 +112,15 @@ BEGIN
             2 as prioridade,
             l.created_at as ultimo_envio
         FROM leads l
-        CROSS JOIN mensagens m
+        INNER JOIN (
+            SELECT DISTINCT ON (cliente_id) 
+                id, nome, texto_mensagem, ordem, created_at, cliente_id
+            FROM mensagens 
+            WHERE ativo = true 
+            ORDER BY cliente_id, ordem ASC
+        ) m ON m.cliente_id = p_cliente_id
         WHERE l.cliente_id = p_cliente_id
             AND l.deletado = false
-            AND m.ativo = true
-            AND m.ordem = 1
-            AND m.cliente_id = p_cliente_id
             AND NOT EXISTS (
                 SELECT 1 FROM followup f 
                 WHERE f.id_lead = l.id
