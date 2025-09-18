@@ -42,7 +42,8 @@ BEGIN
         FROM followup f
         INNER JOIN mensagens m ON f.id_mensagem = m.id
         LEFT JOIN (
-            SELECT DISTINCT ON (m1.cliente_id, m2.ordem) 
+            SELECT DISTINCT ON (m1.id) 
+                m1.id as mensagem_atual_id,
                 m1.ordem as ordem_atual,
                 m2.id,
                 m2.ordem,
@@ -50,13 +51,13 @@ BEGIN
                 m2.intervalo_tipo,
                 m2.cliente_id
             FROM mensagens m1
-            INNER JOIN mensagens m2 ON m2.cliente_id = m1.cliente_id 
+            LEFT JOIN mensagens m2 ON m2.cliente_id = m1.cliente_id 
                 AND m2.ordem > m1.ordem 
                 AND m2.ativo = true
             WHERE m1.ativo = true
-            ORDER BY m1.cliente_id, m2.ordem ASC, m1.ordem
-        ) m_proxima ON m_proxima.ordem_atual = m.ordem 
-            AND m_proxima.cliente_id = p_cliente_id
+                AND m1.cliente_id = p_cliente_id
+            ORDER BY m1.id, m2.ordem ASC
+        ) m_proxima ON m_proxima.mensagem_atual_id = m.id
         WHERE f.status = 'sucesso'
             AND f.cliente_id = p_cliente_id
         ORDER BY f.id_lead, f.created_at DESC

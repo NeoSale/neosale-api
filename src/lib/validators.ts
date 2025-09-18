@@ -9,6 +9,7 @@ export const importLeadsSchema = z.object({
       email: z.string(),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
+      resumo: z.string().optional(),
       origem_id: z.string().uuid('origem_id deve ser um UUID válido')
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
@@ -22,7 +23,8 @@ export const bulkLeadsSchema = z.object({
       telefone: z.string().min(1, 'Telefone é obrigatório'),
       email: z.string().optional(),
       empresa: z.string().optional(),
-      cargo: z.string().optional()
+      cargo: z.string().optional(),
+      resumo: z.string().optional()
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
 })
@@ -82,6 +84,7 @@ export const updateLeadSchema = z.object({
   responsavel: z.string().optional(),
   cnpj: z.string().optional(),
   observacao: z.string().optional(),
+  resumo: z.string().optional(),
   segmento: z.string().optional(),
   erp_atual: z.string().optional(),
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
@@ -132,6 +135,7 @@ export const createLeadSchema = z.object({
   responsavel: z.string().optional(),
   cnpj: z.string().optional(),
   observacao: z.string().optional(),
+  resumo: z.string().optional(),
   segmento: z.string().optional(),
   erp_atual: z.string().optional(),
   origem: z.string().optional(),

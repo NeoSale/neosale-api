@@ -110,6 +110,7 @@ export class LeadService {
           responsavel: data.responsavel || null,
           cnpj: data.cnpj || null,
           observacao: data.observacao || null,
+          resumo: data.resumo || null,
           profile_picture_url: data.profile_picture_url || null,
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
@@ -213,6 +214,7 @@ export class LeadService {
             email: leadData.email,
             empresa: leadData.empresa,
             cargo: leadData.cargo,
+            resumo: leadData.resumo || null,
             origem_id: leadData.origem_id,
             cliente_id: clienteId
           })
@@ -291,6 +293,7 @@ export class LeadService {
             email: leadData.email,
             empresa: leadData.empresa,
             cargo: leadData.cargo,
+            resumo: leadData.resumo || null,
             origem_id: origemOutbound,
             cliente_id: clienteId
           })

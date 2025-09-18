@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS leads (
   responsavel text,
   cnpj text,
   observacao text,
+  resumo text, -- resumo do lead gerado pela IA ou inserido manualmente
   segmento text,
   erp_atual text,
   origem_id uuid REFERENCES origens_leads(id),
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS leads (
 CREATE INDEX IF NOT EXISTS idx_leads_nome ON leads(nome);
 CREATE INDEX IF NOT EXISTS idx_leads_telefone ON leads(telefone);
 CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
+CREATE INDEX IF NOT EXISTS idx_leads_resumo ON leads(resumo);
 CREATE INDEX IF NOT EXISTS idx_leads_origem ON leads(origem_id);
 CREATE INDEX IF NOT EXISTS idx_leads_etapa_funil ON leads(etapa_funil_id);
 CREATE INDEX IF NOT EXISTS idx_leads_status_negociacao ON leads(status_negociacao_id);
