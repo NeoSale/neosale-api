@@ -37,6 +37,7 @@ import n8nChatHistoriesRoutes from './routes/n8nChatHistoriesRoutes'
 import chatRoutes from './routes/chatRoutes'
 import documentoRoutes from './routes/documentoRoutes'
 import baseRoutes from './routes/baseRoutes'
+import origemLeadsRoutes from './routes/origemLeadsRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -115,6 +116,7 @@ app.get('/', (req, res) => {
       usuarios: `${BASE_URL}/api/usuarios`,
       evolutionApi: `${BASE_URL}/api/evolution-api`,
       chat: `${BASE_URL}/api/chat`,
+      origemLeads: `${BASE_URL}/api/origem-leads`,
 
     },
     description: 'API para gerenciamento de leads do sistema NeoSale'
@@ -145,6 +147,7 @@ app.use('/api/n8n-chat-histories', n8nChatHistoriesRoutes)
 app.use('/api/chat', chatRoutes)
 app.use('/api/documentos', documentoRoutes)
 app.use('/api/base', baseRoutes)
+app.use('/api/origem-leads', origemLeadsRoutes)
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec));

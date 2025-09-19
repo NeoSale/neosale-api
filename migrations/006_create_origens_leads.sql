@@ -5,11 +5,13 @@
 CREATE TABLE IF NOT EXISTS origens_leads (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nome text UNIQUE,
+  cliente_id uuid REFERENCES clientes(id) ON DELETE CASCADE,
   embedding vector(1536) -- campo para embedding da LLM
 );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_origens_leads_nome ON origens_leads(nome);
+CREATE INDEX IF NOT EXISTS idx_origens_leads_cliente_id ON origens_leads(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_origens_leads_embedding ON origens_leads USING ivfflat (embedding vector_cosine_ops);
 
 -- Insert initial data

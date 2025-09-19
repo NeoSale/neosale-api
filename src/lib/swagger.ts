@@ -22,6 +22,88 @@ const options: swaggerJSDoc.Options = {
         description: 'Servidor NeoSale'
       }
     ],
+    tags: [
+      {
+        name: 'Admin',
+        description: 'Operações administrativas'
+      },
+      {
+        name: 'Agentes',
+        description: 'Operações relacionadas aos agentes'
+      },
+      {
+        name: 'Base',
+        description: 'Operações relacionadas à base'
+      },
+      {
+        name: 'Chat',
+        description: 'Operações relacionadas ao chat'
+      },
+      {
+        name: 'Clientes',
+        description: 'Operações relacionadas aos clientes'
+      },
+      {
+        name: 'Configurações',
+        description: 'Operações relacionadas às configurações'
+      },
+      {
+        name: 'Controle de Envios',
+        description: 'Operações relacionadas ao controle de envios'
+      },
+      {
+        name: 'Documentos',
+        description: 'Operações relacionadas aos documentos'
+      },
+      {
+        name: 'Evolution API',
+        description: 'Operações relacionadas à Evolution API'
+      },
+      {
+        name: 'Follow-up',
+        description: 'Operações relacionadas ao follow-up'
+      },
+      {
+        name: 'Leads',
+        description: 'Operações relacionadas aos leads'
+      },
+      {
+        name: 'Mensagens',
+        description: 'Operações relacionadas às mensagens'
+      },
+      {
+        name: 'Origem Leads',
+        description: 'Operações relacionadas às origens de leads'
+      },
+      {
+        name: 'Parâmetros',
+        description: 'Operações relacionadas aos parâmetros'
+      },
+      {
+        name: 'Provedores',
+        description: 'Operações relacionadas aos provedores'
+      },
+      {
+        name: 'Referências',
+        description: 'Operações relacionadas às referências'
+      },
+      {
+        name: 'Revendedores',
+        description: 'Operações relacionadas aos revendedores'
+      },
+      {
+        name: 'Tipos de Acesso',
+        description: 'Operações relacionadas aos tipos de acesso'
+      },
+      {
+        name: 'Tipos de Agente',
+        description: 'Operações relacionadas aos tipos de agente'
+      },
+      {
+        name: 'Usuários',
+        description: 'Operações relacionadas aos usuários'
+      }
+    ],
     components: {
       parameters: {
         ClienteId: {

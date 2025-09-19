@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
 import { generateLeadEmbedding } from '../lib/embedding'
-import { ReferenciaService } from './referenciaService'
+import { OrigemLeadsService } from './origemLeadsService'
 export class LeadService {
   // Função para formatar telefone com DDI 55 quando necessário
   private static formatarTelefone(telefone: string): string {
@@ -78,19 +78,26 @@ export class LeadService {
         throw new Error(`Já existe um lead ativo com o telefone ${telefoneFormatado}: ${activePhone.nome}`)
       }
 
-      // Determinar origem_id baseado no campo 'origem' ou usar 'outbound' como padrão
+      // Determinar origem_id baseado no campo 'origem' ou cria uma nova
       let origemId = data.origem_id
       if (!origemId) {
-        // Se o campo 'origem' foi fornecido, buscar por nome, senão usar 'outbound'
-        const nomeOrigem = (data as any).origem || 'outbound'
+        // Se o campo 'origem' foi fornecido, buscar por nome, senão cria uma nova
+        const nomeOrigem = (data as any).origem;
 
-        const origem = await ReferenciaService.buscarOrigemPorNome(nomeOrigem)
+        const origem = await OrigemLeadsService.buscarOrigemPorNome(nomeOrigem)
 
         if (!origem) {
-          throw new Error(`Origem "${nomeOrigem}" não encontrada. É necessário ter a origem "${nomeOrigem}" cadastrada.`)
+          // crie uma origem caso não exista
+          const novaOrigem = await OrigemLeadsService.criarOrigem({
+            nome: nomeOrigem,
+            cliente_id: clienteId!
+          })
+          if (novaOrigem) {
+            origemId = novaOrigem.id
+          }
+        } else if (origem) {
+          origemId = origem.id
         }
-
-        origemId = origem.id
       }
 
       // Gerar embedding para o lead

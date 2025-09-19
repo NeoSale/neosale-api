@@ -54,8 +54,7 @@ BEGIN
             LEFT JOIN mensagens m2 ON m2.cliente_id = m1.cliente_id 
                 AND m2.ordem > m1.ordem 
                 AND m2.ativo = true
-            WHERE m1.ativo = true
-                AND m1.cliente_id = p_cliente_id
+            WHERE m1.cliente_id = p_cliente_id
             ORDER BY m1.id, m2.ordem ASC
         ) m_proxima ON m_proxima.mensagem_atual_id = m.id
         WHERE f.status = 'sucesso'
