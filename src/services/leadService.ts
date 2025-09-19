@@ -84,6 +84,11 @@ export class LeadService {
         // Se o campo 'origem' foi fornecido, buscar por nome, senão cria uma nova
         const nomeOrigem = (data as any).origem;
 
+        // Se o campo 'origem' não foi fornecido retorna um erro
+        if (!nomeOrigem) {
+          throw new Error('Campo "origem" é obrigatório quando "origem_id" não é fornecido')
+        }
+
         const origem = await OrigemLeadsService.buscarOrigemPorNome(nomeOrigem)
 
         if (!origem) {
