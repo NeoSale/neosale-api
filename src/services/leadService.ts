@@ -89,7 +89,7 @@ export class LeadService {
           throw new Error('Campo "origem" é obrigatório quando "origem_id" não é fornecido')
         }
 
-        const origem = await OrigemLeadsService.buscarOrigemPorNome(nomeOrigem)
+        const origem = await OrigemLeadsService.buscarOrigemPorNome(nomeOrigem, clienteId)
 
         if (!origem) {
           // crie uma origem caso não exista
@@ -255,18 +255,36 @@ export class LeadService {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads')
 
-    // Buscar a origem 'outbound'
+    // Buscar a origem 'import'
     const { data: origens, error: origemError } = await supabase!
       .from('origens_leads')
       .select('id')
-      .eq('nome', 'outbound')
+      .eq('nome', 'import')
       .single()
 
+    let origemId = origens?.id
     if (origemError || !origens) {
-      throw new Error('Origem "outbound" não encontrada. É necessário ter a origem "outbound" cadastrada.')
+      /// cria a origem 'import' se não existir
+      const { data: origemImport, error: origemImportError } = await supabase!
+        .from('origens_leads')
+        .insert({
+          nome: 'import',
+          cliente_id: clienteId
+        })
+        .select()
+        .single()
+
+      if (origemImport) {
+        console.log('✅ Origem "import" criada com sucesso:', origemImport.id)
+        origemId = origemImport.id
+      }
+
+      if (origemImportError) {
+        console.error('❌ Erro ao criar origem "import":', origemImportError)
+        throw origemImportError
+      }
     }
 
-    const origemOutbound = origens.id
     const results = []
     const skipped = []
 
@@ -306,7 +324,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             resumo: leadData.resumo || null,
-            origem_id: origemOutbound,
+            origem_id: origemId,  
             cliente_id: clienteId
           })
           .select()
