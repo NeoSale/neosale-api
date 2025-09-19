@@ -260,6 +260,7 @@ export class LeadService {
       .from('origens_leads')
       .select('id')
       .eq('nome', 'import')
+      .eq('cliente_id', clienteId)
       .single()
 
     let origemId = origens?.id
