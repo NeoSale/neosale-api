@@ -32,16 +32,7 @@ export class ReferenciaController {
   // Listar qualificações
   static async listarQualificacoes(req: Request, res: Response) {
     try {
-      const cliente_id = req.headers.cliente_id as string
-      
-      if (!cliente_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'cliente_id é obrigatório no header'
-        })
-      }
-      
-      const qualificacoes = await ReferenciaService.listarQualificacoes(cliente_id)
+      const qualificacoes = await ReferenciaService.listarQualificacoes()
       
       return res.status(200).json({
         success: true,

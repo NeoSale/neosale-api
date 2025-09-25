@@ -5,14 +5,16 @@ import { QualificacaoService } from '../services/qualificacaoService'
 // Schema para validação de criação de qualificação
 const createQualificacaoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  cliente_id: z.string().uuid('Cliente ID deve ser um UUID válido').optional(),
+  tipo_agente: z.array(z.string()).min(1, 'Pelo menos um tipo de agente é obrigatório'),
+  descricao: z.string().min(1, 'Descrição é obrigatória'),
   embedding: z.any().optional()
 })
 
 // Schema para validação de atualização de qualificação
 const updateQualificacaoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  cliente_id: z.string().uuid('Cliente ID deve ser um UUID válido').optional()
+  tipo_agente: z.array(z.string()).min(1, 'Pelo menos um tipo de agente é obrigatório').optional(),
+  descricao: z.string().min(1, 'Descrição é obrigatória').optional()
 })
 
 // Schema para validação de parâmetros UUID
@@ -39,14 +41,14 @@ export class QualificacaoController {
     if (error.code === '23505') { // Violação de constraint unique
       return res.status(409).json({
         success: false,
-        message: 'Já existe uma qualificação com este nome para este cliente'
+        message: 'Já existe uma qualificação com este nome'
       })
     }
     
     if (error.code === '23503') { // Violação de foreign key
       return res.status(400).json({
         success: false,
-        message: 'Cliente ID inválido'
+        message: 'Dados inválidos'
       })
     }
     
@@ -60,16 +62,7 @@ export class QualificacaoController {
   // Listar qualificações
   static async listarQualificacoes(req: Request, res: Response) {
     try {
-      const clienteId = req.headers.cliente_id as string
-      
-      if (!clienteId) {
-        return res.status(400).json({
-          success: false,
-          message: 'cliente_id é obrigatório no header'
-        })
-      }
-      
-      const qualificacoes = await QualificacaoService.listarQualificacoes(clienteId)
+      const qualificacoes = await QualificacaoService.listarQualificacoes()
       
       return res.status(200).json({
         success: true,
@@ -86,12 +79,11 @@ export class QualificacaoController {
   static async buscarQualificacaoPorId(req: Request, res: Response) {
     try {
       const id = QualificacaoController.extractIdFromUrl(req.url)
-      const clienteId = req.headers.cliente_id as string
       
       // Validar UUID
       const validatedId = uuidSchema.parse(id)
       
-      const qualificacao = await QualificacaoService.buscarQualificacaoPorId(validatedId, clienteId)
+      const qualificacao = await QualificacaoService.buscarQualificacaoPorId(validatedId)
       
       if (!qualificacao) {
         return res.status(404).json({
@@ -121,19 +113,13 @@ export class QualificacaoController {
   // Criar nova qualificação
   static async criarQualificacao(req: Request, res: Response) {
     try {
-      const clienteId = req.headers.cliente_id as string
-      
       // Validar dados de entrada
       const validatedData = createQualificacaoSchema.parse(req.body)
       
-      // Se não foi fornecido cliente_id no body, usar o do header
-      if (!validatedData.cliente_id && clienteId) {
-        validatedData.cliente_id = clienteId
-      }
-      
       const qualificacao = await QualificacaoService.criarQualificacao({
         nome: validatedData.nome,
-        cliente_id: validatedData.cliente_id || '',
+        tipo_agente: validatedData.tipo_agente,
+        descricao: validatedData.descricao,
         embedding: validatedData.embedding
       })
       
@@ -160,7 +146,6 @@ export class QualificacaoController {
   static async atualizarQualificacao(req: Request, res: Response) {
     try {
       const id = QualificacaoController.extractIdFromUrl(req.url)
-      const clienteId = req.headers.cliente_id as string
       
       // Validar UUID
       const validatedId = uuidSchema.parse(id)
@@ -171,9 +156,10 @@ export class QualificacaoController {
       // Construir objeto apenas com propriedades definidas
       const updateData: any = {}
       if (validatedData.nome !== undefined) updateData.nome = validatedData.nome
-      if (validatedData.cliente_id !== undefined) updateData.cliente_id = validatedData.cliente_id
+      if (validatedData.tipo_agente !== undefined) updateData.tipo_agente = validatedData.tipo_agente
+      if (validatedData.descricao !== undefined) updateData.descricao = validatedData.descricao
       
-      const qualificacao = await QualificacaoService.atualizarQualificacao(validatedId, updateData, clienteId)
+      const qualificacao = await QualificacaoService.atualizarQualificacao(validatedId, updateData)
       
       return res.status(200).json({
         success: true,
@@ -198,12 +184,11 @@ export class QualificacaoController {
   static async deletarQualificacao(req: Request, res: Response) {
     try {
       const id = QualificacaoController.extractIdFromUrl(req.url)
-      const clienteId = req.headers.cliente_id as string
       
       // Validar UUID
       const validatedId = uuidSchema.parse(id)
       
-      await QualificacaoService.deletarQualificacao(validatedId, clienteId)
+      await QualificacaoService.deletarQualificacao(validatedId)
       
       return res.status(200).json({
         success: true,

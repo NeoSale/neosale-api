@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase'
 export interface Qualificacao {
   id: string
   nome: string
-  cliente_id: string
+  tipo_agente: string[] // array de tipos de agente
+  descricao: string
   embedding?: any
   created_at?: string
   updated_at?: string
@@ -11,13 +12,15 @@ export interface Qualificacao {
 
 export interface CreateQualificacaoData {
   nome: string
-  cliente_id: string
+  tipo_agente: string[]
+  descricao: string
   embedding?: any
 }
 
 export interface UpdateQualificacaoData {
   nome?: string
-  cliente_id?: string
+  tipo_agente?: string[]
+  descricao?: string
 }
 
 export class QualificacaoService {
@@ -28,22 +31,16 @@ export class QualificacaoService {
     }
   }
 
-  // Listar qualificações por cliente
-  static async listarQualificacoes(clienteId?: string): Promise<Qualificacao[]> {
+  // Listar todas as qualificações
+  static async listarQualificacoes(): Promise<Qualificacao[]> {
     QualificacaoService.checkSupabaseConnection()
-    console.log('🔍 Listando qualificações para cliente:', clienteId)
+    console.log('🔍 Listando qualificações')
 
     try {
-      let query = supabase!
+      const { data, error } = await supabase!
         .from('qualificacao')
         .select('*')
         .order('nome', { ascending: true })
-
-      if (clienteId) {
-        query = query.eq('cliente_id', clienteId)
-      }
-
-      const { data, error } = await query
 
       if (error) {
         console.error('❌ Erro ao listar qualificações:', error)
@@ -59,21 +56,16 @@ export class QualificacaoService {
   }
 
   // Buscar qualificação por ID
-  static async buscarQualificacaoPorId(id: string, clienteId?: string): Promise<Qualificacao | null> {
+  static async buscarQualificacaoPorId(id: string): Promise<Qualificacao | null> {
     QualificacaoService.checkSupabaseConnection()
     console.log('🔍 Buscando qualificação por ID:', id)
 
     try {
-      let query = supabase!
+      const { data, error } = await supabase!
         .from('qualificacao')
         .select('*')
         .eq('id', id)
-
-      if (clienteId) {
-        query = query.eq('cliente_id', clienteId)
-      }
-
-      const { data, error } = await query.single()
+        .single()
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -102,7 +94,8 @@ export class QualificacaoService {
         .from('qualificacao')
         .insert([{
           nome: data.nome,
-          cliente_id: data.cliente_id,
+          tipo_agente: data.tipo_agente,
+          descricao: data.descricao,
           embedding: data.embedding
         }])
         .select()
@@ -122,7 +115,7 @@ export class QualificacaoService {
   }
 
   // Atualizar qualificação
-  static async atualizarQualificacao(id: string, data: UpdateQualificacaoData, clienteId?: string): Promise<Qualificacao> {
+  static async atualizarQualificacao(id: string, data: UpdateQualificacaoData): Promise<Qualificacao> {
     QualificacaoService.checkSupabaseConnection()
     console.log('🔄 Atualizando qualificação:', id)
 
@@ -133,16 +126,12 @@ export class QualificacaoService {
         updated_at: new Date().toISOString()
       }
 
-      let query = supabase!
+      const { data: qualificacao, error } = await supabase!
         .from('qualificacao')
         .update(updateData)
         .eq('id', id)
-
-      if (clienteId) {
-        query = query.eq('cliente_id', clienteId)
-      }
-
-      const { data: qualificacao, error } = await query.select().single()
+        .select()
+        .single()
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -161,7 +150,7 @@ export class QualificacaoService {
   }
 
   // Deletar qualificação
-  static async deletarQualificacao(id: string, clienteId?: string): Promise<void> {
+  static async deletarQualificacao(id: string): Promise<void> {
     QualificacaoService.checkSupabaseConnection()
     console.log('🗑️ Deletando qualificação:', id)
 
@@ -183,16 +172,10 @@ export class QualificacaoService {
         throw new Error('Não é possível deletar qualificação que está sendo usada por leads')
       }
 
-      let query = supabase!
+      const { error } = await supabase!
         .from('qualificacao')
         .delete()
         .eq('id', id)
-
-      if (clienteId) {
-        query = query.eq('cliente_id', clienteId)
-      }
-
-      const { error } = await query
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -210,7 +193,7 @@ export class QualificacaoService {
   }
 
   // Verificar se qualificação existe
-  static async qualificacaoExiste(nome: string, clienteId: string, excludeId?: string): Promise<boolean> {
+  static async qualificacaoExiste(nome: string, excludeId?: string): Promise<boolean> {
     QualificacaoService.checkSupabaseConnection()
 
     try {
@@ -218,7 +201,6 @@ export class QualificacaoService {
         .from('qualificacao')
         .select('id')
         .eq('nome', nome)
-        .eq('cliente_id', clienteId)
 
       if (excludeId) {
         query = query.neq('id', excludeId)

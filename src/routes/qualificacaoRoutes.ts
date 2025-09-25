@@ -11,7 +11,8 @@ const router = Router()
  *       type: object
  *       required:
  *         - nome
- *         - cliente_id
+ *         - tipo_agente
+ *         - descricao
  *       properties:
  *         id:
  *           type: string
@@ -21,10 +22,14 @@ const router = Router()
  *           type: string
  *           maxLength: 255
  *           description: Nome da qualificação
- *         cliente_id:
+ *         tipo_agente:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Tipos de agente que podem usar esta qualificação
+ *         descricao:
  *           type: string
- *           format: uuid
- *           description: ID do cliente associado
+ *           description: Descrição detalhada da qualificação
  *         embedding:
  *           type: object
  *           description: Dados de embedding para IA
@@ -40,15 +45,21 @@ const router = Router()
  *       type: object
  *       required:
  *         - nome
+ *         - tipo_agente
+ *         - descricao
  *       properties:
  *         nome:
  *           type: string
  *           maxLength: 255
  *           description: Nome da qualificação
- *         cliente_id:
+ *         tipo_agente:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Tipos de agente que podem usar esta qualificação
+ *         descricao:
  *           type: string
- *           format: uuid
- *           description: ID do cliente associado
+ *           description: Descrição detalhada da qualificação
  *         embedding:
  *           type: object
  *           description: Dados de embedding para IA
@@ -59,10 +70,14 @@ const router = Router()
  *           type: string
  *           maxLength: 255
  *           description: Nome da qualificação
- *         cliente_id:
+ *         tipo_agente:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Tipos de agente que podem usar esta qualificação
+ *         descricao:
  *           type: string
- *           format: uuid
- *           description: ID do cliente associado
+ *           description: Descrição detalhada da qualificação
  *     ApiResponse:
  *       type: object
  *       properties:
@@ -88,15 +103,6 @@ const router = Router()
  *   get:
  *     summary: Listar qualificações
  *     tags: [Qualificações]
- *     parameters:
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *           default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
- *         description: ID do cliente para filtrar qualificações
  *     responses:
  *       200:
  *         description: Lista de qualificações retornada com sucesso
@@ -111,8 +117,6 @@ const router = Router()
  *                       type: array
  *                       items:
  *                         $ref: '#/components/schemas/Qualificacao'
- *       400:
- *         description: cliente_id é obrigatório
  *       500:
  *         description: Erro interno do servidor
  */
@@ -132,13 +136,6 @@ router.get('/', QualificacaoController.listarQualificacoes)
  *           type: string
  *           format: uuid
  *         description: ID da qualificação
- *       - in: header
- *         name: cliente_id
- *         schema:
- *           type: string
- *           format: uuid
- *           default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
- *         description: ID do cliente para filtrar qualificações
  *     responses:
  *       200:
  *         description: Qualificação encontrada
@@ -166,14 +163,6 @@ router.get('/:id', QualificacaoController.buscarQualificacaoPorId)
  *   post:
  *     summary: Criar nova qualificação
  *     tags: [Qualificações]
- *     parameters:
- *       - in: header
- *         name: cliente_id
- *         schema:
- *           type: string
- *           format: uuid
- *           default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
- *         description: ID do cliente (usado se não fornecido no body)
  *     requestBody:
  *       required: true
  *       content:
@@ -215,13 +204,6 @@ router.post('/', QualificacaoController.criarQualificacao)
  *           type: string
  *           format: uuid
  *         description: ID da qualificação
- *       - in: header
- *         name: cliente_id
- *         schema:
- *           type: string
- *           format: uuid
- *           default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
- *         description: ID do cliente para filtrar qualificações
  *     requestBody:
  *       required: true
  *       content:
@@ -241,11 +223,11 @@ router.post('/', QualificacaoController.criarQualificacao)
  *                     data:
  *                       $ref: '#/components/schemas/Qualificacao'
  *       400:
- *         description: Dados inválidos ou cliente ID inválido
+ *         description: Dados inválidos
  *       404:
  *         description: Qualificação não encontrada
  *       409:
- *         description: Já existe uma qualificação com este nome para este cliente
+ *         description: Já existe uma qualificação com este nome
  *       500:
  *         description: Erro interno do servidor
  */
@@ -265,13 +247,6 @@ router.put('/:id', QualificacaoController.atualizarQualificacao)
  *           type: string
  *           format: uuid
  *         description: ID da qualificação
- *       - in: header
- *         name: cliente_id
- *         schema:
- *           type: string
- *           format: uuid
- *           default: 'f029ad69-3465-454e-ba85-e0cdb75c445f'
- *         description: ID do cliente para filtrar qualificações
  *     responses:
  *       200:
  *         description: Qualificação deletada com sucesso

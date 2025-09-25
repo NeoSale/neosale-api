@@ -9,20 +9,15 @@ export class ReferenciaService {
   }
 
   // Listar todas as qualificações
-  static async listarQualificacoes(clienteId?: string) {
+  static async listarQualificacoes() {
     ReferenciaService.checkSupabaseConnection();
     console.log('🔄 Listando qualificações')
     
     try {
-      let query = supabase!
+      const { data: qualificacoes, error } = await supabase!
         .from('qualificacao')
         .select('*')
-      
-      if (clienteId) {
-        query = query.eq('cliente_id', clienteId)
-      }
-      
-      const { data: qualificacoes, error } = await query.order('nome')
+        .order('nome')
       
       if (error) {
         console.error('❌ Erro ao listar qualificações:', error)
@@ -166,7 +161,7 @@ export class ReferenciaService {
     
     try {
       const [qualificacoes, origens, etapas, status] = await Promise.all([
-        ReferenciaService.listarQualificacoes(clienteId),
+        ReferenciaService.listarQualificacoes(),
         ReferenciaService.listarOrigens(clienteId),
         ReferenciaService.listarEtapasFunil(clienteId),
         ReferenciaService.listarStatusNegociacao(clienteId)
