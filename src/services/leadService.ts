@@ -621,8 +621,7 @@ export class LeadService {
       .select(`
         *,
         origem:origem_id (nome),
-        etapa_funil:etapa_funil_id (nome),
-        status_negociacao:status_negociacao_id (nome)
+        qualificacao:qualificacao_id (*)
       `)
       .eq('deletado', false)
 
