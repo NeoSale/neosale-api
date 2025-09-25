@@ -15,6 +15,9 @@ const router = Router()
  *           format: uuid
  *         nome:
  *           type: string
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
  *     Origem:
  *       type: object
  *       properties:
@@ -47,6 +50,15 @@ const router = Router()
  *   get:
  *     summary: Lista todas as tabelas de referência
  *     tags: [Referências]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         default: f029ad69-3465-454e-ba85-e0cdb75c445f
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Todas as referências listadas com sucesso
@@ -87,6 +99,15 @@ router.get('/', ReferenciaController.listarTodasReferencias)
  *   get:
  *     summary: Lista todas as qualificações
  *     tags: [Referências]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         default: f029ad69-3465-454e-ba85-e0cdb75c445f
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Qualificações listadas com sucesso
@@ -112,6 +133,15 @@ router.get('/qualificacoes', ReferenciaController.listarQualificacoes)
  *   get:
  *     summary: Lista todas as origens de leads
  *     tags: [Referências]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         default: f029ad69-3465-454e-ba85-e0cdb75c445f
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Origens listadas com sucesso
@@ -137,6 +167,15 @@ router.get('/origens', ReferenciaController.listarOrigens)
  *   get:
  *     summary: Lista todas as etapas do funil
  *     tags: [Referências]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         default: f029ad69-3465-454e-ba85-e0cdb75c445f
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Etapas do funil listadas com sucesso
@@ -162,6 +201,15 @@ router.get('/etapas-funil', ReferenciaController.listarEtapasFunil)
  *   get:
  *     summary: Lista todos os status de negociação
  *     tags: [Referências]
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         default: f029ad69-3465-454e-ba85-e0cdb75c445f
+ *         description: ID do cliente
  *     responses:
  *       200:
  *         description: Status de negociação listados com sucesso

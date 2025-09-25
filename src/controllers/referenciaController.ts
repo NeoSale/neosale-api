@@ -32,7 +32,16 @@ export class ReferenciaController {
   // Listar qualificações
   static async listarQualificacoes(req: Request, res: Response) {
     try {
-      const qualificacoes = await ReferenciaService.listarQualificacoes()
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
+      const qualificacoes = await ReferenciaService.listarQualificacoes(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -47,7 +56,16 @@ export class ReferenciaController {
   // Listar origens
   static async listarOrigens(req: Request, res: Response) {
     try {
-      const origens = await ReferenciaService.listarOrigens()
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
+      const origens = await ReferenciaService.listarOrigens(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -62,7 +80,16 @@ export class ReferenciaController {
   // Listar etapas do funil
   static async listarEtapasFunil(req: Request, res: Response) {
     try {
-      const etapas = await ReferenciaService.listarEtapasFunil()
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
+      const etapas = await ReferenciaService.listarEtapasFunil(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -77,7 +104,16 @@ export class ReferenciaController {
   // Listar status de negociação
   static async listarStatusNegociacao(req: Request, res: Response) {
     try {
-      const status = await ReferenciaService.listarStatusNegociacao()
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
+      const status = await ReferenciaService.listarStatusNegociacao(cliente_id)
       
       return res.status(200).json({
         success: true,
@@ -92,7 +128,16 @@ export class ReferenciaController {
   // Listar todas as referências
   static async listarTodasReferencias(req: Request, res: Response) {
     try {
-      const referencias = await ReferenciaService.listarTodasReferencias()
+      const cliente_id = req.headers.cliente_id as string
+      
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+      
+      const referencias = await ReferenciaService.listarTodasReferencias(cliente_id)
       
       return res.status(200).json({
         success: true,

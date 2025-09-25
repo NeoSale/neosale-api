@@ -13,9 +13,3 @@ CREATE TABLE IF NOT EXISTS origens_leads (
 CREATE INDEX IF NOT EXISTS idx_origens_leads_nome ON origens_leads(nome);
 CREATE INDEX IF NOT EXISTS idx_origens_leads_cliente_id ON origens_leads(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_origens_leads_embedding ON origens_leads USING ivfflat (embedding vector_cosine_ops);
-
--- Insert initial data
-INSERT INTO origens_leads (id, nome) VALUES
-  (gen_random_uuid(), 'inbound'),
-  (gen_random_uuid(), 'outbound')
-ON CONFLICT (nome) DO NOTHING;

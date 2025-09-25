@@ -497,11 +497,13 @@ export const updateStatusNegociacaoSchema = z.object({
 // Schemas para qualificacao
 export const createQualificacaoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   embedding: z.array(z.number()).optional()
 })
 
 export const updateQualificacaoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
