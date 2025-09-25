@@ -84,6 +84,36 @@ export class QualificacaoService {
     }
   }
 
+  // 
+  // Buscar qualificações por nome (busca parcial, case-insensitive)
+  static async buscarQualificacaoPorNome(nome: string): Promise<Qualificacao | null> {
+    QualificacaoService.checkSupabaseConnection()
+    console.log('🔍 Buscando qualificações por nome:', nome)
+
+    try {
+      const { data, error } = await supabase!
+        .from('qualificacao')
+        .select('*')
+        .eq('nome', nome)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('⚠️ Qualificação não encontrada')
+          return null
+        }
+        console.error('❌ Erro ao buscar qualificações por nome:', error)
+        throw error
+      }
+
+      console.log('✅ Qualificações encontradas:', data?.length || 0)
+      return data
+    } catch (error) {
+      console.error('❌ Erro ao buscar qualificações por nome:', error)
+      throw error
+    }
+  }
+
   // Criar nova qualificação
   static async criarQualificacao(data: CreateQualificacaoData): Promise<Qualificacao> {
     QualificacaoService.checkSupabaseConnection()

@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
 import { generateLeadEmbedding } from '../lib/embedding'
 import { OrigemLeadsService } from './origemLeadsService'
+import { QualificacaoService } from './qualificacaoService'
 export class LeadService {
   // Função para formatar telefone com DDI 55 quando necessário
   private static formatarTelefone(telefone: string): string {
@@ -105,6 +106,26 @@ export class LeadService {
         }
       }
 
+      // Determinar qualificacao_id baseado no campo 'qualificacao' ou cria uma nova
+      let qualificacaoId = data.qualificacao_id
+      if (!qualificacaoId) {
+        // Se o campo 'qualificacao' foi fornecido, buscar por nome, senão cria uma nova
+        const nomeQualificacao = (data as any).qualificacao;
+
+        // Se o campo 'qualificacao' não foi fornecido retorna um erro
+        if (!nomeQualificacao) {
+          throw new Error('Campo "qualificacao" é obrigatório quando "qualificacao_id" não é fornecido');
+        }
+
+        const qualificacao = await QualificacaoService.buscarQualificacaoPorNome(nomeQualificacao)
+
+        if (!qualificacao) {
+          throw new Error('Qualificação não existe');
+        } else if (qualificacao) {
+          qualificacaoId = qualificacao.id
+        }
+      }
+
       // Gerar embedding para o lead
       const embedding = data.embedding || await generateLeadEmbedding(data)
 
@@ -127,7 +148,7 @@ export class LeadService {
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
           origem_id: origemId,
-          qualificacao_id: data.qualificacao_id || null,
+          qualificacao_id: qualificacaoId || null,
           cliente_id: clienteId || null,
           embedding: embedding,
           deletado: false
