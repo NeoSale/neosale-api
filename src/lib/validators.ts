@@ -140,6 +140,7 @@ export const createLeadSchema = z.object({
   erp_atual: z.string().optional(),
   origem: z.string().optional(),
   origem_id: z.string().uuid('origem_id deve ser um UUID válido').optional(),
+  qualificacao: z.string().optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
   profile_picture_url: z.string().nullable().optional(),
