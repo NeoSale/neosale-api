@@ -7,30 +7,30 @@ export class LeadService {
   // Função para formatar telefone com DDI 55 quando necessário
   private static formatarTelefone(telefone: string): string {
     if (!telefone) return telefone
-    
+
     // Se o telefone contém '@', retorna como está (formato especial como WhatsApp Business)
     if (telefone.includes('@lid')) {
       return telefone
     }
-    
+
     // Remove todos os caracteres não numéricos
     const numeroLimpo = telefone.replace(/\D/g, '')
-    
+
     // Se já tem DDI (13 ou 14 dígitos), retorna como está
     if (numeroLimpo.length === 13 || numeroLimpo.length === 14) {
       return numeroLimpo
     }
-    
+
     // Se tem 12 dígitos e começa com 55, já tem DDI, retorna como está
     if (numeroLimpo.length === 12 && numeroLimpo.startsWith('55')) {
       return numeroLimpo
     }
-    
+
     // Se tem 10 ou 11 dígitos, adiciona DDI 55 (número brasileiro sem DDI)
     if (numeroLimpo.length === 10 || numeroLimpo.length === 11) {
       return '55' + numeroLimpo
     }
-    
+
     return numeroLimpo
   }
   // Verificar se Supabase está configurado
@@ -48,7 +48,7 @@ export class LeadService {
     try {
       // Formatar telefone com DDI 55 se necessário
       const telefoneFormatado = LeadService.formatarTelefone(data.telefone)
-      
+
       // Verificar se telefone já existe e está ativo
       const { data: existingPhones, error: phoneError } = await supabase!
         .from('leads')
@@ -314,7 +314,7 @@ export class LeadService {
       try {
         // Formatar telefone com DDI 55 se necessário
         const telefoneFormatado = LeadService.formatarTelefone(leadData.telefone)
-        
+
         // Verificar se telefone já existe
         const { data: existingPhone, error: phoneError } = await supabase!
           .from('leads')
@@ -346,7 +346,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             resumo: leadData.resumo || null,
-            origem_id: origemId,  
+            origem_id: origemId,
             cliente_id: clienteId
           })
           .select()
@@ -520,7 +520,7 @@ export class LeadService {
 
     const { data: lead, error } = await supabase!
       .from('leads')
-      .update({ 
+      .update({
         etapa_funil_id: data.etapa_funil_id,
         updated_at: new Date().toISOString()
       })
@@ -545,7 +545,7 @@ export class LeadService {
 
     const { data: lead, error } = await supabase!
       .from('leads')
-      .update({ 
+      .update({
         status_negociacao_id: data.status_negociacao_id,
         updated_at: new Date().toISOString()
       })
@@ -629,7 +629,11 @@ export class LeadService {
     // Primeiro, contar o total de leads
     let countQuery = supabase!
       .from('leads')
-      .select('*', { count: 'exact', head: true })
+      .select(`
+        *,
+        origem:origem_id (nome),
+        qualificacao:qualificacao_id (*)
+      `, { count: 'exact', head: true })
       .eq('deletado', false)
 
     if (clienteId) {
@@ -884,7 +888,7 @@ export class LeadService {
       if (updateData.telefone) {
         updateData.telefone = LeadService.formatarTelefone(updateData.telefone)
       }
-      
+
       // Gerar embedding se houver dados para atualizar
       if (Object.keys(updateData).length > 0 && !updateData.embedding) {
         // Buscar dados atuais do lead para gerar embedding completo
@@ -965,7 +969,7 @@ export class LeadService {
       // Marcar o lead como deletado (soft delete)
       let deleteQuery = supabase!
         .from('leads')
-        .update({ 
+        .update({
           deletado: true,
           updated_at: new Date().toISOString()
         })
@@ -1002,7 +1006,7 @@ export class LeadService {
       // Construir query base
       let query = supabase!
         .from('leads')
-        .update({ 
+        .update({
           ai_habilitada: aiHabilitada,
           updated_at: new Date().toISOString()
         })
@@ -1040,7 +1044,7 @@ export class LeadService {
     try {
       // Primeiro, buscar a qualificação pelo nome
       const qualificacao = await QualificacaoService.buscarQualificacaoPorNome(nomeQualificacao)
-      
+
       if (!qualificacao) {
         throw new Error(`Qualificação '${nomeQualificacao}' não encontrada`)
       }
@@ -1064,7 +1068,7 @@ export class LeadService {
       // Atualizar a qualificação do lead
       const { data, error } = await supabase!
         .from('leads')
-        .update({ 
+        .update({
           qualificacao_id: qualificacao.id,
           updated_at: new Date().toISOString()
         })
