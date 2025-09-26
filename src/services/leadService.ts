@@ -375,7 +375,8 @@ export class LeadService {
     console.log('🔄 Agendando lead:', id)
 
     const updateData: any = {
-      status_agendamento: true
+      status_agendamento: true,
+      updated_at: new Date().toISOString()
     }
 
     if (data.agendado_em) {
@@ -519,7 +520,10 @@ export class LeadService {
 
     const { data: lead, error } = await supabase!
       .from('leads')
-      .update({ etapa_funil_id: data.etapa_funil_id })
+      .update({ 
+        etapa_funil_id: data.etapa_funil_id,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .eq('deletado', false)
       .select()
@@ -541,7 +545,10 @@ export class LeadService {
 
     const { data: lead, error } = await supabase!
       .from('leads')
-      .update({ status_negociacao_id: data.status_negociacao_id })
+      .update({ 
+        status_negociacao_id: data.status_negociacao_id,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .eq('deletado', false)
       .select()
@@ -893,10 +900,13 @@ export class LeadService {
         }
       }
 
-      // Atualizar o lead
+      // Atualizar o lead incluindo updated_at
       let updateQuery = supabase!
         .from('leads')
-        .update(updateData)
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
 
       if (clienteId) {
@@ -955,7 +965,10 @@ export class LeadService {
       // Marcar o lead como deletado (soft delete)
       let deleteQuery = supabase!
         .from('leads')
-        .update({ deletado: true })
+        .update({ 
+          deletado: true,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
 
       if (clienteId) {
@@ -989,7 +1002,10 @@ export class LeadService {
       // Construir query base
       let query = supabase!
         .from('leads')
-        .update({ ai_habilitada: aiHabilitada })
+        .update({ 
+          ai_habilitada: aiHabilitada,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .eq('deletado', false)
 
@@ -1012,6 +1028,64 @@ export class LeadService {
       return data
     } catch (error) {
       console.error('❌ Erro ao atualizar ai_habilitada:', error)
+      throw error
+    }
+  }
+
+  // Atualizar qualificação do lead por nome da qualificação
+  static async atualizarQualificacaoPorNome(id: string, nomeQualificacao: string) {
+    LeadService.checkSupabaseConnection()
+    console.log('🔄 Atualizando qualificação do lead:', id, 'para:', nomeQualificacao)
+
+    try {
+      // Primeiro, buscar a qualificação pelo nome
+      const qualificacao = await QualificacaoService.buscarQualificacaoPorNome(nomeQualificacao)
+      
+      if (!qualificacao) {
+        throw new Error(`Qualificação '${nomeQualificacao}' não encontrada`)
+      }
+
+      // Verificar se o lead existe
+      const { data: leadExistente, error: leadError } = await supabase!
+        .from('leads')
+        .select('id, nome, qualificacao_id')
+        .eq('id', id)
+        .eq('deletado', false)
+        .single()
+
+      if (leadError) {
+        console.error('❌ Erro ao buscar lead:', leadError)
+        if (leadError.code === 'PGRST116') {
+          throw new Error('Lead não encontrado')
+        }
+        throw leadError
+      }
+
+      // Atualizar a qualificação do lead
+      const { data, error } = await supabase!
+        .from('leads')
+        .update({ 
+          qualificacao_id: qualificacao.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select(`
+          id,
+          nome,
+          qualificacao_id,
+          qualificacao:qualificacao_id(id, nome, descricao)
+        `)
+        .single()
+
+      if (error) {
+        console.error('❌ Erro ao atualizar qualificação do lead:', error)
+        throw error
+      }
+
+      console.log('✅ Qualificação do lead atualizada com sucesso:', data)
+      return data
+    } catch (error) {
+      console.error('❌ Erro ao atualizar qualificação do lead:', error)
       throw error
     }
   }

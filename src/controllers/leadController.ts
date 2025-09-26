@@ -594,4 +594,37 @@ export class LeadController {
       return LeadController.handleError(res, error)
     }
   }
+
+  // Atualizar qualificação do lead
+  static async atualizarQualificacao(req: Request, res: Response) {
+    try {
+      const { id } = req.params
+      const { qualificacao } = req.body
+
+      // Validar parâmetros
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID do lead é obrigatório'
+        })
+      }
+
+      if (!qualificacao) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nome da qualificação é obrigatório'
+        })
+      }
+
+      const result = await LeadService.atualizarQualificacaoPorNome(id, qualificacao)
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Qualificação do lead atualizada com sucesso',
+        data: result
+      })
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
 }

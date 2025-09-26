@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS leads (
   profile_picture_url text, -- URL da foto de perfil do lead
   instance_name text, -- nome da instância do Evolution API associada ao lead
   embedding vector(1536), -- campo para embedding da LLM
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')
 );
 
 -- Create indexes for better performance

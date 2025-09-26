@@ -859,6 +859,75 @@ router.put('/:id/ai-habilitada', validateClienteId, LeadController.atualizarAiHa
 
 /**
  * @swagger
+ * /api/leads/{id}/qualificacao:
+ *   put:
+ *     summary: Atualiza a qualificação de um lead pelo nome da qualificação
+ *     tags: [Leads]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do lead
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - qualificacao
+ *             properties:
+ *               qualificacao:
+ *                 type: string
+ *                 description: Nome da qualificação
+ *                 example: "Novo"
+ *     responses:
+ *       200:
+ *         description: Qualificação do lead atualizada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     nome:
+ *                       type: string
+ *                     qualificacao_id:
+ *                       type: string
+ *                       format: uuid
+ *                     qualificacao:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                         nome:
+ *                           type: string
+ *                         descricao:
+ *                           type: string
+ *       400:
+ *         description: Dados inválidos ou qualificação não encontrada
+ *       404:
+ *         description: Lead não encontrado
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.put('/:id/qualificacao', LeadController.atualizarQualificacao)
+
+/**
+ * @swagger
  * /api/leads/{id}:
  *   get:
  *     summary: Buscar lead por ID
