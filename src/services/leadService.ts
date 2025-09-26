@@ -601,7 +601,11 @@ export class LeadService {
 
     const query = supabase!
       .from('leads')
-      .select('*')
+      .select(`
+        *,
+        origem:origem_id (nome),
+        qualificacao:qualificacao_id (*)
+      `)
       .eq('telefone', telefone)
       .eq('cliente_id', clienteId)
       .eq('deletado', false)
