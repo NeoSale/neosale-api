@@ -28,5 +28,6 @@ INSERT INTO qualificacao (nome, tipo_agente, descricao) VALUES
 ('Desinteressado', '["SDR", "Closer"]', 'Fora do perfil ou desistente'),
 ('Atendimento', '["Atendimento"]', 'Está em conversa com equipe de suporte ou pré-venda'),
 ('Problema', '["Atendimento"]', 'Cliente relatou um problema (ticket técnico, SAC, etc.)'),
-('Satisfeito', '["Atendimento"]', 'Cliente validou a solução ou finalizou a compra com sucesso')
+('Satisfeito', '["Atendimento"]', 'Cliente validou a solução ou finalizou a compra com sucesso'),
+('Cliente', '["SDR", "Closer"]', 'Realizou ou confirmou a compra')
 ON CONFLICT (nome) DO NOTHING;

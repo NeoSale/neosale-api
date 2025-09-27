@@ -125,7 +125,7 @@ export const updateFollowupSchema = z.object({
 
 // Validator para criação de um único lead
 export const createLeadSchema = z.object({
-  nome: z.string().min(1, 'Nome é obrigatório'),
+  nome: z.string().optional(),
   telefone: z.string().min(1, 'Telefone é obrigatório'),
   email: z.string().optional(),
   empresa: z.string().optional(),
