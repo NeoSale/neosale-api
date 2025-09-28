@@ -110,11 +110,11 @@ export class LeadService {
       let qualificacaoId = data.qualificacao_id
       if (!qualificacaoId) {
         // Se o campo 'qualificacao' foi fornecido, buscar por nome, senão cria uma nova
-        const nomeQualificacao = (data as any).qualificacao;
+        let nomeQualificacao = (data as any).qualificacao;
 
         // Se o campo 'qualificacao' não foi fornecido retorna um erro
         if (!nomeQualificacao) {
-          throw new Error('Campo "qualificacao" é obrigatório quando "qualificacao_id" não é fornecido');
+          nomeQualificacao = "Novo"
         }
 
         const qualificacao = await QualificacaoService.buscarQualificacaoPorNome(nomeQualificacao)
