@@ -39,6 +39,7 @@ import documentoRoutes from './routes/documentoRoutes'
 import baseRoutes from './routes/baseRoutes'
 import origemLeadsRoutes from './routes/origemLeadsRoutes'
 import qualificacaoRoutes from './routes/qualificacaoRoutes'
+import googleCalendarRoutes from './routes/googleCalendarRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -150,6 +151,7 @@ app.use('/api/documentos', documentoRoutes)
 app.use('/api/base', baseRoutes)
 app.use('/api/origem-leads', origemLeadsRoutes)
 app.use('/api/qualificacoes', qualificacaoRoutes)
+app.use('/api/google-calendar', googleCalendarRoutes)
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec));

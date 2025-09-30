@@ -784,3 +784,131 @@ export const updateAgenteSchema = z.object({
 
 export type CreateAgenteInput = z.infer<typeof createAgenteSchema>
 export type UpdateAgenteInput = z.infer<typeof updateAgenteSchema>
+
+// ===== GOOGLE CALENDAR VALIDATORS =====
+
+// Validator para criação de integração do Google Calendar
+export const createGoogleCalendarIntegracaoSchema = z.object({
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  client_id: z.string().min(1, 'Client ID é obrigatório'),
+  client_secret: z.string().min(1, 'Client Secret é obrigatório'),
+  redirect_uri: z.string().url('Redirect URI deve ser uma URL válida').optional(),
+  scope: z.string().optional().default('https://www.googleapis.com/auth/calendar'),
+  access_token: z.string().optional(),
+  refresh_token: z.string().optional(),
+  token_expiry: z.string().datetime('Token expiry deve ser uma data válida').optional(),
+  ativo: z.boolean().optional().default(true)
+})
+
+// Validator para atualização de integração do Google Calendar
+export const updateGoogleCalendarIntegracaoSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório').optional(),
+  client_id: z.string().min(1, 'Client ID é obrigatório').optional(),
+  client_secret: z.string().min(1, 'Client Secret é obrigatório').optional(),
+  redirect_uri: z.string().url('Redirect URI deve ser uma URL válida').optional(),
+  scope: z.string().optional(),
+  access_token: z.string().optional(),
+  refresh_token: z.string().optional(),
+  token_expiry: z.string().datetime('Token expiry deve ser uma data válida').optional(),
+  ativo: z.boolean().optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+// Validator para criação de agendamento do Google Calendar
+export const createGoogleCalendarAgendamentoSchema = z.object({
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido'),
+  configuracao_id: z.string().uuid('configuracao_id deve ser um UUID válido').optional(),
+  titulo: z.string().min(1, 'Título é obrigatório').max(255, 'Título deve ter no máximo 255 caracteres'),
+  descricao: z.string().optional(),
+  data_inicio: z.string().datetime('Data de início deve ser uma data válida'),
+  data_fim: z.string().datetime('Data de fim deve ser uma data válida'),
+  timezone: z.string().optional().default('America/Sao_Paulo'),
+  localizacao: z.string().optional(),
+  participantes: z.array(z.string().email('Email inválido')).optional(),
+  status: z.enum(['confirmed', 'tentative', 'cancelled']).optional().default('confirmed'),
+  visibilidade: z.enum(['default', 'public', 'private', 'confidential']).optional().default('default'),
+  lembrete_minutos: z.number().int().min(0).max(40320).optional().default(15), // máximo 4 semanas
+  recorrencia: z.string().optional(),
+  criado_por: z.string().email('Email do criador deve ser válido').optional()
+}).refine(data => {
+  const inicio = new Date(data.data_inicio)
+  const fim = new Date(data.data_fim)
+  return fim > inicio
+}, {
+  message: 'Data de fim deve ser posterior à data de início'
+})
+
+// Validator para atualização de agendamento do Google Calendar
+export const updateGoogleCalendarAgendamentoSchema = z.object({
+  titulo: z.string().min(1, 'Título é obrigatório').max(255, 'Título deve ter no máximo 255 caracteres').optional(),
+  descricao: z.string().optional(),
+  data_inicio: z.string().datetime('Data de início deve ser uma data válida').optional(),
+  data_fim: z.string().datetime('Data de fim deve ser uma data válida').optional(),
+  timezone: z.string().optional(),
+  localizacao: z.string().optional(),
+  participantes: z.array(z.string().email('Email inválido')).optional(),
+  status: z.enum(['confirmed', 'tentative', 'cancelled']).optional(),
+  visibilidade: z.enum(['default', 'public', 'private', 'confidential']).optional(),
+  lembrete_minutos: z.number().int().min(0).max(40320).optional(), // máximo 4 semanas
+  recorrencia: z.string().optional(),
+  criado_por: z.string().email('Email do criador deve ser válido').optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+}).refine(data => {
+  if (data.data_inicio && data.data_fim) {
+    const inicio = new Date(data.data_inicio)
+    const fim = new Date(data.data_fim)
+    return fim > inicio
+  }
+  return true
+}, {
+  message: 'Data de fim deve ser posterior à data de início'
+})
+
+// Validator para geração de access token
+export const generateAccessTokenSchema = z.object({
+  code: z.string().min(1, 'Código de autorização é obrigatório'),
+  configuracao_id: z.string().uuid('configuracao_id deve ser um UUID válido')
+})
+
+// Validator para refresh token
+export const refreshTokenSchema = z.object({
+  configuracao_id: z.string().uuid('configuracao_id deve ser um UUID válido')
+})
+
+// Validator para sincronização com Google Calendar
+export const syncGoogleCalendarSchema = z.object({
+  agendamento_id: z.string().uuid('agendamento_id deve ser um UUID válido'),
+  force_sync: z.boolean().optional().default(false)
+})
+
+// Validator para query parameters de listagem de agendamentos
+export const googleCalendarListQuerySchema = z.object({
+  page: z.string().optional().transform((val) => {
+    return val ? Math.max(1, parseInt(val, 10)) : 1
+  }),
+  limit: z.string().optional().transform((val) => {
+    return val ? Math.min(100, Math.max(1, parseInt(val, 10))) : 10
+  }),
+  search: z.string().optional(),
+  status: z.enum(['confirmed', 'tentative', 'cancelled']).optional(),
+  data_inicio: z.string().datetime('Data de início deve ser uma data válida').optional(),
+  data_fim: z.string().datetime('Data de fim deve ser uma data válida').optional(),
+  sincronizado: z.string().optional().transform((val) => {
+    if (val === 'true') return true
+    if (val === 'false') return false
+    return undefined
+  })
+})
+
+// Types para os validators do Google Calendar
+export type CreateGoogleCalendarIntegracaoInput = z.infer<typeof createGoogleCalendarIntegracaoSchema>
+export type UpdateGoogleCalendarIntegracaoInput = z.infer<typeof updateGoogleCalendarIntegracaoSchema>
+export type CreateGoogleCalendarAgendamentoInput = z.infer<typeof createGoogleCalendarAgendamentoSchema>
+export type UpdateGoogleCalendarAgendamentoInput = z.infer<typeof updateGoogleCalendarAgendamentoSchema>
+export type GenerateAccessTokenInput = z.infer<typeof generateAccessTokenSchema>
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>
+export type SyncGoogleCalendarInput = z.infer<typeof syncGoogleCalendarSchema>
+export type GoogleCalendarListQuery = z.infer<typeof googleCalendarListQuerySchema>
