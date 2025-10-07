@@ -168,20 +168,6 @@ router.post('/', validateClienteId, ChatController.create);
  *           format: uuid
  *         description: ID do cliente
  *         example: "f029ad69-3465-454e-ba85-e0cdb75c445f"
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 1
- *         description: Número da página
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           minimum: 1
- *           default: 50
- *         description: Limite de itens por página
  *     responses:
  *       200:
  *         description: Lista de mensagens

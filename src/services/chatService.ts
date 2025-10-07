@@ -36,7 +36,6 @@ interface PaginationResult<T> {
   data: T[];
   pagination: {
     page: number;
-    limit: number;
     total: number;
     totalPages: number;
     hasNext: boolean;
@@ -85,108 +84,147 @@ export class ChatService {
     }
   }
 
-  // Listar leads únicos com suas últimas mensagens
+  // Listar leads únicos com suas últimas mensagens (versão otimizada)
   static async getAll(
-    cliente_id: string,
-    page: number,
-    limit: number
+    cliente_id: string
   ): Promise<PaginationResult<any>> {
     ChatService.checkSupabaseConnection();
     console.log('🔄 Buscando leads com última mensagem para cliente_id:', cliente_id);
 
     try {
-      const offset = (page - 1) * limit;
+      // Tentar usar função RPC otimizada primeiro
+      try {
+        const { data: allLeadsWithMessages, error } = await supabase!
+          .rpc('get_leads_with_last_message', {
+            p_cliente_id: cliente_id,
+            p_offset: 0  // Sempre buscar do início
+          });
 
-      // Primeiro, buscar todos os leads ativos do cliente
-      const { data: allLeads, error: leadsError } = await supabase!
-        .from('leads')
-        .select('id, nome, profile_picture_url, telefone')
-        .eq('cliente_id', cliente_id)
-        .eq('deletado', false);
+        if (!error && allLeadsWithMessages) {
+          // Retornar todos os resultados sem paginação
+          const total = allLeadsWithMessages.length;
 
-      if (leadsError) {
-        console.error('❌ Erro ao buscar leads:', leadsError);
-        throw new Error(`Erro ao buscar leads: ${leadsError.message}`);
+          console.log(`✅ RPC: ${total} leads únicos encontrados`);
+
+          return {
+            data: allLeadsWithMessages,
+            pagination: {
+              page: 1,
+              total,
+              totalPages: 1,
+              hasNext: false,
+              hasPrev: false
+            }
+          };
+        }
+      } catch (rpcError) {
+        console.log('🔄 Função RPC não disponível, usando query otimizada...');
       }
 
-      if (!allLeads || allLeads.length === 0) {
-        return {
-          data: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0,
-            hasNext: false,
-            hasPrev: false
-          }
-        };
-      }
+      // Fallback: Query otimizada usando Supabase client
+      return await ChatService.getAllOptimized(cliente_id);
 
-      // Agrupar leads por nome e pegar apenas o mais recente de cada grupo
-      const leadsByName = new Map();
-
-      for (const lead of allLeads) {
-        const { data: lastMessage, error: messageError } = await supabase!
-          .from('chat')
-          .select('mensagem, created_at')
-          .eq('lead_id', lead.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (messageError && messageError.code !== 'PGRST116') {
-          console.error('❌ Erro ao buscar última mensagem para lead:', lead.id, messageError);
-        }
-
-        const leadData = {
-          id: lead.id,
-          nome: lead.nome,
-          ultima_mensagem: lastMessage?.mensagem || null,
-          data_ultima_mensagem: lastMessage?.created_at || null,
-          profile_picture_url: lead.profile_picture_url || null,
-          telefone: lead.telefone || null
-        };
-
-        // Se não existe lead com esse nome ou se a mensagem atual é mais recente
-        if (!leadsByName.has(lead.nome) ||
-          (lastMessage?.created_at && leadsByName.get(lead.nome).data_ultima_mensagem &&
-            new Date(lastMessage.created_at) > new Date(leadsByName.get(lead.nome).data_ultima_mensagem))) {
-          leadsByName.set(lead.nome, leadData);
-        }
-      }
-
-      // Converter Map para array, ordenar por data decrescente e aplicar paginação
-      const uniqueLeads = Array.from(leadsByName.values())
-        .sort((a, b) => {
-          if (!a.data_ultima_mensagem && !b.data_ultima_mensagem) return 0;
-          if (!a.data_ultima_mensagem) return 1;
-          if (!b.data_ultima_mensagem) return -1;
-          return new Date(b.data_ultima_mensagem).getTime() - new Date(a.data_ultima_mensagem).getTime();
-        });
-
-      const totalUnique = uniqueLeads.length;
-      const paginatedLeads = uniqueLeads.slice(offset, offset + limit);
-      const totalPages = Math.ceil(totalUnique / limit);
-
-      console.log('✅ Leads únicos com última mensagem encontrados:', paginatedLeads.length);
-
-      return {
-        data: paginatedLeads,
-        pagination: {
-          page,
-          limit,
-          total: totalUnique,
-          totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
-        }
-      };
     } catch (error: any) {
       console.error('❌ Erro no ChatService.getAll:', error);
       throw error;
     }
   }
+
+  // Método otimizado usando Supabase client (sem RPC)
+  private static async getAllOptimized(
+    cliente_id: string
+  ): Promise<PaginationResult<any>> {
+    console.log('🔄 Executando query otimizada com Supabase client...');
+
+    // Primeiro, buscar todos os leads que têm mensagens
+    const { data: leadsWithChat, error: leadsError } = await supabase!
+      .from('leads')
+      .select(`
+        id,
+        nome,
+        profile_picture_url,
+        telefone,
+        chat!inner(
+          mensagem,
+          created_at
+        )
+      `)
+      .eq('cliente_id', cliente_id)
+      .eq('deletado', false)
+      .order('chat.created_at', { ascending: false });
+
+    if (leadsError) {
+      console.error('❌ Erro ao buscar leads com chat:', leadsError);
+      throw new Error(`Erro ao buscar leads: ${leadsError.message}`);
+    }
+
+    if (!leadsWithChat || leadsWithChat.length === 0) {
+      return {
+        data: [],
+        pagination: {
+          page: 1,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false
+        }
+      };
+    }
+
+    // Processar dados para obter leads únicos com última mensagem
+    const leadsMap = new Map();
+
+    for (const lead of leadsWithChat) {
+      const leadId = lead.id;
+      const leadNome = lead.nome;
+      
+      // Pegar a primeira mensagem (mais recente devido ao order by)
+      const lastMessage = lead.chat && lead.chat.length > 0 ? lead.chat[0] : null;
+      
+      const leadData = {
+        id: leadId,
+        nome: leadNome,
+        profile_picture_url: lead.profile_picture_url,
+        telefone: lead.telefone,
+        ultima_mensagem: lastMessage?.mensagem || null,
+        data_ultima_mensagem: lastMessage?.created_at || null
+      };
+
+      // Manter apenas o lead mais recente por nome
+      if (!leadsMap.has(leadNome) || 
+          (lastMessage?.created_at && leadsMap.get(leadNome).data_ultima_mensagem &&
+           new Date(lastMessage.created_at) > new Date(leadsMap.get(leadNome).data_ultima_mensagem))) {
+        leadsMap.set(leadNome, leadData);
+      }
+    }
+
+    // Converter para array e ordenar por data da última mensagem
+    const uniqueLeads = Array.from(leadsMap.values())
+      .sort((a, b) => {
+        if (!a.data_ultima_mensagem && !b.data_ultima_mensagem) return 0;
+        if (!a.data_ultima_mensagem) return 1;
+        if (!b.data_ultima_mensagem) return -1;
+        return new Date(b.data_ultima_mensagem).getTime() - new Date(a.data_ultima_mensagem).getTime();
+      });
+
+    // Retornar todos os resultados sem paginação
+    const total = uniqueLeads.length;
+
+    console.log(`✅ Otimizado: ${total} leads únicos encontrados`);
+
+    return {
+       data: uniqueLeads,
+       pagination: {
+         page: 1,
+         total,
+         totalPages: 1,
+         hasNext: false,
+         hasPrev: false
+       }
+     };
+  }
+
+
 
   // Buscar mensagem por ID
   static async getById(id: string, cliente_id: string): Promise<Chat | null> {
@@ -266,7 +304,6 @@ export class ChatService {
         data: chats || [],
         pagination: {
           page,
-          limit,
           total,
           totalPages,
           hasNext: page < totalPages,

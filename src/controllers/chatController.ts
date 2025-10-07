@@ -34,11 +34,6 @@ const uuidParamSchema = z.object({
   id: z.string().uuid('ID deve ser um UUID válido')
 });
 
-const paginationSchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).default(50)
-});
-
 export class ChatController {
   // Método auxiliar para tratar erros
   private static handleError(res: Response, error: any) {
@@ -97,7 +92,6 @@ export class ChatController {
   // GET /api/chat - Listar todas as mensagens com paginação
   static async getAll(req: Request, res: Response) {
     try {
-      const { page, limit } = paginationSchema.parse(req.query);
       const cliente_id = req.headers['cliente_id'] as string;
       
       if (!cliente_id) {
@@ -107,7 +101,7 @@ export class ChatController {
         });
       }
       
-      const result = await ChatService.getAll(cliente_id, page, limit);
+      const result = await ChatService.getAll(cliente_id);
       
       return res.status(200).json({
         success: true,
@@ -156,7 +150,6 @@ export class ChatController {
   static async getByLeadId(req: Request, res: Response) {
     try {
       const { leadId } = z.object({ leadId: z.string().uuid() }).parse(req.params);
-      const { page, limit } = paginationSchema.parse(req.query);
       const cliente_id = req.headers['cliente_id'] as string;
       
       if (!cliente_id) {
@@ -166,7 +159,7 @@ export class ChatController {
         });
       }
       
-      const result = await ChatService.getByLeadId(leadId, cliente_id, page, limit);
+      const result = await ChatService.getByLeadId(leadId, cliente_id);
       
       return res.status(200).json({
         success: true,
