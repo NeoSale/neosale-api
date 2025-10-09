@@ -93,7 +93,8 @@ export const updateLeadSchema = z.object({
   status_negociacao_id: z.string().uuid('status_negociacao_id deve ser um UUID válido').optional(),
   qualificacao_id: z.string().uuid('qualificacao_id deve ser um UUID válido').optional(),
   profile_picture_url: z.string().nullable().optional(),
-  embedding: z.array(z.number()).optional()
+  embedding: z.array(z.number()).optional(),
+  ai_habilitada: z.boolean().optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
