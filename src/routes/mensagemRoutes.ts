@@ -1,7 +1,7 @@
 import { Router } from 'express';
 const { body, param, query } = require('express-validator');
 import { mensagemController } from '../controllers/mensagemController';
-import { validateClienteId } from '../middleware/validate-cliente-id';
+import { validateClienteId } from '../middleware/validate-cliente_id';
 
 const router = Router();
 

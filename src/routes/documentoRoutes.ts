@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { DocumentoController } from '../controllers/documentoController'
-import { validateClienteId } from '../middleware/validate-cliente-id'
+import { validateClienteId } from '../middleware/validate-cliente_id'
 
 const router = Router()
 
@@ -29,14 +29,20 @@ const router = Router()
  *         nome_arquivo:
  *           type: string
  *           description: Nome do arquivo
+ *         base64:
+ *           type: string
+ *           description: Conteúdo do arquivo em base64
+ *           nullable: true
  *         cliente_id:
  *           type: string
  *           format: uuid
  *           description: ID do cliente
  *         base_id:
- *           type: string
- *           format: uuid
- *           description: ID da base associada
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: uuid
+ *           description: Lista de IDs de bases associadas
  *           nullable: true
  *         embedding:
  *           type: array
@@ -73,10 +79,17 @@ const router = Router()
  *           type: string
  *           description: Nome do arquivo
  *           example: "manual_usuario.pdf"
- *         base_id:
+ *         base64:
  *           type: string
- *           format: uuid
- *           description: ID da base associada
+ *           description: Conteúdo do arquivo em base64
+ *           example: "JVBERi0xLjQKJeLjz9MKMy..."
+ *         base_id:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: uuid
+ *           description: Lista de IDs de bases associadas
+ *           example: ["f029ad69-3465-454e-ba85-e0cdb75c445f", "a1b2c3d4-5678-90ab-cdef-1234567890ab"]
  *           nullable: true
  *         embedding:
  *           type: array
@@ -96,10 +109,15 @@ const router = Router()
  *         nome_arquivo:
  *           type: string
  *           description: Nome do arquivo
- *         base_id:
+ *         base64:
  *           type: string
- *           format: uuid
- *           description: ID da base associada
+ *           description: Conteúdo do arquivo em base64
+ *         base_id:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: uuid
+ *           description: Lista de IDs de bases associadas
  *           nullable: true
  *         embedding:
  *           type: array
@@ -126,7 +144,7 @@ const router = Router()
  *   parameters:
  *     ClienteIdHeader:
  *       in: header
- *       name: cliente-id
+ *       name: cliente_id
  *       required: false
  *       schema:
  *         type: string

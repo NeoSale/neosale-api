@@ -8,19 +8,14 @@ export class DocumentoController {
    */
   static async criarDocumento(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const data: CreateDocumentoInput = req.body
 
-      // Validações básicas
-      if (!data.nome || !data.nome_arquivo) {
-        return res.status(400).json({
-          success: false,
-          message: 'Nome e nome_arquivo são obrigatórios',
-          data: null
-        })
-      }
-
       const resultado = await DocumentoService.criarDocumento(data, clienteId)
+
+      if (!resultado.success) {
+        return res.status(404).json(resultado)
+      }
       
       return res.status(201).json(resultado)
     } catch (error) {
@@ -39,7 +34,7 @@ export class DocumentoController {
    */
   static async buscarPorId(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
 
       if (!id) {
@@ -73,7 +68,7 @@ export class DocumentoController {
    */
   static async listarDocumentos(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       
       const params: PaginationInput = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
@@ -117,26 +112,9 @@ export class DocumentoController {
    */
   static async atualizarDocumento(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
       const data: UpdateDocumentoInput = req.body
-
-      if (!id) {
-        return res.status(400).json({
-          success: false,
-          message: 'ID do documento é obrigatório',
-          data: null
-        })
-      }
-
-      // Verificar se pelo menos um campo foi fornecido para atualização
-      if (!data.nome && !data.descricao && !data.nome_arquivo) {
-        return res.status(400).json({
-          success: false,
-          message: 'Pelo menos um campo deve ser fornecido para atualização',
-          data: null
-        })
-      }
 
       const resultado = await DocumentoService.atualizarDocumento(id, data, clienteId)
       
@@ -161,7 +139,7 @@ export class DocumentoController {
    */
   static async excluirDocumento(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
 
       if (!id) {
@@ -195,7 +173,7 @@ export class DocumentoController {
    */
   static async buscarSimilares(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { texto, limite } = req.body
 
       if (!texto) {

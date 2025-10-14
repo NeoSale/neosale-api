@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { LeadController } from '../controllers/leadController'
-import { validateClienteId } from '../middleware/validate-cliente-id'
+import { validateClienteId } from '../middleware/validate-cliente_id'
 
 const router = Router()
 
@@ -766,7 +766,7 @@ router.get('/telefone/:telefone', validateClienteId, LeadController.buscarPorTel
 
 /**
  * @swagger
- * /api/leads/debug/cliente-id:
+ * /api/leads/debug/cliente_id:
  *   get:
  *     summary: Teste para verificar se cliente_id está sendo recebido
  *     tags: [Leads]
@@ -796,7 +796,7 @@ router.get('/telefone/:telefone', validateClienteId, LeadController.buscarPorTel
  *       500:
  *         description: Erro interno do servidor
  */
-router.get('/debug/cliente-id', LeadController.testeClienteId)
+router.get('/debug/cliente_id', LeadController.testeClienteId)
 
 /**
  * @swagger

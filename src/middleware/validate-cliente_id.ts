@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 export function validateClienteId(req: Request, res: Response, next: NextFunction) {
-  const clienteId = req.headers.cliente_id as string;
+  const clienteId = req.headers['cliente_id'] as string;
   
   if (!clienteId) {
     return res.status(400).json({

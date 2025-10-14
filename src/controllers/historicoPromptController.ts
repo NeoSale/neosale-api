@@ -7,12 +7,12 @@ export class HistoricoPromptController {
    */
   static async getAll(req: Request, res: Response): Promise<void> {
     try {
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }
@@ -37,7 +37,7 @@ export class HistoricoPromptController {
   static async getById(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!id) {
         res.status(400).json({
@@ -50,7 +50,7 @@ export class HistoricoPromptController {
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }
@@ -83,7 +83,7 @@ export class HistoricoPromptController {
   static async getByAgenteId(req: Request, res: Response): Promise<void> {
     try {
       const { agenteId } = req.params;
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!agenteId) {
         res.status(400).json({
@@ -96,7 +96,7 @@ export class HistoricoPromptController {
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }
@@ -121,7 +121,7 @@ export class HistoricoPromptController {
   static async create(req: Request, res: Response): Promise<void> {
     try {
       const { agente_id, prompt, prompt_agendamento } = req.body;
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!agente_id) {
         res.status(400).json({
@@ -134,7 +134,7 @@ export class HistoricoPromptController {
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }
@@ -167,7 +167,7 @@ export class HistoricoPromptController {
     try {
       const { id } = req.params;
       const { prompt, prompt_agendamento } = req.body;
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!id) {
         res.status(400).json({
@@ -180,7 +180,7 @@ export class HistoricoPromptController {
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }
@@ -210,7 +210,7 @@ export class HistoricoPromptController {
   static async delete(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const clienteId = req.headers['cliente-id'] as string;
+      const clienteId = req.headers['cliente_id'] as string;
       
       if (!id) {
         res.status(400).json({
@@ -223,7 +223,7 @@ export class HistoricoPromptController {
       if (!clienteId) {
         res.status(400).json({
           success: false,
-          message: 'Header cliente-id é obrigatório'
+          message: 'Header cliente_id é obrigatório'
         });
         return;
       }

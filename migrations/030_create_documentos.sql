@@ -7,8 +7,9 @@ CREATE TABLE IF NOT EXISTS documentos (
   nome varchar(255) NOT NULL,
   descricao text,
   nome_arquivo varchar(500) NOT NULL,
+  base64 text, -- conteúdo do arquivo em base64
   cliente_id uuid NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
-  base_id uuid REFERENCES base(id) ON DELETE SET NULL,
+  base_id jsonb, -- lista de IDs de bases associadas
   embedding vector(1536), -- campo para embedding da LLM
   created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo'),
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS documentos (
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_documentos_cliente_id ON documentos(cliente_id) WHERE deletado = false;
-CREATE INDEX IF NOT EXISTS idx_documentos_base_id ON documentos(base_id) WHERE deletado = false;
+CREATE INDEX IF NOT EXISTS idx_documentos_base_id_jsonb ON documentos USING gin (base_id) WHERE deletado = false;
 CREATE INDEX IF NOT EXISTS idx_documentos_nome ON documentos(nome) WHERE deletado = false;
 CREATE INDEX IF NOT EXISTS idx_documentos_created_at ON documentos(created_at) WHERE deletado = false;
 CREATE INDEX IF NOT EXISTS idx_documentos_embedding ON documentos USING ivfflat (embedding vector_cosine_ops) WHERE deletado = false;

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AgenteController } from '../controllers/agenteController';
-import { validateClienteId } from '../middleware/validate-cliente-id';
+import { validateClienteId } from '../middleware/validate-cliente_id';
 
 const router = Router();
 

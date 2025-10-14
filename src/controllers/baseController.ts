@@ -8,7 +8,7 @@ export class BaseController {
    */
   static async criarBase(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const data: CreateBaseInput = req.body
 
       // Validações básicas
@@ -21,6 +21,10 @@ export class BaseController {
       }
 
       const resultado = await BaseService.criarBase(data, clienteId)
+
+      if (!resultado.success) {
+        return res.status(404).json(resultado)
+      }
       
       return res.status(201).json(resultado)
     } catch (error) {
@@ -39,7 +43,7 @@ export class BaseController {
    */
   static async buscarPorId(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
 
       if (!id) {
@@ -73,7 +77,7 @@ export class BaseController {
    */
   static async listarBases(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       
       const params: PaginationInput = {
         page: req.query.page ? parseInt(req.query.page as string) : 1,
@@ -117,7 +121,7 @@ export class BaseController {
    */
   static async atualizarBase(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
       const data: UpdateBaseInput = req.body
 
@@ -161,7 +165,7 @@ export class BaseController {
    */
   static async excluirBase(req: Request, res: Response) {
     try {
-      const clienteId = req.headers['cliente-id'] as string
+      const clienteId = req.headers['cliente_id'] as string
       const { id } = req.params
 
       if (!id) {

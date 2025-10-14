@@ -10,7 +10,7 @@ export const verificarTokenGoogle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const clienteId = req.headers['cliente-id'] as string
+    const clienteId = req.headers['cliente_id'] as string
     const configuracaoId = req.body.configuracao_id || req.query.configuracao_id || req.params.configuracao_id
 
     if (!configuracaoId) {
@@ -22,7 +22,7 @@ export const verificarTokenGoogle = async (
 
     if (!clienteId) {
       res.status(400).json({
-        error: 'cliente-id é obrigatório no header'
+        error: 'cliente_id é obrigatório no header'
       })
       return
     }
@@ -57,11 +57,11 @@ export const gerarTokenAutomatico = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const clienteId = req.headers['cliente-id'] as string
+    const clienteId = req.headers['cliente_id'] as string
     
     if (!clienteId) {
       res.status(400).json({
-        error: 'cliente-id é obrigatório no header'
+        error: 'cliente_id é obrigatório no header'
       })
       return
     }

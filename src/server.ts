@@ -59,7 +59,7 @@ app.use(cors({
   origin: '*',
   credentials: false,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'cliente-id', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'cliente_id', 'X-Requested-With']
 }))
 
 // Logging

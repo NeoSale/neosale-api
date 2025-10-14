@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { GoogleCalendarController } from '../controllers/googleCalendarController'
-import { validateClienteId } from '../middleware/validate-cliente-id'
+import { validateClienteId } from '../middleware/validate-cliente_id'
 import { verificarTokenGoogle } from '../middleware/google-auth.middleware'
 
 const router = Router()

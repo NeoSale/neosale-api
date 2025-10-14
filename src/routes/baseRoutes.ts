@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { BaseController } from '../controllers/baseController'
-import { validateClienteId } from '../middleware/validate-cliente-id'
+import { validateClienteId } from '../middleware/validate-cliente_id'
 
 const router = Router()
 
@@ -56,7 +56,7 @@ const router = Router()
  *   parameters:
  *     ClienteIdHeaderBase:
  *       in: header
- *       name: cliente-id
+ *       name: cliente_id
  *       required: false
  *       schema:
  *         type: string
