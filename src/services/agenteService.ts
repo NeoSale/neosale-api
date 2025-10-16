@@ -13,6 +13,7 @@ export interface Agente {
   agendamento: boolean;
   prompt_agendamento?: string;
   prompt_seguranca?: string;
+  base_id?: string[];
   ativo: boolean;
   deletado: boolean;
   embedding?: number[];
@@ -492,6 +493,7 @@ export class AgenteService {
       'agendamento',
       'prompt_agendamento',
       'prompt_seguranca',
+      'base_id',
       'ativo'
     ];
 

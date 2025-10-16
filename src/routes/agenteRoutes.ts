@@ -37,6 +37,12 @@ const router = Router();
  *           type: string
  *           nullable: true
  *           description: Prompt de segurança do agente
+ *         base_id:
+ *           type: array
+ *           items:
+ *             type: string
+ *           nullable: true
+ *           description: Lista de IDs de bases associadas ao agente
  *         ativo:
  *           type: boolean
  *           description: Se o agente está ativo
@@ -93,6 +99,11 @@ const router = Router();
  *         prompt_seguranca:
  *           type: string
  *           description: Prompt de segurança do agente
+ *         base_id:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Lista de IDs de bases associadas ao agente
  *         ativo:
  *           type: boolean
  *           default: true
@@ -126,6 +137,11 @@ const router = Router();
  *         prompt_seguranca:
  *           type: string
  *           description: Prompt de segurança do agente
+ *         base_id:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Lista de IDs de bases associadas ao agente
  *         ativo:
  *           type: boolean
  *           description: Se o agente está ativo
@@ -141,7 +157,7 @@ const router = Router();
  * /api/agentes:
  *   get:
  *     summary: Lista todos os agentes
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -178,7 +194,7 @@ router.get('/', validateClienteId, AgenteController.getAll);
  * /api/agentes/ativos:
  *   get:
  *     summary: Lista todos os agentes ativos
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -215,7 +231,7 @@ router.get('/ativos', validateClienteId, AgenteController.getAtivos);
  * /api/agentes/agendamento:
  *   get:
  *     summary: Lista todos os agentes com agendamento ativo
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -252,7 +268,7 @@ router.get('/agendamento', validateClienteId, AgenteController.getComAgendamento
  * /api/agentes/{id}:
  *   get:
  *     summary: Busca um agente por ID
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: id
@@ -295,7 +311,7 @@ router.get('/:id', validateClienteId, AgenteController.getById);
  * /api/agentes/nome/{nome}:
  *   get:
  *     summary: Busca um agente por nome
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: nome
@@ -337,7 +353,7 @@ router.get('/nome/:nome', validateClienteId, AgenteController.getByNome);
  * /api/agentes/instance/{instanceName}:
  *   get:
  *     summary: Buscar agente por instance name
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: instanceName
@@ -379,7 +395,7 @@ router.get('/instance/:instanceName', validateClienteId, AgenteController.getByI
  * /api/agentes/tipo/{tipoAgenteId}:
  *   get:
  *     summary: Busca agentes por tipo de agente
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: tipoAgenteId
@@ -425,7 +441,7 @@ router.get('/tipo/:tipoAgenteId', validateClienteId, AgenteController.getByTipoA
  * /api/agentes:
  *   post:
  *     summary: Cria um novo agente
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -470,7 +486,7 @@ router.post('/', validateClienteId, AgenteController.create);
  * /api/agentes/{id}:
  *   put:
  *     summary: Atualiza um agente
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: id
@@ -524,7 +540,7 @@ router.put('/:id', validateClienteId, AgenteController.update);
  * /api/agentes/{id}:
  *   delete:
  *     summary: Deleta um agente
- *     tags: [Agente]
+ *     tags: [Agentes]
  *     parameters:
  *       - in: path
  *         name: id

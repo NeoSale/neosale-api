@@ -60,3 +60,31 @@ begin
   limit match_count;
 end;
 $$;
+
+-- Função para buscar documentos por base_id e cliente_id com embedding
+create or replace function public.match_documentos_by_base_cliente(
+  p_base_ids text[],
+  p_cliente_id uuid,
+  match_count integer,
+  query_embedding vector
+)
+returns table (
+  metadata jsonb,
+  similarity float
+)
+language plpgsql
+as $$
+begin
+  return query
+  select
+    to_jsonb(d.*) - 'embedding' - 'base64' as metadata,
+    1 - (d.embedding <=> query_embedding) as similarity
+  from public.documentos d
+  where d.embedding is not null
+    and d.deletado = false
+    and d.cliente_id = p_cliente_id
+    and d.base_id ?| p_base_ids
+  order by d.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;

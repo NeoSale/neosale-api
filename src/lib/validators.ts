@@ -767,6 +767,7 @@ export const createAgenteSchema = z.object({
   agendamento: z.boolean().optional().default(false),
   prompt_agendamento: z.string().optional(),
   prompt_seguranca: z.string().optional(),
+  base_id: z.array(z.string()).optional(),
   ativo: z.boolean().optional().default(true),
   embedding: z.array(z.number()).optional()
 })
@@ -778,6 +779,7 @@ export const updateAgenteSchema = z.object({
   agendamento: z.boolean().optional(),
   prompt_agendamento: z.string().optional(),
   prompt_seguranca: z.string().optional(),
+  base_id: z.array(z.string()).optional(),
   ativo: z.boolean().optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: 'Pelo menos um campo deve ser fornecido para atualização'
@@ -786,7 +788,7 @@ export const updateAgenteSchema = z.object({
 export type CreateAgenteInput = z.infer<typeof createAgenteSchema>
 export type UpdateAgenteInput = z.infer<typeof updateAgenteSchema>
 
-// ===== GOOGLE CALENDAR VALIDATORS =====
+// ... (rest of the code remains the same)
 
 // Validator para criação de integração do Google Calendar
 export const createGoogleCalendarIntegracaoSchema = z.object({

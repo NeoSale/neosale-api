@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS agentes (
   agendamento boolean NOT NULL DEFAULT false,
   prompt_agendamento text,
   prompt_seguranca text,
+  base_id jsonb, -- lista de IDs de bases associadas
   ativo boolean NOT NULL DEFAULT true,
   deletado boolean NOT NULL DEFAULT false,
   embedding vector(1536), -- campo para embedding da LLM
@@ -24,4 +25,5 @@ CREATE INDEX IF NOT EXISTS idx_agentes_cliente_id ON agentes(cliente_id);
 CREATE INDEX IF NOT EXISTS idx_agentes_tipo_agente_id ON agentes(tipo_agente_id);
 CREATE INDEX IF NOT EXISTS idx_agentes_ativo ON agentes(ativo);
 CREATE INDEX IF NOT EXISTS idx_agentes_agendamento ON agentes(agendamento);
+CREATE INDEX IF NOT EXISTS idx_agentes_base_id_jsonb ON agentes USING gin (base_id);
 CREATE INDEX IF NOT EXISTS idx_agentes_embedding ON agentes USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
