@@ -8,13 +8,18 @@ import {
   CreateUsuarioPermissaoSistemaInput
 } from '../lib/validators';
 import { generateUsuarioEmbedding } from '../lib/embedding';
+import bcrypt from 'bcryptjs';
 
 export interface Usuario {
   id: string;
   nome: string;
   email: string;
   telefone?: string;
-  provedor_id: string;
+  senha?: string;
+  provedor_id?: string;
+  tipo_acesso_id?: string;
+  revendedor_id?: string;
+  cliente_id?: string;
   ativo: boolean;
   embedding?: number[];
   created_at: string;
@@ -153,7 +158,33 @@ export class UsuarioService {
     return data;
   }
 
+  static async getByTelefone(telefone: string): Promise<UsuarioWithRelations | null> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
 
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select(`
+        *,
+        provedor:provedores(
+          id,
+          nome,
+          descricao
+        )
+      `)
+      .eq('telefone', telefone)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw new Error(`Erro ao buscar usuário por telefone: ${error.message}`);
+    }
+
+    return data;
+  }
 
   static async getAtivos(): Promise<UsuarioWithRelations[]> {
     if (!supabase) {
@@ -185,15 +216,22 @@ export class UsuarioService {
       throw new Error('Supabase client não está inicializado');
     }
 
+    // Hash da senha
+    const senhaHash = await bcrypt.hash(input.senha, 10);
+
     const { data, error } = await supabase
       .from('usuarios')
       .insert({
         nome: input.nome,
         email: input.email,
         telefone: input.telefone,
+        senha: senhaHash,
         provedor_id: input.provedor_id,
+        tipo_acesso_id: input.tipo_acesso_id,
+        revendedor_id: input.revendedor_id,
+        cliente_id: input.cliente_id,
         ativo: input.ativo ?? true,
-        updated_at: new Date().toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo"})
+        updated_at: new Date().toISOString()
       })
       .select(`
         *,

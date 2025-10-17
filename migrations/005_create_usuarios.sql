@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   nome varchar(255) NOT NULL,
   email varchar(255) NOT NULL UNIQUE,
   telefone varchar(20),
+  senha varchar(255), -- hash da senha (bcrypt)
   provedor_id uuid,
   tipo_acesso_id uuid,
   revendedor_id uuid,
@@ -22,6 +23,7 @@ ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS provedor_id uuid;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS tipo_acesso_id uuid;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS revendedor_id uuid;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cliente_id UUID;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS senha varchar(255);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS ativo boolean DEFAULT true;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS embedding vector(1536);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo');
@@ -65,6 +67,8 @@ END $add_constraints$;
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+CREATE INDEX IF NOT EXISTS idx_usuarios_telefone ON usuarios(telefone) WHERE telefone IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_usuarios_senha ON usuarios(senha) WHERE senha IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_usuarios_provedor ON usuarios(provedor_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_tipo_acesso ON usuarios(tipo_acesso_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_revendedor ON usuarios(revendedor_id);

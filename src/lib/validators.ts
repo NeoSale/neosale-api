@@ -399,14 +399,16 @@ export const updateClienteSchema = z.object({
 export type CreateClienteInput = z.infer<typeof createClienteSchema>
 export type UpdateClienteInput = z.infer<typeof updateClienteSchema>
 
-// ===== VALIDATORS PARA USUÁRIOS =====
-
 // Validator para criação de usuário
 export const createUsuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres'),
-  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres'),
+  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres'),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
-  provedor_id: z.string().uuid('provedor_id deve ser um UUID válido'),
+  senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(255, 'Senha deve ter no máximo 255 caracteres'),
+  provedor_id: z.string().uuid('provedor_id deve ser um UUID válido').optional(),
+  tipo_acesso_id: z.string().uuid('tipo_acesso_id deve ser um UUID válido').optional(),
+  revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
   ativo: z.boolean().optional().default(true),
   embedding: z.array(z.number()).optional()
 })
@@ -414,9 +416,13 @@ export const createUsuarioSchema = z.object({
 // Validator para atualização de usuário
 export const updateUsuarioSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome deve ter no máximo 255 caracteres').optional(),
-  email: z.string().max(255, 'Email deve ter no máximo 255 caracteres').optional(),
+  email: z.string().email('Email inválido').max(255, 'Email deve ter no máximo 255 caracteres').optional(),
   telefone: z.string().max(20, 'Telefone deve ter no máximo 20 caracteres').optional(),
+  senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(255, 'Senha deve ter no máximo 255 caracteres').optional(),
   provedor_id: z.string().uuid('provedor_id deve ser um UUID válido').optional(),
+  tipo_acesso_id: z.string().uuid('tipo_acesso_id deve ser um UUID válido').optional(),
+  revendedor_id: z.string().uuid('revendedor_id deve ser um UUID válido').optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
   ativo: z.boolean().optional(),
   embedding: z.array(z.number()).optional()
 }).refine(data => Object.keys(data).length > 0, {

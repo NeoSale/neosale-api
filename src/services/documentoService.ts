@@ -26,14 +26,42 @@ export interface PaginationInput {
 }
 
 /**
+ * Extrai texto do conteúdo base64 do documento
+ * Suporta arquivos de texto, JSON, CSV, etc.
+ */
+function extractTextFromBase64(base64Content: string, nomeArquivo: string): string {
+  try {
+    // Remover prefixo data:xxx;base64, se existir
+    const base64Data = base64Content.replace(/^data:.*?;base64,/, '')
+    
+    // Decodificar base64 para texto
+    const buffer = Buffer.from(base64Data, 'base64')
+    const text = buffer.toString('utf-8')
+    
+    // Limitar tamanho do texto para embedding (primeiros 5000 caracteres)
+    return text.substring(0, 5000)
+  } catch (error) {
+    console.warn(`Não foi possível extrair texto do arquivo ${nomeArquivo}:`, error)
+    return ''
+  }
+}
+
+/**
  * Gera embedding específico para documentos
- * Combina nome, descrição e nome do arquivo para criar um embedding representativo
+ * Combina nome, descrição, nome do arquivo e conteúdo para criar um embedding representativo
  */
 function generateDocumentoEmbedding(documento: any): number[] {
+  // Extrair conteúdo do arquivo se disponível
+  let conteudo = ''
+  if (documento.base64) {
+    conteudo = extractTextFromBase64(documento.base64, documento.nome_arquivo || '')
+  }
+  
   const embeddingData = {
     nome: documento.nome || '',
     descricao: documento.descricao || '',
     nome_arquivo: documento.nome_arquivo || '',
+    conteudo: conteudo,
     tipo: 'documento'
   }
   

@@ -220,7 +220,8 @@ export class MigrationRunner {
    * Extract table definition from migration content
    */
   private extractTableDefinition(content: string, tableName: string): string {
-    const regex = new RegExp(`CREATE TABLE(?:\\s+IF NOT EXISTS)?\\s+${tableName}\\s*\\([^;]*\\);`, 'gi');
+    // Use DOTALL flag to match across newlines
+    const regex = new RegExp(`CREATE TABLE(?:\\s+IF NOT EXISTS)?\\s+${tableName}\\s*\\([\\s\\S]*?\\);`, 'gi');
     const match = content.match(regex);
     return match ? match[0] : '';
   }
@@ -420,7 +421,8 @@ export class MigrationRunner {
           await this.recordMigration(migration.filename);
           console.log(`✅ Migration ${migration.filename} executed successfully`);
         } else {
-          console.log(`❌ Migration ${migration.filename} failed to execute`);
+          console.log(`❌ Migration ${migration.filename} failed to execute - NOT marking as executed`);
+          // NÃO registrar migration que falhou
         }
       }
 
@@ -553,7 +555,7 @@ export class MigrationRunner {
   private async executeCreateTable(sql: string): Promise<boolean> {
     try {
       // Extract table name and columns from CREATE TABLE statement
-      const tableMatch = sql.match(/CREATE TABLE\s+(\w+)\s*\(/i);
+      const tableMatch = sql.match(/CREATE TABLE(?:\s+IF NOT EXISTS)?\s+(\w+)\s*\(/i);
       if (!tableMatch) {
         console.error('Could not parse table name from SQL');
         return false;
@@ -858,9 +860,12 @@ export class MigrationRunner {
       
       // For each pending migration, try to verify if tables/data exist
       for (const migration of pendingMigrations) {
-        if (await this.verifyMigrationExecuted(migration)) {
+        const isExecuted = await this.verifyMigrationExecuted(migration);
+        if (isExecuted) {
           await this.recordMigration(migration.filename);
           console.log(`✅ Marked ${migration.filename} as executed`);
+        } else {
+          console.log(`⚠️  ${migration.filename} - objects not found, NOT marking as executed`);
         }
       }
     } catch (error) {
@@ -877,25 +882,24 @@ export class MigrationRunner {
         return false;
       }
       
-      // Simple verification: check if migration creates tables that now exist
-      if (migration.content.includes('CREATE TABLE')) {
-        const tableMatches = migration.content.match(/CREATE TABLE.*?([a-zA-Z_][a-zA-Z0-9_]*)/g);
-        if (tableMatches) {
-          for (const match of tableMatches) {
-            const tableName = match.replace(/CREATE TABLE.*?IF NOT EXISTS\s+/, '').replace(/CREATE TABLE\s+/, '').split('(')[0].trim();
-            
-            // Try to query the table
-            const { error } = await supabase
-              .from(tableName)
-              .select('*')
-              .limit(1);
-            
-            if (error && error.message.includes('does not exist')) {
-              return false;
-            }
+      // Parse migration to extract tables
+      const objects = this.parseMigrationContent(migration);
+      const tables = objects.filter(obj => obj.type === 'table');
+      
+      // If migration creates tables, verify they exist
+      if (tables.length > 0) {
+        for (const table of tables) {
+          const exists = await this.tableExists(table.name);
+          if (!exists) {
+            // Se alguma tabela não existe, a migration não foi executada
+            return false;
           }
         }
+        // Todas as tabelas existem
+        return true;
       }
+      
+      // Se não cria tabelas, assume que foi executada (índices, funções, etc)
       return true;
     } catch (error) {
       return false;

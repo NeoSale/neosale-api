@@ -63,18 +63,27 @@ $$;
 
 -- Função para buscar documentos por base_id e cliente_id com embedding
 create or replace function public.match_documentos_by_base_cliente(
-  p_base_ids text[],
-  p_cliente_id uuid,
+  filter jsonb,
   match_count integer,
   query_embedding vector
 )
-returns table (
-  metadata jsonb,
-  similarity float
-)
+returns table (metadata jsonb, similarity float)
 language plpgsql
+security definer
+set search_path = public
 as $$
+declare
+  v_cliente_id uuid;
+  v_base_ids_text text[];
 begin
+  v_cliente_id := (filter->>'cliente_id')::uuid;
+
+  -- extrai ["...","..."] do filter->'base_id' como text[]
+  select coalesce(array_agg(x), '{}') into v_base_ids_text
+  from (
+    select jsonb_array_elements_text(coalesce(filter->'base_id','[]'::jsonb)) as x
+  ) s;
+
   return query
   select
     to_jsonb(d.*) - 'embedding' - 'base64' as metadata,
@@ -82,9 +91,17 @@ begin
   from public.documentos d
   where d.embedding is not null
     and d.deletado = false
-    and d.cliente_id = p_cliente_id
-    and d.base_id ?| p_base_ids
+    and d.cliente_id = v_cliente_id
+    -- base_id é JSONB: verifica se QUALQUER id do filtro está dentro do array JSONB
+    and exists (
+      select 1
+      from jsonb_array_elements_text(d.base_id) j(val)
+      where j.val = any(v_base_ids_text)
+    )
   order by d.embedding <=> query_embedding
-  limit match_count;
+  limit greatest(match_count,1);
 end;
 $$;
+
+grant execute on function public.match_documentos_by_base_cliente(jsonb, integer, vector)
+to anon, authenticated, service_role;

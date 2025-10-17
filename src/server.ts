@@ -40,6 +40,10 @@ import baseRoutes from './routes/baseRoutes'
 import origemLeadsRoutes from './routes/origemLeadsRoutes'
 import qualificacaoRoutes from './routes/qualificacaoRoutes'
 import googleCalendarRoutes from './routes/googleCalendarRoutes'
+import perfilRoutes from './routes/perfilRoutes'
+import conviteRoutes from './routes/conviteRoutes'
+import sessaoRoutes from './routes/sessaoRoutes'
+import authRoutes from './routes/authRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -116,6 +120,7 @@ app.get('/', (req, res) => {
       revendedores: `${BASE_URL}/api/revendedores`,
       clientes: `${BASE_URL}/api/clientes`,
       usuarios: `${BASE_URL}/api/usuarios`,
+      auth: `${BASE_URL}/api/auth`,
       evolutionApi: `${BASE_URL}/api/evolution-api`,
       chat: `${BASE_URL}/api/chat`,
       origemLeads: `${BASE_URL}/api/origem-leads`,
@@ -152,9 +157,19 @@ app.use('/api/base', baseRoutes)
 app.use('/api/origem-leads', origemLeadsRoutes)
 app.use('/api/qualificacoes', qualificacaoRoutes)
 app.use('/api/google-calendar', googleCalendarRoutes)
+app.use('/api/perfis', perfilRoutes)
+app.use('/api/convites', conviteRoutes)
+app.use('/api/sessoes', sessaoRoutes)
+app.use('/api/auth', authRoutes)
 
 app.use('/api/admin', adminRoutes)
-app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    docExpansion: 'none', // Todas as seções fechadas por padrão
+    tagsSorter: 'alpha', // Ordenar tags alfabeticamente
+    operationsSorter: 'alpha' // Ordenar operações alfabeticamente
+  }
+}));
 
 // Rota de health check
 app.get('/health', (req, res) => {

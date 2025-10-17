@@ -94,7 +94,7 @@ const router = Router()
  * /api/followup:
  *   get:
  *     summary: Listar followups com paginação
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: query
  *         name: page
@@ -140,7 +140,7 @@ const router = Router()
  *                       type: integer
  *   post:
   *     summary: Criar novo followup
-  *     tags: [Followup]
+  *     tags: [Follow-up]
   *     parameters:
   *       - in: header
   *         name: cliente_id
@@ -181,7 +181,7 @@ router.get('/leads-para-envio', FollowupController.buscarLeadsParaEnvio)
  * /api/followup/estatisticas-por-dia:
  *   get:
  *     summary: Buscar estatísticas de followups por dia
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -228,7 +228,7 @@ router.get('/estatisticas-por-dia', FollowupController.buscarEstatisticasPorDia)
  * /api/followup/detalhes-por-data:
  *   get:
  *     summary: Buscar detalhes de followups por data específica
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: header
  *         name: cliente_id
@@ -293,7 +293,7 @@ router.get('/detalhes-por-data', FollowupController.buscarDetalhesPorData)
  * /api/followup/{id}:
  *   get:
  *     summary: Buscar followup por ID
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: path
  *         name: id
@@ -318,7 +318,7 @@ router.get('/detalhes-por-data', FollowupController.buscarDetalhesPorData)
  *         description: Followup não encontrado
  *   put:
  *     summary: Atualizar followup
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: path
  *         name: id
@@ -351,7 +351,7 @@ router.get('/detalhes-por-data', FollowupController.buscarDetalhesPorData)
  *         description: Followup não encontrado
  *   delete:
  *     summary: Deletar followup
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: path
  *         name: id
@@ -382,7 +382,7 @@ router.delete('/:id', FollowupController.deletar)
  * /api/followup/lead/{leadId}:
  *   get:
  *     summary: Buscar followups por lead
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: path
  *         name: leadId
@@ -413,7 +413,7 @@ router.get('/lead/:leadId', FollowupController.buscarPorLead)
  * /api/followup/status/{status}:
  *   get:
  *     summary: Buscar followups por status
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: path
  *         name: status
@@ -450,7 +450,7 @@ router.get('/status/:status', FollowupController.buscarPorStatus)
  *       Busca leads priorizados para envio de mensagens de followup:
  *       1. Leads com followup anterior que precisam da próxima mensagem (ordenados por data da próxima mensagem)
  *       2. Leads sem followup ainda (ordenados por data de criação)
- *     tags: [Followup]
+ *     tags: [Follow-up]
  *     parameters:
  *       - in: header
  *         name: cliente_id

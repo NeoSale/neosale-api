@@ -102,6 +102,22 @@ const options: swaggerJSDoc.Options = {
       {
         name: 'Usuários',
         description: 'Operações relacionadas aos usuários'
+      },
+      {
+        name: 'Perfis',
+        description: 'Operações relacionadas aos perfis de usuário'
+      },
+      {
+        name: 'Convites',
+        description: 'Operações relacionadas aos convites de usuários'
+      },
+      {
+        name: 'Sessões',
+        description: 'Operações relacionadas às sessões de usuários'
+      },
+      {
+        name: 'Autenticação',
+        description: 'Operações de login, logout e gerenciamento de tokens JWT'
       }
     ],
     components: {
@@ -124,6 +140,12 @@ const options: swaggerJSDoc.Options = {
           in: 'header',
           name: 'cliente_id',
           description: 'ID do cliente para autenticação e filtragem de dados'
+        },
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Token JWT obtido através do endpoint de login'
         }
       },
       schemas: {
@@ -805,6 +827,289 @@ const options: swaggerJSDoc.Options = {
               description: 'Mensagem de erro (se houver)'
             }
           }
+        },
+        Perfil: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              format: 'uuid',
+              description: 'ID único do perfil'
+            },
+            nome: {
+              type: 'string',
+              description: 'Nome do perfil',
+              example: 'Administrador'
+            },
+            descricao: {
+              type: 'string',
+              description: 'Descrição do perfil',
+              example: 'Acesso total ao sistema'
+            },
+            permissoes: {
+              type: 'object',
+              description: 'Objeto JSON com permissões granulares',
+              example: {
+                admin: true,
+                usuarios: {
+                  criar: true,
+                  editar: true,
+                  deletar: true,
+                  visualizar: true
+                }
+              }
+            },
+            ativo: {
+              type: 'boolean',
+              description: 'Indica se o perfil está ativo',
+              example: true
+            },
+            sistema: {
+              type: 'boolean',
+              description: 'Indica se é um perfil do sistema (não pode ser deletado)',
+              example: true
+            },
+            embedding: {
+              type: 'array',
+              items: {
+                type: 'number'
+              },
+              description: 'Vetor de embedding para busca semântica',
+              nullable: true
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data de criação do perfil'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Data de atualização do perfil'
+            }
+          }
+        },
+        CreatePerfilRequest: {
+          type: 'object',
+          required: ['nome', 'permissoes'],
+          properties: {
+            nome: {
+              type: 'string',
+              description: 'Nome do perfil (único)',
+              example: 'Analista de Marketing'
+            },
+            descricao: {
+              type: 'string',
+              description: 'Descrição do perfil',
+              example: 'Acesso a relatórios e campanhas'
+            },
+            permissoes: {
+              type: 'object',
+              description: 'Objeto JSON com estrutura de permissões',
+              example: {
+                relatorios: {
+                  visualizar: true,
+                  exportar: true
+                },
+                campanhas: {
+                  criar: true,
+                  editar: true,
+                  deletar: false,
+                  visualizar: true
+                }
+              }
+            },
+            ativo: {
+              type: 'boolean',
+              description: 'Status do perfil (padrão: true)',
+              example: true
+            }
+          }
+        },
+        UpdatePerfilRequest: {
+          type: 'object',
+          properties: {
+            nome: {
+              type: 'string',
+              description: 'Nome do perfil (não pode ser alterado em perfis do sistema)',
+              example: 'Analista de Marketing Senior'
+            },
+            descricao: {
+              type: 'string',
+              description: 'Descrição do perfil',
+              example: 'Acesso completo a relatórios e campanhas'
+            },
+            permissoes: {
+              type: 'object',
+              description: 'Objeto JSON com estrutura de permissões',
+              example: {
+                relatorios: {
+                  visualizar: true,
+                  exportar: true
+                },
+                campanhas: {
+                  criar: true,
+                  editar: true,
+                  deletar: true,
+                  visualizar: true
+                }
+              }
+            },
+            ativo: {
+              type: 'boolean',
+              description: 'Status do perfil',
+              example: true
+            }
+          }
+        },
+        UpdatePermissoesRequest: {
+          type: 'object',
+          required: ['permissoes'],
+          properties: {
+            permissoes: {
+              type: 'object',
+              description: 'Objeto JSON com estrutura completa de permissões',
+              example: {
+                usuarios: {
+                  criar: true,
+                  editar: true,
+                  deletar: false,
+                  visualizar: true,
+                  convidar: true
+                },
+                clientes: {
+                  criar: true,
+                  editar: true,
+                  deletar: false,
+                  visualizar: true
+                },
+                leads: {
+                  criar: true,
+                  editar: true,
+                  deletar: true,
+                  visualizar: true,
+                  atribuir: true
+                }
+              }
+            }
+          }
+        },
+        PerfilListResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Perfil'
+              }
+            },
+            total: {
+              type: 'integer',
+              description: 'Total de perfis retornados',
+              example: 5
+            }
+          }
+        },
+        PerfilResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              $ref: '#/components/schemas/Perfil'
+            },
+            message: {
+              type: 'string',
+              description: 'Mensagem de sucesso',
+              example: 'Perfil criado com sucesso'
+            }
+          }
+        },
+        PermissoesResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'object',
+              description: 'Objeto com as permissões do perfil',
+              example: {
+                usuarios: {
+                  criar: true,
+                  editar: true,
+                  deletar: false,
+                  visualizar: true
+                }
+              }
+            }
+          }
+        },
+        UsuarioPerfilResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  usuario_id: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  perfil_id: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  cliente_id: {
+                    type: 'string',
+                    format: 'uuid'
+                  },
+                  ativo: {
+                    type: 'boolean'
+                  },
+                  usuario: {
+                    type: 'object',
+                    properties: {
+                      id: {
+                        type: 'string',
+                        format: 'uuid'
+                      },
+                      nome: {
+                        type: 'string'
+                      },
+                      email: {
+                        type: 'string',
+                        format: 'email'
+                      },
+                      ativo: {
+                        type: 'boolean'
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            total: {
+              type: 'integer',
+              description: 'Total de usuários com este perfil'
+            }
+          }
         }
       },
       responses: {
@@ -873,8 +1178,12 @@ const options: swaggerJSDoc.Options = {
 }
 
 const routesPath = path.join(__dirname, '../routes')
-// console.log('🔍 Swagger __dirname:', __dirname)
-// console.log('🔍 Routes path:', routesPath)
-// console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
+console.log('🔍 Swagger __dirname:', __dirname)
+console.log('🔍 Routes path:', routesPath)
+console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
+if (fs.existsSync(routesPath)) {
+  const files = fs.readdirSync(routesPath)
+  console.log('🔍 Route files found:', files.filter(f => f.endsWith('.ts') || f.endsWith('.js')))
+}
 
 export const swaggerSpec = swaggerJSDoc(options)

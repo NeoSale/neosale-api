@@ -76,7 +76,7 @@ const router = Router();
  * /api/tipos-agente:
  *   get:
  *     summary: Lista todos os tipos de agente
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     responses:
  *       200:
  *         description: Lista de tipos de agente retornada com sucesso
@@ -105,7 +105,7 @@ router.get('/', TipoAgenteController.getAll);
  * /api/tipos-agente/ativos:
  *   get:
  *     summary: Lista todos os tipos de agente ativos
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     responses:
  *       200:
  *         description: Lista de tipos de agente ativos retornada com sucesso
@@ -134,7 +134,7 @@ router.get('/ativos', TipoAgenteController.getAtivos);
  * /api/tipos-agente/{id}:
  *   get:
  *     summary: Busca um tipo de agente por ID
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     parameters:
  *       - in: path
  *         name: id
@@ -170,7 +170,7 @@ router.get('/:id', TipoAgenteController.getById);
  * /api/tipos-agente/nome/{nome}:
  *   get:
  *     summary: Busca um tipo de agente por nome
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     parameters:
  *       - in: path
  *         name: nome
@@ -205,7 +205,7 @@ router.get('/nome/:nome', TipoAgenteController.getByNome);
  * /api/tipos-agente:
  *   post:
  *     summary: Cria um novo tipo de agente
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     requestBody:
  *       required: true
  *       content:
@@ -242,7 +242,7 @@ router.post('/', TipoAgenteController.create);
  * /api/tipos-agente/{id}:
  *   put:
  *     summary: Atualiza um tipo de agente
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     parameters:
  *       - in: path
  *         name: id
@@ -289,7 +289,7 @@ router.put('/:id', TipoAgenteController.update);
  * /api/tipos-agente/{id}:
  *   delete:
  *     summary: Deleta um tipo de agente
- *     tags: [TipoAgente]
+ *     tags: [Tipos de Agente]
  *     parameters:
  *       - in: path
  *         name: id

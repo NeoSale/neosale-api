@@ -129,7 +129,7 @@ export class UsuarioController {
         });
       }
 
-      const { email } = validationResult.data;
+      const { email, telefone } = validationResult.data;
 
       // Verificar se já existe um usuário com o mesmo email
       const existingUsuario = await UsuarioService.getByEmail(email);
@@ -138,6 +138,17 @@ export class UsuarioController {
           success: false,
           message: 'Já existe um usuário com este email'
         });
+      }
+
+      // Verificar se já existe um usuário com o mesmo telefone
+      if (telefone) {
+        const existingUsuarioByTelefone = await UsuarioService.getByTelefone(telefone);
+        if (existingUsuarioByTelefone) {
+          return res.status(409).json({
+            success: false,
+            message: 'Já existe um usuário com este telefone'
+          });
+        }
       }
 
       const usuario = await UsuarioService.create(validationResult.data);

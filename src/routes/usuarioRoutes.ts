@@ -20,16 +20,31 @@ const router = Router();
  *         email:
  *           type: string
  *           format: email
- *           description: Email do usuário
+ *           description: Email do usuário (único)
  *         telefone:
  *           type: string
  *           nullable: true
- *           description: Telefone do usuário
+ *           description: Telefone do usuário (único)
  *         provedor_id:
  *           type: string
  *           format: uuid
  *           nullable: true
  *           description: ID do provedor associado
+ *         tipo_acesso_id:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ *           description: ID do tipo de acesso
+ *         revendedor_id:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ *           description: ID do revendedor
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ *           description: ID do cliente
  *         ativo:
  *           type: boolean
  *           description: Se o usuário está ativo
@@ -56,21 +71,43 @@ const router = Router();
  *       required:
  *         - nome
  *         - email
+ *         - senha
  *       properties:
  *         nome:
  *           type: string
- *           description: Nome do usuário
+ *           description: Nome completo do usuário
+ *           example: João Silva
  *         email:
  *           type: string
  *           format: email
- *           description: Email do usuário
+ *           description: Email do usuário (deve ser único)
+ *           example: joao@exemplo.com
  *         telefone:
  *           type: string
- *           description: Telefone do usuário
+ *           description: Telefone do usuário (deve ser único se fornecido)
+ *           example: "11999999999"
+ *         senha:
+ *           type: string
+ *           format: password
+ *           minLength: 6
+ *           description: Senha do usuário (será criptografada com bcrypt)
+ *           example: senha123
  *         provedor_id:
  *           type: string
  *           format: uuid
- *           description: ID do provedor associado
+ *           description: ID do provedor associado (opcional)
+ *         tipo_acesso_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do tipo de acesso (opcional)
+ *         revendedor_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do revendedor (opcional)
+ *         cliente_id:
+ *           type: string
+ *           format: uuid
+ *           description: ID do cliente (opcional)
  *         ativo:
  *           type: boolean
  *           default: true
@@ -266,6 +303,7 @@ router.get('/ativos', UsuarioController.getAtivos);
  * /api/usuarios:
  *   post:
  *     summary: Criar novo usuário
+ *     description: Cria um novo usuário com senha criptografada (bcrypt). Email e telefone devem ser únicos.
  *     tags: [Usuários]
  *     requestBody:
  *       required: true
@@ -273,9 +311,28 @@ router.get('/ativos', UsuarioController.getAtivos);
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CreateUsuario'
+ *           examples:
+ *             usuario_completo:
+ *               summary: Usuário completo com todos os campos
+ *               value:
+ *                 nome: João Silva
+ *                 email: joao@exemplo.com
+ *                 telefone: "11999999999"
+ *                 senha: senha123
+ *                 provedor_id: uuid-provedor
+ *                 tipo_acesso_id: uuid-tipo-acesso
+ *                 revendedor_id: uuid-revendedor
+ *                 cliente_id: uuid-cliente
+ *                 ativo: true
+ *             usuario_minimo:
+ *               summary: Campos mínimos obrigatórios
+ *               value:
+ *                 nome: Maria Santos
+ *                 email: maria@exemplo.com
+ *                 senha: senha123
  *     responses:
  *       201:
- *         description: Usuário criado com sucesso
+ *         description: Usuário criado com sucesso (senha criptografada com bcrypt)
  *         content:
  *           application/json:
  *             schema:
@@ -290,17 +347,44 @@ router.get('/ativos', UsuarioController.getAtivos);
  *                   type: string
  *                   example: Usuário criado com sucesso
  *       400:
- *         description: Dados inválidos
+ *         description: Dados inválidos (campos obrigatórios faltando ou senha menor que 6 caracteres)
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Dados inválidos
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
  *       409:
- *         description: Já existe um usuário com este email
+ *         description: Email ou telefone já cadastrado
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Já existe um usuário com este email
+ *             examples:
+ *               email_duplicado:
+ *                 value:
+ *                   success: false
+ *                   message: Já existe um usuário com este email
+ *               telefone_duplicado:
+ *                 value:
+ *                   success: false
+ *                   message: Já existe um usuário com este telefone
  *       500:
  *         description: Erro interno do servidor
  *         content:
