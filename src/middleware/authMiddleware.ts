@@ -55,7 +55,7 @@ export const authMiddleware = async (
     };
 
     // Continuar para o próximo middleware/controller
-    next();
+    return next();
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Token inválido';
     
@@ -92,9 +92,9 @@ export const optionalAuthMiddleware = async (
       }
     }
 
-    next();
+    return next();
   } catch (error) {
     // Ignora erro e continua sem autenticação
-    next();
+    return next();
   }
 };
