@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase'
 import { generateEmbedding } from '../lib/embedding'
+import { generateOpenAIEmbedding } from '../lib/openai'
+import { splitTextIntoChunks, getChunkingStats } from '../lib/chunking'
+import mammoth from 'mammoth'
 
 export interface CreateDocumentoInput {
   nome: string
@@ -27,45 +30,107 @@ export interface PaginationInput {
 
 /**
  * Extrai texto do conteúdo base64 do documento
- * Suporta arquivos de texto, JSON, CSV, etc.
+ * Suporta PDF, DOCX, arquivos de texto, JSON, CSV, etc.
  */
-function extractTextFromBase64(base64Content: string, nomeArquivo: string): string {
+async function extractTextFromBase64(base64Content: string, nomeArquivo: string): Promise<string> {
   try {
     // Remover prefixo data:xxx;base64, se existir
     const base64Data = base64Content.replace(/^data:.*?;base64,/, '')
     
-    // Decodificar base64 para texto
+    // Decodificar base64 para buffer
     const buffer = Buffer.from(base64Data, 'base64')
-    const text = buffer.toString('utf-8')
     
-    // Limitar tamanho do texto para embedding (primeiros 5000 caracteres)
-    return text.substring(0, 5000)
+    // Detectar tipo de arquivo pela extensão
+    const extensao = nomeArquivo.toLowerCase().split('.').pop() || ''
+    
+    let text = ''
+    
+    // Processar de acordo com o tipo de arquivo
+    if (extensao === 'pdf') {
+      // Extrair texto de PDF usando pdfjs-dist
+      const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js')
+      
+      // Converter Buffer para Uint8Array
+      const uint8Array = new Uint8Array(buffer)
+      
+      // Carregar o documento PDF
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
+      const pdfDocument = await loadingTask.promise
+      
+      // Extrair texto de todas as páginas
+      const textParts: string[] = []
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const page = await pdfDocument.getPage(i)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        textParts.push(pageText)
+      }
+      
+      text = textParts.join(' ')
+    } else if (extensao === 'docx' || extensao === 'doc') {
+      // Extrair texto de DOCX
+      const result = await mammoth.extractRawText({ buffer })
+      text = result.value
+    } else if (['txt', 'json', 'csv', 'md', 'xml', 'html', 'htm'].includes(extensao)) {
+      // Arquivos de texto simples
+      text = buffer.toString('utf-8')
+    } else {
+      // Para outros tipos, tentar decodificar como texto
+      console.warn(`Tipo de arquivo não suportado para extração de texto: ${extensao}. Tentando decodificar como texto.`)
+      text = buffer.toString('utf-8')
+    }
+    
+    // Limpar texto: remover espaços extras, quebras de linha múltiplas
+    text = text.replace(/\s+/g, ' ').trim()
+
+    console.log(`Texto extraído: ${text.length} caracteres`)
+    
+    // Retornar o texto completo - o embedding será gerado com o texto inteiro
+    // Se houver necessidade de limitar, isso deve ser feito na camada de embedding
+    return text
   } catch (error) {
-    console.warn(`Não foi possível extrair texto do arquivo ${nomeArquivo}:`, error)
-    return ''
+    console.error(`Erro ao extrair texto do arquivo ${nomeArquivo}:`, error)
+    throw new Error(`Não foi possível extrair o conteúdo do arquivo ${nomeArquivo}. Verifique se o arquivo está corrompido ou em um formato válido.`)
   }
 }
 
 /**
- * Gera embedding específico para documentos
+ * Gera embedding específico para documentos usando OpenAI
  * Combina nome, descrição, nome do arquivo e conteúdo para criar um embedding representativo
+ * Retorna o embedding e o texto completo extraído
  */
-function generateDocumentoEmbedding(documento: any): number[] {
+async function generateDocumentoEmbedding(documento: any): Promise<{ embedding: number[], textoCompleto: string }> {
   // Extrair conteúdo do arquivo se disponível
   let conteudo = ''
   if (documento.base64) {
-    conteudo = extractTextFromBase64(documento.base64, documento.nome_arquivo || '')
+    conteudo = await extractTextFromBase64(documento.base64, documento.nome_arquivo || '')
   }
   
-  const embeddingData = {
-    nome: documento.nome || '',
-    descricao: documento.descricao || '',
-    nome_arquivo: documento.nome_arquivo || '',
-    conteudo: conteudo,
-    tipo: 'documento'
+  // Criar um texto combinado para o embedding
+  const textoParts: string[] = []
+  
+  if (documento.nome) {
+    textoParts.push(`Nome: ${documento.nome}`)
   }
   
-  return generateEmbedding(embeddingData)
+  if (documento.descricao) {
+    textoParts.push(`Descrição: ${documento.descricao}`)
+  }
+  
+  if (documento.nome_arquivo) {
+    textoParts.push(`Arquivo: ${documento.nome_arquivo}`)
+  }
+  
+  if (conteudo) {
+    textoParts.push(`Conteúdo: ${conteudo}`)
+  }
+  
+  const textoCompleto = textoParts.join('\n\n')
+  
+  // Gerar embedding usando OpenAI
+  const embedding = await generateOpenAIEmbedding(textoCompleto)
+  
+  return { embedding, textoCompleto }
 }
 
 export class DocumentoService {
@@ -197,38 +262,188 @@ export class DocumentoService {
         }
       }
 
-      // Gerar embedding para o documento
-      const embedding = data.embedding || generateDocumentoEmbedding(data)
-
-      // Criar o documento
-      const { data: novoDocumento, error } = await supabase
-        .from('documentos')
-        .insert({
-          nome: data.nome.trim(),
-          descricao: data.descricao?.trim() || null,
-          nome_arquivo: data.nome_arquivo.trim(),
-          base64: data.base64 || null,
-          cliente_id: clienteId,
-          base_id: data.base_id || null,
-          embedding: embedding
-        })
-        .select('*')
-        .single()
-
-      if (error) {
-        const errorMessage = this.handleSupabaseError(error, 'criar documento')
+      // Gerar embedding e extrair texto completo
+      let embedding: number[]
+      let textoCompleto: string
+      
+      try {
+        console.log('Gerando embedding para o documento...')
+        const startTime = Date.now()
+        
+        if (data.embedding) {
+          embedding = data.embedding
+          textoCompleto = ''
+        } else {
+          const result = await generateDocumentoEmbedding(data)
+          embedding = result.embedding
+          textoCompleto = result.textoCompleto
+        }
+        
+        const endTime = Date.now()
+        console.log(`Embedding gerado em ${endTime - startTime}ms`)
+        console.log(`Texto completo: ${textoCompleto.length} caracteres`)
+      } catch (error: any) {
+        console.error('Erro ao gerar embedding:', error)
         return {
           success: false,
-          message: errorMessage,
+          message: error.message || 'Erro ao processar o arquivo',
           data: null,
-          error: error.code || 'DATABASE_ERROR'
+          error: 'FILE_PROCESSING_ERROR'
         }
       }
 
-      return {
-        success: true,
-        data: novoDocumento,
-        message: 'Documento criado com sucesso'
+      // Verificar se precisa fazer chunking
+      const CHUNK_SIZE = 10000 // 10k caracteres por chunk (reduzido para melhor precisão)
+      const shouldChunk = textoCompleto.length > CHUNK_SIZE
+
+      if (shouldChunk) {
+        console.log(`📄 Documento grande detectado (${textoCompleto.length} chars). Aplicando chunking...`)
+        
+        // Dividir em chunks (overlap de 500 chars para manter contexto)
+        const chunks = splitTextIntoChunks(textoCompleto, CHUNK_SIZE, 500)
+        const stats = getChunkingStats(chunks)
+        
+        console.log(`📊 Estatísticas de chunking:`)
+        console.log(`   Total de chunks: ${stats.totalChunks}`)
+        console.log(`   Tamanho médio: ${stats.avgChunkSize} chars`)
+        console.log(`   Min/Max: ${stats.minChunkSize}/${stats.maxChunkSize} chars`)
+
+        // Criar documento pai (sem base64 para economizar espaço)
+        console.log('Criando documento pai...')
+        const { data: documentoPai, error: errorPai } = await supabase
+          .from('documentos')
+          .insert({
+            nome: data.nome.trim(),
+            descricao: data.descricao?.trim() || null,
+            nome_arquivo: data.nome_arquivo.trim(),
+            base64: null, // Não salvar base64 no pai para economizar espaço
+            cliente_id: clienteId,
+            base_id: data.base_id || null,
+            embedding: embedding, // Embedding do documento completo (truncado)
+            chunk_index: 0,
+            total_chunks: chunks.length,
+            chunk_texto: chunks[0]?.text || null
+          })
+          .select('*')
+          .single()
+
+        if (errorPai) {
+          console.error('Erro ao criar documento pai:', errorPai)
+          return {
+            success: false,
+            message: this.handleSupabaseError(errorPai, 'criar documento pai'),
+            data: null,
+            error: errorPai.code || 'DATABASE_ERROR'
+          }
+        }
+
+        console.log(`✅ Documento pai criado: ${documentoPai.id}`)
+
+        // Criar chunks (começando do segundo, pois o primeiro já está no pai)
+        const chunkPromises = chunks.slice(1).map(async (chunk, idx) => {
+          const chunkIndex = idx + 1
+          console.log(`Processando chunk ${chunkIndex + 1}/${chunks.length}...`)
+          
+          try {
+            // Gerar embedding para o chunk
+            const chunkEmbedding = await generateOpenAIEmbedding(chunk.text)
+            
+            if (!supabase) {
+              throw new Error('Conexão com Supabase não estabelecida')
+            }
+            
+            // Inserir chunk
+            const { error: errorChunk } = await supabase
+              .from('documentos')
+              .insert({
+                nome: `${data.nome.trim()} (Parte ${chunkIndex + 1})`,
+                descricao: `Chunk ${chunkIndex + 1} de ${chunks.length}`,
+                nome_arquivo: data.nome_arquivo.trim(),
+                base64: null,
+                cliente_id: clienteId,
+                base_id: data.base_id || null,
+                embedding: chunkEmbedding,
+                documento_pai_id: documentoPai.id,
+                chunk_index: chunkIndex,
+                total_chunks: chunks.length,
+                chunk_texto: chunk.text
+              })
+
+            if (errorChunk) {
+              console.error(`Erro ao criar chunk ${chunkIndex + 1}:`, errorChunk)
+            } else {
+              console.log(`✅ Chunk ${chunkIndex + 1} criado`)
+            }
+          } catch (error) {
+            console.error(`Erro ao processar chunk ${chunkIndex + 1}:`, error)
+          }
+        })
+
+        // Aguardar todos os chunks serem criados
+        await Promise.all(chunkPromises)
+        
+        console.log(`✅ Documento com ${chunks.length} chunks criado com sucesso`)
+
+        return {
+          success: true,
+          data: {
+            ...documentoPai,
+            chunks_info: {
+              total_chunks: chunks.length,
+              chunk_stats: stats
+            }
+          },
+          message: `Documento criado com sucesso (${chunks.length} partes)`
+        }
+      } else {
+        // Documento pequeno - criar normalmente
+        console.log('Inserindo documento no banco de dados...')
+        const { data: novoDocumento, error } = await supabase
+          .from('documentos')
+          .insert({
+            nome: data.nome.trim(),
+            descricao: data.descricao?.trim() || null,
+            nome_arquivo: data.nome_arquivo.trim(),
+            base64: data.base64 || null,
+            cliente_id: clienteId,
+            base_id: data.base_id || null,
+            embedding: embedding,
+            chunk_index: 0,
+            total_chunks: 1,
+            chunk_texto: textoCompleto
+          })
+          .select('*')
+          .single()
+
+        if (error) {
+          console.error('Erro ao inserir documento:', error)
+          
+          // Tratamento específico para timeout
+          if (error.code === '57014') {
+            return {
+              success: false,
+              message: 'A operação demorou muito tempo. Tente novamente com um documento menor ou entre em contato com o suporte.',
+              data: null,
+              error: 'TIMEOUT_ERROR'
+            }
+          }
+          
+          const errorMessage = this.handleSupabaseError(error, 'criar documento')
+          return {
+            success: false,
+            message: errorMessage,
+            data: null,
+            error: error.code || 'DATABASE_ERROR'
+          }
+        }
+
+        console.log('Documento criado com sucesso:', novoDocumento.id)
+
+        return {
+          success: true,
+          data: novoDocumento,
+          message: 'Documento criado com sucesso'
+        }
       }
     } catch (error: any) {
       console.error('Erro no DocumentoService.criarDocumento:', error)
@@ -649,12 +864,21 @@ export class DocumentoService {
       if (data.base_id !== undefined) updateData.base_id = data.base_id
 
       // Regenerar embedding se algum campo relevante foi alterado
-      if (data.nome || data.descricao || data.nome_arquivo) {
+      if (data.nome || data.descricao || data.nome_arquivo || data.base64) {
         const dadosParaEmbedding = {
           ...documentoExistente.data,
           ...updateData
         }
-        updateData.embedding = data.embedding || generateDocumentoEmbedding(dadosParaEmbedding)
+        try {
+          updateData.embedding = data.embedding || await generateDocumentoEmbedding(dadosParaEmbedding)
+        } catch (error: any) {
+          return {
+            success: false,
+            message: error.message || 'Erro ao processar o arquivo',
+            data: null,
+            error: 'FILE_PROCESSING_ERROR'
+          }
+        }
       }
 
       const { data: documentoAtualizado, error } = await supabase

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { DocumentoController } from '../controllers/documentoController'
+import { buscarDocumentos } from '../controllers/documentoSearchController'
 import { validateClienteId } from '../middleware/validate-cliente_id'
 
 const router = Router()
@@ -416,5 +417,8 @@ router.delete('/:id', validateClienteId, DocumentoController.excluirDocumento)
  *         description: Erro interno do servidor
  */
 router.post('/buscar-similares', validateClienteId, DocumentoController.buscarSimilares)
+
+// Busca híbrida (texto + semântica)
+router.post('/search', buscarDocumentos)
 
 export default router

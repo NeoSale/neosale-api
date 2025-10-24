@@ -14,6 +14,11 @@ export class DocumentoController {
       const resultado = await DocumentoService.criarDocumento(data, clienteId)
 
       if (!resultado.success) {
+        // Retornar 400 para erros de validação e processamento de arquivo
+        if (resultado.error === 'VALIDATION_ERROR' || resultado.error === 'FILE_PROCESSING_ERROR' || 
+            resultado.error === 'DUPLICATE_NAME' || resultado.error === 'DUPLICATE_FILENAME') {
+          return res.status(400).json(resultado)
+        }
         return res.status(404).json(resultado)
       }
       
@@ -119,6 +124,11 @@ export class DocumentoController {
       const resultado = await DocumentoService.atualizarDocumento(id, data, clienteId)
       
       if (!resultado.success) {
+        // Retornar 400 para erros de validação e processamento de arquivo
+        if (resultado.error === 'VALIDATION_ERROR' || resultado.error === 'FILE_PROCESSING_ERROR' || 
+            resultado.error === 'DUPLICATE_NAME' || resultado.error === 'DUPLICATE_FILENAME') {
+          return res.status(400).json(resultado)
+        }
         return res.status(404).json(resultado)
       }
 
