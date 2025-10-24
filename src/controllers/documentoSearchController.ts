@@ -48,15 +48,10 @@ import { DocumentoSearchService } from '../services/documentoSearchService'
  *                 example: ["1b87c1a9-ced5-4760-98ef-6a97e464cd24"]
  *               query:
  *                 type: string
- *                 description: Texto da consulta (obrigatório)
- *                 example: "o que diz o art. 77 da Lei Complementar 214/2025?"
- *               search_terms:
- *                 type: string
  *                 description: |
- *                   Termo específico para buscar no texto dos documentos (opcional).
- *                   Se não fornecido, o sistema extrai automaticamente da query.
- *                   Aceita apenas uma string (não array).
- *                 example: "Art. 77"
+ *                   Texto da consulta (obrigatório).
+ *                   O sistema extrai automaticamente termos específicos (Art. X, Lei X, etc).
+ *                 example: "o que diz o art. 77 da Lei Complementar 214/2025?"
  *               limit:
  *                 type: integer
  *                 default: 10
@@ -65,20 +60,19 @@ import { DocumentoSearchService } from '../services/documentoSearchService'
  *                 description: Número máximo de resultados (1-100)
  *                 example: 10
  *           examples:
- *             comTermoEspecifico:
- *               summary: Busca com termo específico
+ *             exemplo1:
+ *               summary: Busca por artigo específico
  *               value:
  *                 cliente_id: "f029ad69-3465-454e-ba85-e0cdb75c445f"
  *                 base_id: ["1b87c1a9-ced5-4760-98ef-6a97e464cd24"]
  *                 query: "o que diz o art. 77?"
- *                 search_terms: "Art. 77"
  *                 limit: 10
- *             semTermo:
- *               summary: Busca com extração automática
+ *             exemplo2:
+ *               summary: Busca por lei
  *               value:
  *                 cliente_id: "f029ad69-3465-454e-ba85-e0cdb75c445f"
  *                 base_id: ["1b87c1a9-ced5-4760-98ef-6a97e464cd24"]
- *                 query: "o que diz o art. 77?"
+ *                 query: "Lei Complementar 214/2025"
  *                 limit: 10
  *     responses:
  *       200:
@@ -196,7 +190,7 @@ import { DocumentoSearchService } from '../services/documentoSearchService'
  */
 export async function buscarDocumentos(req: Request, res: Response) {
   try {
-    const { cliente_id, base_id = [], query, search_terms, limit = 10 } = req.body
+    const { cliente_id, base_id = [], query, limit = 10 } = req.body
 
     // Validações
     if (!cliente_id) {
@@ -218,20 +212,15 @@ export async function buscarDocumentos(req: Request, res: Response) {
     // Validar base_id se fornecido
     const baseIds = Array.isArray(base_id) ? base_id : []
 
-    // Validar search_terms se fornecido - converter string para array
-    const searchTerms = search_terms && typeof search_terms === 'string' && search_terms.trim().length > 0
-      ? [search_terms.trim()]
-      : undefined
-
     // Validar limit
     const limitNum = typeof limit === 'number' ? Math.min(Math.max(limit, 1), 100) : 10
 
-    // Executar busca híbrida
+    // Executar busca híbrida (extração automática de termos)
     const result = await DocumentoSearchService.buscarHibrido(
       cliente_id,
       baseIds,
       query.trim(),
-      searchTerms,
+      undefined,  // Sempre undefined para forçar extração automática
       limitNum
     )
 

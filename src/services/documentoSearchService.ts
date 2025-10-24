@@ -45,49 +45,58 @@ export class DocumentoSearchService {
         console.log('📝 Buscando por texto...')
         
         for (const term of searchTerms) {
-          const { data, error } = await supabase
-            .from('documentos')
-            .select('*')
-            .eq('cliente_id', clienteId)
-            .ilike('chunk_texto', `%${term}%`)
-            .eq('deletado', false)
-            .limit(20)  // Buscar até 20 matches por termo
+          // Normalizar termo para buscar variações
+          const normalizedTerms = this.normalizeSearchTerm(term)
+          console.log(`   Buscando variações de "${term}": ${normalizedTerms.join(', ')}`)
+          
+          for (const normalizedTerm of normalizedTerms) {
+            const { data, error } = await supabase
+              .from('documentos')
+              .select('*')
+              .eq('cliente_id', clienteId)
+              .ilike('chunk_texto', `%${normalizedTerm}%`)
+              .eq('deletado', false)
+              .limit(20)  // Buscar até 20 matches por termo
 
-          if (!error && data) {
-            // Filtrar por base_id se fornecido
-            const filtered = baseIds.length > 0
-              ? data.filter(d => {
-                  const docBaseIds = Array.isArray(d.base_id) ? d.base_id : []
-                  return baseIds.some(bid => docBaseIds.includes(bid))
-                })
-              : data
+            if (!error && data) {
+              // Filtrar por base_id se fornecido
+              const filtered = baseIds.length > 0
+                ? data.filter(d => {
+                    const docBaseIds = Array.isArray(d.base_id) ? d.base_id : []
+                    return baseIds.some(bid => docBaseIds.includes(bid))
+                  })
+                : data
 
-            // Calcular similaridade para cada resultado
-            for (const doc of filtered) {
-              let embedding = doc.embedding
-              
-              // Parse embedding se estiver como string
-              if (typeof embedding === 'string') {
-                try {
-                  embedding = JSON.parse(embedding)
-                } catch (e) {
-                  console.warn(`Erro ao fazer parse do embedding do doc ${doc.id}`)
-                  continue
+              // Calcular similaridade para cada resultado
+              for (const doc of filtered) {
+                // Evitar duplicatas
+                if (textResults.some(r => r.id === doc.id)) continue
+                
+                let embedding = doc.embedding
+                
+                // Parse embedding se estiver como string
+                if (typeof embedding === 'string') {
+                  try {
+                    embedding = JSON.parse(embedding)
+                  } catch (e) {
+                    console.warn(`Erro ao fazer parse do embedding do doc ${doc.id}`)
+                    continue
+                  }
                 }
-              }
-              
-              if (embedding && Array.isArray(embedding)) {
-                const similarity = this.calculateCosineSimilarity(
-                  queryEmbedding,
-                  embedding
-                )
-                textResults.push({
-                  ...doc,
-                  similarity,
-                  text_match: true,
-                  matched_term: term,
-                  combined_score: 1.0 + (similarity * 0.5)  // Boost para text match
-                })
+                
+                if (embedding && Array.isArray(embedding)) {
+                  const similarity = this.calculateCosineSimilarity(
+                    queryEmbedding,
+                    embedding
+                  )
+                  textResults.push({
+                    ...doc,
+                    similarity,
+                    text_match: true,
+                    matched_term: term,
+                    combined_score: 1.0 + (similarity * 0.5)  // Boost para text match
+                  })
+                }
               }
             }
           }
@@ -198,6 +207,36 @@ export class DocumentoSearchService {
         error: 'SEARCH_ERROR'
       }
     }
+  }
+
+  /**
+   * Normaliza um termo de busca para encontrar variações
+   * Ex: "artigo 77" -> ["artigo 77", "art. 77", "art 77"]
+   */
+  private static normalizeSearchTerm(term: string): string[] {
+    const normalized: string[] = [term] // Incluir o termo original
+    const lowerTerm = term.toLowerCase().trim()
+    
+    // Se contém "artigo" ou "art", criar variações
+    if (lowerTerm.includes('artigo')) {
+      // "artigo 77" -> "art. 77", "art 77"
+      const num = lowerTerm.match(/\d+/)
+      if (num) {
+        normalized.push(`art. ${num[0]}`)
+        normalized.push(`art ${num[0]}`)
+      }
+    } else if (lowerTerm.match(/^art\.?\s*\d+/)) {
+      // "art 77" ou "art. 77" -> adicionar ambas variações
+      const num = lowerTerm.match(/\d+/)
+      if (num) {
+        normalized.push(`art. ${num[0]}`)
+        normalized.push(`art ${num[0]}`)
+        normalized.push(`artigo ${num[0]}`)
+      }
+    }
+    
+    // Remover duplicatas
+    return [...new Set(normalized)]
   }
 
   /**

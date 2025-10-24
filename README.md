@@ -96,6 +96,56 @@ Após iniciar o servidor, a documentação Swagger estará disponível em:
 GET /api/leads/paginated?page=2&limit=20&search=joão
 ```
 
+### Documentos - Busca Híbrida
+
+**Endpoint:** `POST /api/documentos/search`
+
+Busca híbrida que combina busca por texto exato + busca semântica usando embeddings OpenAI.
+
+**Características:**
+- ✅ Prioriza documentos com match de texto (score 1.0-1.5)
+- ✅ Complementa com busca semântica (score 0-0.5)
+- ✅ Normalização automática de termos (ex: "artigo 77" → "art. 77")
+- ✅ Extração automática de termos da query
+- ✅ Suporte a chunks de documentos
+
+**Body:**
+```json
+{
+  "cliente_id": "uuid",
+  "base_id": ["uuid"],
+  "query": "o que diz o artigo 77 da Lei Complementar 214/2025?",
+  "limit": 10
+}
+```
+
+**Extração e Normalização Automática:**
+O sistema extrai e normaliza automaticamente termos da query:
+- `"artigo 77"` → extrai e busca: `"artigo 77"`, `"art. 77"`, `"art 77"`
+- `"art 77"` → extrai e busca: `"art 77"`, `"art. 77"`, `"artigo 77"`
+- `"Lei Complementar 214"` → extrai e busca: `"Lei Complementar 214"`, `"Lei 214"`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "10 documento(s) encontrado(s)",
+  "data": [
+    {
+      "id": "uuid",
+      "nome": "ref (Parte 12)",
+      "nome_arquivo": "Lei Complementar 214_2025.pdf",
+      "chunk_index": 11,
+      "chunk_texto": "Art. 77. As diferenças percentuais...",
+      "similarity": 0.41,
+      "combined_score": 1.205,
+      "text_match": true,
+      "matched_term": "art. 77"
+    }
+  ]
+}
+```
+
 ## 🔒 Segurança
 
 - **Helmet**: Configuração de headers de segurança
