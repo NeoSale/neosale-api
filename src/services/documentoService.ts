@@ -293,14 +293,16 @@ export class DocumentoService {
       }
 
       // Verificar se precisa fazer chunking
-      const CHUNK_SIZE = 10000 // 10k caracteres por chunk (reduzido para melhor precisão)
+      const CHUNK_SIZE = 3000 // 3k caracteres por chunk (chunks menores = busca mais precisa)
+      const OVERLAP = 300 // 10% de overlap para manter contexto
       const shouldChunk = textoCompleto.length > CHUNK_SIZE
 
       if (shouldChunk) {
         console.log(`📄 Documento grande detectado (${textoCompleto.length} chars). Aplicando chunking...`)
+        console.log(`⚙️ Configuração: ${CHUNK_SIZE} chars/chunk, ${OVERLAP} chars overlap`)
         
-        // Dividir em chunks (overlap de 500 chars para manter contexto)
-        const chunks = splitTextIntoChunks(textoCompleto, CHUNK_SIZE, 500)
+        // Dividir em chunks menores para busca mais precisa
+        const chunks = splitTextIntoChunks(textoCompleto, CHUNK_SIZE, OVERLAP)
         const stats = getChunkingStats(chunks)
         
         console.log(`📊 Estatísticas de chunking:`)

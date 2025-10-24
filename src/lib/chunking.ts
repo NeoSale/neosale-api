@@ -15,14 +15,19 @@ export interface TextChunk {
  * Tenta quebrar em limites de sentenças para manter contexto
  * 
  * @param text - Texto completo para dividir
- * @param chunkSize - Tamanho aproximado de cada chunk em caracteres
- * @param overlap - Número de caracteres de sobreposição entre chunks
+ * @param chunkSize - Tamanho aproximado de cada chunk em caracteres (padrão: 3000)
+ * @param overlap - Número de caracteres de sobreposição entre chunks (padrão: 300)
  * @returns Array de chunks
+ * 
+ * Configuração otimizada para busca:
+ * - Chunks menores (3k) = busca mais precisa
+ * - Overlap de 10% = mantém contexto entre chunks
+ * - Quebra em sentenças = preserva significado
  */
 export function splitTextIntoChunks(
   text: string,
-  chunkSize: number = 20000,
-  overlap: number = 1000
+  chunkSize: number = 3000,
+  overlap: number = 300
 ): TextChunk[] {
   if (!text || text.length === 0) {
     return []

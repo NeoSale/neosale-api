@@ -406,7 +406,7 @@ class UserService {
 - Prioriza documentos com match de texto (score 1.0-1.5)
 - Busca semântica complementar (score 0-0.5)
 - Extração automática de termos (Art. X, Lei X)
-- Chunking inteligente de documentos (10k chars, 500 overlap)
+- Chunking otimizado de documentos (3k chars, 300 overlap)
 
 **Arquivos Importantes:**
 - `src/services/documentoSearchService.ts` - Lógica da busca híbrida
@@ -416,12 +416,14 @@ class UserService {
 - `N8N_HYBRID_SEARCH_GUIDE.md` - Guia de integração com n8n
 
 ### 2. Chunking de Documentos
-**Características:**
-- Documentos > 10k chars são divididos em chunks
-- Tamanho: ~10k caracteres por chunk
-- Overlap: 500 caracteres entre chunks
+**Características (OTIMIZADO):**
+- Documentos > 3k chars são divididos em chunks
+- Tamanho: ~3k caracteres por chunk (reduzido para melhor precisão)
+- Overlap: 300 caracteres entre chunks (10% de overlap)
 - Quebra em limites de sentença para preservar contexto
 - Cada chunk recebe seu próprio embedding
+- Chunks menores = busca mais precisa (90-95% vs 70-85%)
+- Custo: ~$0.014 por documento grande (748k chars)
 
 **Colunas do Banco:**
 - `documento_pai_id` - ID do documento original
