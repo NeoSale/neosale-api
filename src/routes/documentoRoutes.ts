@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { DocumentoController } from '../controllers/documentoController'
 import { buscarDocumentos } from '../controllers/documentoSearchController'
+import { buscarSimples } from '../controllers/documentoSearchSimpleController'
 import { validateClienteId } from '../middleware/validate-cliente_id'
 
 const router = Router()
@@ -420,5 +421,8 @@ router.post('/buscar-similares', validateClienteId, DocumentoController.buscarSi
 
 // Busca híbrida (texto + semântica)
 router.post('/search', buscarDocumentos)
+
+// Busca simples (APENAS texto, sem embeddings) - para debug
+router.post('/search-simple', buscarSimples)
 
 export default router

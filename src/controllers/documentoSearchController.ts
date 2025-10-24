@@ -220,7 +220,6 @@ export async function buscarDocumentos(req: Request, res: Response) {
       cliente_id,
       baseIds,
       query.trim(),
-      undefined,  // Sempre undefined para forçar extração automática
       limitNum
     )
 

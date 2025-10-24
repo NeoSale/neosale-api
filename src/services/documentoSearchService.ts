@@ -9,12 +9,12 @@ export class DocumentoSearchService {
   /**
    * Busca híbrida: combina busca por texto com busca semântica
    * Prioriza documentos que contêm o texto exato
+   * Extrai automaticamente termos específicos da query
    */
   static async buscarHibrido(
     clienteId: string,
     baseIds: string[],
     queryText: string,
-    searchTerms?: string[],  // Termos específicos para buscar (ex: ["Art. 77"])
     limit: number = 10
   ) {
     try {
@@ -23,10 +23,10 @@ export class DocumentoSearchService {
       }
 
       console.log('🔍 Iniciando busca híbrida...')
+      console.log(`   Cliente ID: ${clienteId}`)
+      console.log(`   Base IDs: ${baseIds.length > 0 ? baseIds.join(', ') : 'NENHUMA (buscando em todas)'}`)
       console.log(`   Query: "${queryText}"`)
-      if (searchTerms && searchTerms.length > 0) {
-        console.log(`   Termos específicos: ${searchTerms.join(', ')}`)
-      }
+      console.log(`   Limit: ${limit}`)
 
       // 1. Gerar embedding da consulta
       console.log('⏳ Gerando embedding...')
@@ -34,9 +34,10 @@ export class DocumentoSearchService {
       const queryEmbedding = await generateOpenAIEmbedding(queryText)
       console.log(`✅ Embedding gerado em ${Date.now() - startEmb}ms`)
 
-      // 2. Extrair termos específicos automaticamente se não fornecidos
-      if (!searchTerms || searchTerms.length === 0) {
-        searchTerms = this.extractSpecificTerms(queryText)
+      // 2. Extrair termos específicos automaticamente da query
+      const searchTerms = this.extractSpecificTerms(queryText)
+      if (searchTerms.length > 0) {
+        console.log(`   Termos extraídos: ${searchTerms.join(', ')}`)
       }
 
       // 3. Buscar por texto primeiro (se houver termos específicos)
@@ -59,13 +60,21 @@ export class DocumentoSearchService {
               .limit(20)  // Buscar até 20 matches por termo
 
             if (!error && data) {
+              console.log(`      Encontrados ${data.length} documentos com "${normalizedTerm}"`)
+              
               // Filtrar por base_id se fornecido
               const filtered = baseIds.length > 0
                 ? data.filter(d => {
                     const docBaseIds = Array.isArray(d.base_id) ? d.base_id : []
-                    return baseIds.some(bid => docBaseIds.includes(bid))
+                    const hasMatch = baseIds.some(bid => docBaseIds.includes(bid))
+                    if (!hasMatch) {
+                      console.log(`      ⚠️ Doc ${d.id} não está nas bases solicitadas: ${JSON.stringify(docBaseIds)}`)
+                    }
+                    return hasMatch
                   })
                 : data
+              
+              console.log(`      Após filtro de base_id: ${filtered.length} documentos`)
 
               // Calcular similaridade para cada resultado
               for (const doc of filtered) {
@@ -89,6 +98,7 @@ export class DocumentoSearchService {
                     queryEmbedding,
                     embedding
                   )
+                  console.log(`      ✅ Doc ${doc.id}: similarity=${similarity.toFixed(4)}, score=${(1.0 + similarity * 0.5).toFixed(4)}`)
                   textResults.push({
                     ...doc,
                     similarity,
@@ -96,6 +106,8 @@ export class DocumentoSearchService {
                     matched_term: term,
                     combined_score: 1.0 + (similarity * 0.5)  // Boost para text match
                   })
+                } else {
+                  console.log(`      ⚠️ Doc ${doc.id} sem embedding válido`)
                 }
               }
             }
@@ -114,6 +126,8 @@ export class DocumentoSearchService {
         .eq('deletado', false)
         .not('embedding', 'is', null)
         .limit(limit * 3)  // Buscar mais para ter opções
+      
+      console.log(`   Documentos com embedding encontrados: ${semanticData?.length || 0}`)
 
       if (semanticError) {
         console.error('Erro na busca semântica:', semanticError)
@@ -128,6 +142,8 @@ export class DocumentoSearchService {
               return baseIds.some(bid => docBaseIds.includes(bid))
             })
           : semanticData
+        
+        console.log(`   Após filtro de base_id: ${filtered.length} documentos`)
 
         // Calcular similaridade e excluir os que já estão em textResults
         const textResultIds = new Set(textResults.map(r => r.id))
