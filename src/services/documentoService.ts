@@ -310,7 +310,7 @@ export class DocumentoService {
         console.log(`   Tamanho médio: ${stats.avgChunkSize} chars`)
         console.log(`   Min/Max: ${stats.minChunkSize}/${stats.maxChunkSize} chars`)
 
-        // Criar documento pai (sem base64 para economizar espaço)
+        // Criar documento pai
         console.log('Criando documento pai...')
         const { data: documentoPai, error: errorPai } = await supabase
           .from('documentos')
@@ -318,7 +318,7 @@ export class DocumentoService {
             nome: data.nome.trim(),
             descricao: data.descricao?.trim() || null,
             nome_arquivo: data.nome_arquivo.trim(),
-            base64: null, // Não salvar base64 no pai para economizar espaço
+            base64: data.base64 || null, // Salvar base64 no documento pai
             cliente_id: clienteId,
             base_id: data.base_id || null,
             embedding: embedding, // Embedding do documento completo (truncado)
@@ -595,6 +595,7 @@ export class DocumentoService {
         .select('*', { count: 'exact' })
         .eq('cliente_id', clienteId)
         .eq('deletado', false)
+        .is('documento_pai_id', null)  // Apenas documentos pai (sem chunks)
         .order('created_at', { ascending: false })
 
       // Aplicar filtro de busca se fornecido
@@ -957,11 +958,47 @@ export class DocumentoService {
         return documentoExistente
       }
 
-      const { error } = await supabase
+      console.log(`🗑️ Excluindo documento ${id} e seus chunks...`)
+
+      // Marcar o documento pai como deletado
+      const { error: errorPai } = await supabase
         .from('documentos')
         .update({ deletado: true })
         .eq('id', id)
         .eq('cliente_id', clienteId)
+
+      if (errorPai) {
+        const errorMessage = this.handleSupabaseError(errorPai, 'excluir documento pai')
+        return {
+          success: false,
+          message: errorMessage,
+          data: null,
+          error: errorPai.code || 'DATABASE_ERROR'
+        }
+      }
+
+      console.log(`✅ Documento pai ${id} marcado como deletado`)
+
+      // Contar chunks filhos antes de deletar
+      const { count: chunkCount } = await supabase
+        .from('documentos')
+        .select('id', { count: 'exact', head: true })
+        .eq('documento_pai_id', id)
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+
+      // Marcar todos os chunks filhos como deletados
+      const { error } = await supabase
+        .from('documentos')
+        .update({ deletado: true })
+        .eq('documento_pai_id', id)
+        .eq('cliente_id', clienteId)
+
+      if (chunkCount && chunkCount > 0) {
+        console.log(`✅ ${chunkCount} chunks filhos marcados como deletados`)
+      } else {
+        console.log(`ℹ️ Nenhum chunk filho encontrado (documento sem chunks)`)
+      }
 
       if (error) {
         const errorMessage = this.handleSupabaseError(error, 'excluir documento')

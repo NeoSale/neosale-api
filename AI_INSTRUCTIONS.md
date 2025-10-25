@@ -426,10 +426,28 @@ class UserService {
 - Custo: ~$0.014 por documento grande (748k chars)
 
 **Colunas do Banco:**
-- `documento_pai_id` - ID do documento original
+- `documento_pai_id` - ID do documento original (NULL para documentos pai)
 - `chunk_index` - Índice do chunk (0-based)
 - `total_chunks` - Total de chunks do documento
 - `chunk_texto` - Texto do chunk
+
+### 3. Gestão de Documentos (IMPORTANTE)
+**GET `/api/documentos`:**
+- Retorna **APENAS documentos pai** (sem chunks)
+- Filtro: `documento_pai_id IS NULL`
+- Paginação eficiente (10 documentos = 10 registros, não 2500)
+- Payload reduzido em ~90%
+
+**DELETE `/api/documentos/:id`:**
+- Deleta documento pai **E todos os chunks filhos**
+- Soft delete (marca `deletado = true`)
+- Deleção em cascata automática
+- Logs detalhados do processo
+- Mantém integridade referencial
+
+**Arquivos:**
+- `src/services/documentoService.ts` - Lógica de listagem e deleção
+- `CHANGELOG_DOCUMENTOS_API.md` - Documentação completa das mudanças
 
 ## 🔧 Padrões de Desenvolvimento
 
