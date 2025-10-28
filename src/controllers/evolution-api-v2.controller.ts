@@ -546,6 +546,45 @@ export class EvolutionApiV2Controller {
       });
     }
   }
+
+  async getContacts(req: Request, res: Response) {
+    try {
+      const { instanceName } = req.params;
+      const { id } = req.query;
+
+      if (!instanceName) {
+        return res.status(400).json({
+          success: false,
+          message: 'instanceName is required'
+        });
+      }
+
+      // Build where filter from query parameters
+      const where: { id?: string } = {};
+      if (id) {
+        where.id = id as string;
+      }
+
+      // API key vem do .env, não precisa passar
+      const contacts = await evolutionApiServiceV2.findContacts(
+        instanceName,
+        where,
+        '' // API key será obtida do service via .env
+      );
+
+      return res.json({
+        success: true,
+        data: contacts,
+        message: 'Contacts retrieved successfully'
+      });
+    } catch (error: any) {
+      console.error('Error in getContacts:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Internal server error'
+      });
+    }
+  }
 }
 
 export const evolutionApiV2Controller = new EvolutionApiV2Controller();

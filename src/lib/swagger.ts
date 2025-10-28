@@ -60,6 +60,10 @@ const options: swaggerJSDoc.Options = {
         description: 'Operações relacionadas à Evolution API'
       },
       {
+        name: 'Evolution API V2',
+        description: 'Operações relacionadas à Evolution API V2'
+      },
+      {
         name: 'Follow-up',
         description: 'Operações relacionadas ao follow-up'
       },

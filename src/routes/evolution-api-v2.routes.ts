@@ -1432,4 +1432,111 @@ router.post('/chat/sendPresence/:instance', validateSendPresence, evolutionApiV2
  */
 router.post('/chat/findContacts/:instanceName', evolutionApiV2Controller.findContacts.bind(evolutionApiV2Controller));
 
+/**
+ * @swagger
+ * /api/evolution-api-v2/chat/contacts/{instanceName}:
+ *   get:
+ *     summary: Consultar contatos do WhatsApp conectado
+ *     description: Busca contatos do WhatsApp através da instância conectada. Retorna todos os contatos se nenhum filtro for especificado, ou um contato específico se o ID for fornecido. A API Key é obtida automaticamente do arquivo .env.
+ *     tags: [Evolution API V2]
+ *     parameters:
+ *       - in: path
+ *         name: instanceName
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Nome da instância do WhatsApp
+ *         example: "minha-instancia"
+ *       - in: query
+ *         name: id
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: ID do contato (número de telefone com código do país)
+ *         example: "5511991386362@s.whatsapp.net"
+ *     responses:
+ *       200:
+ *         description: Contatos recuperados com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: ID do contato
+ *                         example: "cmf7hak760upso84jucokbywq"
+ *                       remoteJid:
+ *                         type: string
+ *                         description: JID remoto do contato
+ *                         example: "5511991386362@s.whatsapp.net"
+ *                       pushName:
+ *                         type: string
+ *                         description: Nome do contato
+ *                         example: "BRAVALU Rafa"
+ *                       profilePicUrl:
+ *                         type: string
+ *                         description: URL da foto do perfil
+ *                         example: "https://pps.whatsapp.net/v/t61.24694-24/..."
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-05T23:40:54.594Z"
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-09-05T23:40:54.890Z"
+ *                       instanceId:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "1e93236f-81e4-4e7a-9f8a-f4543c67239c"
+ *                       isGroup:
+ *                         type: boolean
+ *                         example: false
+ *                       isSaved:
+ *                         type: boolean
+ *                         example: true
+ *                       type:
+ *                         type: string
+ *                         example: "contact"
+ *                 message:
+ *                   type: string
+ *                   example: "Contacts retrieved successfully"
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "instanceName is required"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Internal server error"
+ */
+router.get('/chat/contacts/:instanceName', evolutionApiV2Controller.getContacts.bind(evolutionApiV2Controller));
+
 export default router;

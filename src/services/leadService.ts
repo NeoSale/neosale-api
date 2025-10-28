@@ -222,21 +222,46 @@ export class LeadService {
           }
         }
 
-        // Criar followup primeiro com valores padrão
-        // const { data: followup, error: followupError } = await supabase!
-        //   .from('followup')
-        //   .insert({
-        //     id_mensagem: (await supabase!.from('mensagens').select('id').limit(1).single()).data?.id || null,
-        //     status: 'sucesso',
-        //     mensagem_enviada: 'Mensagem padrão - aguardando envio'
-        //   })
-        //   .select()
-        //   .single()
+        // Validar e obter origem_id
+        let origemId = null
+        if (leadData.origem) {
+          // Buscar origem pelo nome
+          const { data: origemExistente, error: origemError } = await supabase!
+            .from('origens_leads')
+            .select('id')
+            .eq('nome', leadData.origem)
+            .eq('cliente_id', clienteId)
+            .single()
 
-        // if (followupError) {
-        //   console.error('❌ Erro ao criar followup:', followupError)
-        //   throw followupError
-        // }
+          if (origemError && origemError.code !== 'PGRST116') {
+            console.error('❌ Erro ao buscar origem:', origemError)
+            throw origemError
+          }
+
+          if (origemExistente) {
+            // Origem existe, usar o ID
+            origemId = origemExistente.id
+            console.log(`✅ Origem "${leadData.origem}" encontrada:`, origemId)
+          } else {
+            // Origem não existe, criar
+            const { data: novaOrigem, error: criarOrigemError } = await supabase!
+              .from('origens_leads')
+              .insert({
+                nome: leadData.origem,
+                cliente_id: clienteId
+              })
+              .select()
+              .single()
+
+            if (criarOrigemError) {
+              console.error('❌ Erro ao criar origem:', criarOrigemError)
+              throw criarOrigemError
+            }
+
+            origemId = novaOrigem.id
+            console.log(`✅ Origem "${leadData.origem}" criada:`, origemId)
+          }
+        }
 
         // Criar lead com referência ao mensagem_status
         const { data: lead, error: leadError } = await supabase!
@@ -248,7 +273,7 @@ export class LeadService {
             empresa: leadData.empresa,
             cargo: leadData.cargo,
             resumo: leadData.resumo || null,
-            origem_id: leadData.origem_id,
+            origem_id: origemId,
             cliente_id: clienteId
           })
           .select()
@@ -267,44 +292,58 @@ export class LeadService {
       }
     }
 
-    console.log('✅ Importação concluída:', results.length, 'leads criados,', skipped.length, 'leads pulados')
+    console.log('✅ Importação de leads concluída:', results.length, 'leads criados,', skipped.length, 'leads pulados')
     return { created: results, skipped }
   }
 
-  // Importar leads em lote (bulk) sem origem_id
+  // Importar leads em lote (bulk) com origem opcional
   static async bulkImportLeads(data: BulkLeadsInput, clienteId: string) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Iniciando importação em lote de leads:', data.leads.length, 'leads')
 
-    // Buscar a origem 'import'
+    // Usar origem fornecida ou 'import' como padrão
+    const origemNome = data.leads[0].origem || 'import'
+    console.log('📍 Origem:', origemNome)
+
+    // Buscar a origem
     const { data: origens, error: origemError } = await supabase!
       .from('origens_leads')
       .select('id')
-      .eq('nome', 'import')
+      .eq('nome', origemNome)
       .eq('cliente_id', clienteId)
       .single()
 
     let origemId = origens?.id
     if (origemError || !origens) {
-      /// cria a origem 'import' se não existir
+      // Criar a origem se não existir
       const { data: origemImport, error: origemImportError } = await supabase!
         .from('origens_leads')
         .insert({
-          nome: 'import',
+          nome: origemNome,
           cliente_id: clienteId
         })
         .select()
         .single()
 
       if (origemImport) {
-        console.log('✅ Origem "import" criada com sucesso:', origemImport.id)
+        console.log(`✅ Origem "${origemNome}" criada com sucesso:`, origemImport.id)
         origemId = origemImport.id
       }
 
       if (origemImportError) {
-        console.error('❌ Erro ao criar origem "import":', origemImportError)
+        console.error(`❌ Erro ao criar origem "${origemNome}":`, origemImportError)
         throw origemImportError
       }
+    }
+
+    // Buscar qualificação "Novo"
+    const qualificacao = await QualificacaoService.buscarQualificacaoPorNome('Novo')
+    const qualificacaoId = qualificacao?.id || null
+    
+    if (qualificacaoId) {
+      console.log('✅ Qualificação "Novo" encontrada:', qualificacaoId)
+    } else {
+      console.log('⚠️ Qualificação "Novo" não encontrada')
     }
 
     const results = []
@@ -332,7 +371,6 @@ export class LeadService {
         if (existingPhone) {
           console.log('⚠️ Lead com telefone já existe:', telefoneFormatado, '- pulando')
           skipped.push({ ...leadData, motivo: 'Telefone já existe na base de leads' })
-
           continue
         }
 
@@ -347,6 +385,7 @@ export class LeadService {
             cargo: leadData.cargo,
             resumo: leadData.resumo || null,
             origem_id: origemId,
+            qualificacao_id: qualificacaoId,
             cliente_id: clienteId
           })
           .select()

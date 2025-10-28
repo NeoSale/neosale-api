@@ -120,7 +120,7 @@ export class LeadController {
           message: 'Header cliente_id é obrigatório'
         })
       }
-      
+
       const validatedData = bulkLeadsSchema.parse(req.body)
       const result = await LeadService.bulkImportLeads(validatedData, cliente_id)
       

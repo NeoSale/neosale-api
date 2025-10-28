@@ -10,13 +10,14 @@ export const importLeadsSchema = z.object({
       empresa: z.string().optional(),
       cargo: z.string().optional(),
       resumo: z.string().optional(),
-      origem_id: z.string().uuid('origem_id deve ser um UUID válido')
+      origem: z.string().optional()
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
 })
 
 // Validator para importação em lote (bulk) de leads
 export const bulkLeadsSchema = z.object({
+  origem: z.string().optional(), // Nome da origem (opcional, padrão: "import")
   leads: z.array(
     z.object({
       nome: z.string().min(1, 'Nome é obrigatório'),
@@ -24,7 +25,8 @@ export const bulkLeadsSchema = z.object({
       email: z.string().optional(),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
-      resumo: z.string().optional()
+      resumo: z.string().optional(),
+      origem: z.string().optional()
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
 })

@@ -1026,43 +1026,10 @@ class EvolutionApiV2Service {
       const response = await axios.post(url, { where }, requestConfig);
 
       console.log(`✅ Response status: ${response.status}`);
+      console.log(`📄 Found ${response.data.length || 0} contacts`);
       
-      // Processar os contatos para garantir o formato padrão
-      let contacts: any[] = [];
-      
-      if (response.data.length > 0) {
-        console.log(`📄 Found ${response.data.length} contacts`);
-        contacts = response.data.map((contact: any) => {
-          return {
-            id: contact.id || '',
-            pushName: contact.pushName || contact.name || '',
-            profilePictureUrl: contact.profilePictureUrl || '',
-            owner: contact.owner || instanceName
-          };
-        });
-      } else if (where.id) {
-        // Se não retornou dados mas temos um ID, tentar buscar a foto do perfil
-        try {
-          console.log(`📸 Contact ${where.id} not found or has no data. Fetching profile picture...`);
-          const pictureResponse = await this.fetchProfilePictureUrl(instanceName, where.id, apiKey || this.apiKey);
-          
-          if (pictureResponse && pictureResponse.profilePictureUrl) {
-            contacts = [{
-              id: where.id,
-              pushName: '',
-              profilePictureUrl: pictureResponse.profilePictureUrl,
-              owner: instanceName
-            }];
-            console.log(`✅ Profile picture fetched successfully for ${where.id}`);
-          }
-        } catch (pictureError: any) {
-          console.error(`❌ Error fetching profile picture for ${where.id}:`, pictureError.message);
-          throw new Error(`Failed to fetch profile picture for contact ${where.id}: ${pictureError.message}`);
-          // Continuar mesmo se falhar ao buscar a foto
-        }
-      }
-      
-      return contacts;
+      // Retornar todos os dados brutos da Evolution API sem processar
+      return response.data;
     } catch (error: any) {
       console.error('❌ [findContacts] Error details:');
       console.error('Error type:', error.constructor.name);
