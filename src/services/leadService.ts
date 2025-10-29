@@ -386,7 +386,8 @@ export class LeadService {
             resumo: leadData.resumo || null,
             origem_id: origemId,
             qualificacao_id: qualificacaoId,
-            cliente_id: clienteId
+            cliente_id: clienteId,
+            profile_picture_url: leadData.profile_picture_url || null
           })
           .select()
           .single()

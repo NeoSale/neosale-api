@@ -10,7 +10,8 @@ export const importLeadsSchema = z.object({
       empresa: z.string().optional(),
       cargo: z.string().optional(),
       resumo: z.string().optional(),
-      origem: z.string().optional()
+      origem: z.string().optional(),
+      profile_picture_url: z.string().optional()
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
 })
@@ -26,7 +27,8 @@ export const bulkLeadsSchema = z.object({
       empresa: z.string().optional(),
       cargo: z.string().optional(),
       resumo: z.string().optional(),
-      origem: z.string().optional()
+      origem: z.string().optional(),
+      profile_picture_url: z.string().optional()
     })
   ).min(1, 'Pelo menos um lead deve ser fornecido')
 })
@@ -738,7 +740,7 @@ export const updateConfiguracaoFollowupSchema = z.object({
     domingo: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional()
   }).optional(),
   qtd_envio_diario: z.number().int().min(1, 'Quantidade de envio diário deve ser maior que 0').optional(),
-  em_execucao: z.boolean().optional(),
+  em_execucao: z.boolean().optional().default(false),
   ativo: z.boolean().optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional(),
   embedding: z.array(z.number()).optional()

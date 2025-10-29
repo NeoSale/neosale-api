@@ -239,7 +239,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async updateEmExecucao(clienteId: string, emExecucao: boolean): Promise<ConfiguracaoFollowup> {
+  static async updateById(id: string, clienteId: string, updateData: UpdateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -248,21 +248,26 @@ export class ConfiguracaoFollowupService {
       const { data, error } = await supabase
         .from('configuracoes_followup')
         .update({
-          em_execucao: emExecucao,
+          ...updateData,
           updated_at: new Date().toISOString()
         })
+        .eq('id', id)
         .eq('cliente_id', clienteId)
         .select()
         .single()
 
       if (error) {
-        console.error('Erro ao atualizar status de execução da configuração de follow-up:', error)
-        throw new Error(`Erro ao atualizar status de execução da configuração de follow-up: ${error.message}`)
+        console.error('Erro ao atualizar configuração de follow-up por ID:', error)
+        throw new Error(`Erro ao atualizar configuração de follow-up: ${error.message}`)
+      }
+
+      if (!data) {
+        throw new Error('Configuração de follow-up não encontrada')
       }
 
       return data
     } catch (error) {
-      console.error('Erro no serviço updateEmExecucao:', error)
+      console.error('Erro no serviço updateById:', error)
       throw error
     }
   }

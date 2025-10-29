@@ -316,19 +316,19 @@ router.get('/ativo', ConfiguracaoFollowupController.getByAtivo)
 
 /**
  * @swagger
- * /api/configuracoes-followup/{em_execucao}:
+ * /api/configuracoes-followup/{id}:
  *   put:
- *     summary: Atualizar status de execução da configuração de follow-up
- *     description: Atualiza o status de execução (em_execucao) de uma configuração de follow-up específica do cliente
+ *     summary: Atualizar configuração de follow-up por ID
+ *     description: Atualiza uma configuração de follow-up específica pelo ID e cliente_id
  *     tags: [Configurações Follow-up]
  *     parameters:
  *       - in: path
- *         name: em_execucao
+ *         name: id
  *         required: true
  *         schema:
  *           type: string
- *           enum: ["true", "false"]
- *         description: Novo status de execução (true ou false)
+ *           format: uuid
+ *         description: ID da configuração de follow-up
  *       - in: header
  *         name: cliente_id
  *         required: true
@@ -336,9 +336,26 @@ router.get('/ativo', ConfiguracaoFollowupController.getByAtivo)
  *           type: string
  *           format: uuid
  *         description: ID do cliente proprietário da configuração
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateConfiguracaoFollowup'
+ *           example:
+ *             dia_horario_envio:
+ *               segunda: "08:00-18:00"
+ *               terca: "08:00-18:00"
+ *               quarta: "08:00-18:00"
+ *               quinta: "08:00-18:00"
+ *               sexta: "08:00-18:00"
+ *               sabado: "08:00-12:00"
+ *               domingo: "fechado"
+ *             qtd_envio_diario: 50
+ *             em_execucao: false
  *     responses:
  *       200:
- *         description: Status de execução atualizado com sucesso
+ *         description: Configuração atualizada com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -367,61 +384,7 @@ router.get('/ativo', ConfiguracaoFollowupController.getByAtivo)
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-router.put('/:em_execucao', ConfiguracaoFollowupController.updateEmExecucao)
-
-/**
- * @swagger
- * /api/configuracoes-followup/{index}:
- *   put:
- *     summary: Atualizar índice da configuração de follow-up
- *     description: Atualiza o índice de uma configuração de follow-up específica do cliente
- *     tags: [Configurações Follow-up]
- *     parameters:
- *       - in: path
- *         name: index
- *         required: true
- *         schema:
- *           type: integer
- *         description: Novo valor do índice para a configuração
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente proprietário da configuração
- *     responses:
- *       200:
- *         description: Índice atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               allOf:
- *                 - $ref: '#/components/schemas/ApiResponse'
- *                 - type: object
- *                   properties:
- *                     data:
- *                       $ref: '#/components/schemas/ConfiguracaoFollowup'
- *       400:
- *         description: Dados de entrada inválidos
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       404:
- *         description: Configuração não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- */
-router.put('/:index', ConfiguracaoFollowupController.updateIndex)
+router.put('/:id', ConfiguracaoFollowupController.updateById)
 
 /**
  * @swagger
@@ -581,48 +544,5 @@ router.post('/', ConfiguracaoFollowupController.create)
  *               $ref: '#/components/schemas/ApiResponse'
  */
 router.put('/:id', ConfiguracaoFollowupController.update)
-
-/**
- * @swagger
- * /api/configuracoes-followup/{id}:
- *   delete:
- *     summary: Deletar configuração de follow-up
- *     description: Remove uma configuração de follow-up do sistema
- *     tags: [Configurações Follow-up]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID único da configuração de follow-up
- *     responses:
- *       200:
- *         description: Configuração deletada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       400:
- *         description: ID inválido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       404:
- *         description: Configuração não encontrada
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- */
-router.delete('/:id', ConfiguracaoFollowupController.delete)
 
 export default router

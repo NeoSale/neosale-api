@@ -146,33 +146,6 @@ export class ConfiguracaoFollowupController {
     }
   }
 
-  static async delete(req: Request, res: Response) {
-    try {
-      const { id } = idParamSchema.parse(req.params)
-      
-      await ConfiguracaoFollowupService.delete(id)
-      
-      return res.json({
-        success: true,
-        message: 'Configuração de follow-up deletada com sucesso'
-      })
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          success: false,
-          message: 'Dados de entrada inválidos',
-          errors: error.errors
-        })
-      }
-
-      console.error('Erro ao deletar configuração de follow-up:', error)
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor',
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
-      })
-    }
-  }
 
   static async getByAtivo(req: Request, res: Response) {
     try {
@@ -205,9 +178,10 @@ export class ConfiguracaoFollowupController {
     }
   }
 
-  static async updateIndex(req: Request, res: Response) {
+  static async updateById(req: Request, res: Response) {
     try {
-      const { index } = req.params
+      const { id } = idParamSchema.parse(req.params)
+      const validatedData = updateConfiguracaoFollowupSchema.parse(req.body)
       const cliente_id = req.headers['cliente_id'] as string
       
       if (!cliente_id) {
@@ -227,75 +201,26 @@ export class ConfiguracaoFollowupController {
         })
       }
       
-      const indexNumber = parseInt(index)
-      if (isNaN(indexNumber)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Index deve ser um número válido'
-        })
-      }
+      // Remove cliente_id from update data since it's passed as a separate parameter
+      const { cliente_id: _, ...updateData } = validatedData
       
-      const configuracaoAtualizada = await ConfiguracaoFollowupService.updateIndex(cliente_id, indexNumber)
+      const configuracaoAtualizada = await ConfiguracaoFollowupService.updateById(id, cliente_id, updateData)
       
       return res.json({
         success: true,
         data: configuracaoAtualizada,
-        message: 'Índice da configuração de follow-up atualizado com sucesso'
+        message: 'Configuração de follow-up atualizada com sucesso'
       })
     } catch (error) {
-      console.error('Erro ao atualizar índice da configuração de follow-up:', error)
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor',
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
-      })
-    }
-  }
-
-  static async updateEmExecucao(req: Request, res: Response) {
-    try {
-      const { em_execucao } = req.params
-      const cliente_id = req.headers['cliente_id'] as string
-      
-      if (!cliente_id) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           success: false,
-          message: 'cliente_id é obrigatório no cabeçalho da requisição'
+          message: 'Dados de entrada inválidos',
+          errors: error.errors
         })
       }
       
-      // Validar se cliente_id é um UUID válido
-      try {
-        z.string().uuid().parse(cliente_id)
-      } catch {
-        return res.status(400).json({
-          success: false,
-          message: 'cliente_id deve ser um UUID válido'
-        })
-      }
-      
-      // Converter string para boolean
-      let emExecucaoBoolean: boolean
-      if (em_execucao === 'true') {
-        emExecucaoBoolean = true
-      } else if (em_execucao === 'false') {
-        emExecucaoBoolean = false
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: 'em_execucao deve ser "true" ou "false"'
-        })
-      }
-      
-      const configuracaoAtualizada = await ConfiguracaoFollowupService.updateEmExecucao(cliente_id, emExecucaoBoolean)
-      
-      return res.json({
-        success: true,
-        data: configuracaoAtualizada,
-        message: 'Status de execução da configuração de follow-up atualizado com sucesso'
-      })
-    } catch (error) {
-      console.error('Erro ao atualizar status de execução da configuração de follow-up:', error)
+      console.error('Erro ao atualizar configuração de follow-up:', error)
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
