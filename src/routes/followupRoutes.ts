@@ -495,6 +495,9 @@ router.get('/status/:status', FollowupController.buscarPorStatus)
  *                       lead_created_at:
  *                         type: string
  *                         format: date-time
+ *                       lead_ai_habilitada:
+ *                         type: boolean
+ *                         description: Indica se a IA está habilitada para este lead
  *                       mensagem_id:
  *                         type: string
  *                         format: uuid

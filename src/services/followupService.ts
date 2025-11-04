@@ -310,7 +310,8 @@ export class FollowupService {
             nome: lead.lead_nome,
             telefone: lead.lead_telefone,
             email: lead.lead_email,
-            created_at: lead.lead_created_at
+            created_at: lead.lead_created_at,
+            ai_habilitada: lead.lead_ai_habilitada
           },
           mensagem: {
             id: lead.mensagem_id,
