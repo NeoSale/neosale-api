@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS leads (
   escritorio text,
   responsavel text,
   cnpj text,
+  cpf text,
   observacao text,
   resumo text, -- resumo do lead gerado pela IA ou inserido manualmente
   segmento text,

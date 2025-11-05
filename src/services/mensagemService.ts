@@ -9,6 +9,7 @@ export interface Mensagem {
   texto_mensagem: string;
   ordem?: number;
   ativo?: boolean;
+  deletado?: boolean;
   embedding?: number[];
   cliente_id?: string;
   created_at?: string;
@@ -69,6 +70,7 @@ export const mensagemService = {
         texto_mensagem: data.texto_mensagem,
         ordem: ordem,
         ativo: data.ativo !== undefined ? data.ativo : true,
+        deletado: false,
         cliente_id: data.cliente_id || null,
         embedding: embedding
       })
@@ -91,6 +93,7 @@ export const mensagemService = {
       .from('mensagens')
       .select('*')
       .eq('ativo', true)
+      .eq('deletado', false)
     
     if (clienteId) {
       query = query.eq('cliente_id', clienteId)
@@ -113,6 +116,7 @@ export const mensagemService = {
     let query = supabase
       .from('mensagens')
       .select('*')
+      .eq('deletado', false)
     
     if (clienteId) {
       query = query.eq('cliente_id', clienteId)
@@ -142,6 +146,7 @@ export const mensagemService = {
       })
       .eq('id', id)
       .eq('cliente_id', clienteId)
+      .eq('deletado', false)
       .select()
       .single();
 
@@ -163,7 +168,8 @@ export const mensagemService = {
     let query = supabase
       .from('mensagens')
       .select('*')
-      .eq('id', id);
+      .eq('id', id)
+      .eq('deletado', false);
     
     if (clienteId) {
       query = query.eq('cliente_id', clienteId);
@@ -192,6 +198,7 @@ export const mensagemService = {
       .select('*')
       .eq('id', id)
       .eq('cliente_id', data.cliente_id)
+      .eq('deletado', false)
       .single();
     
     if (!mensagemAtual) {
@@ -264,22 +271,26 @@ export const mensagemService = {
       throw new Error('Supabase não configurado');
     }
     
-    // Primeiro verifica se a mensagem existe
+    // Primeiro verifica se a mensagem existe e não está deletada
     const { data: mensagemExistente } = await supabase
       .from('mensagens')
-      .select('id')
+      .select('id, deletado')
       .eq('id', id)
       .eq('cliente_id', clienteId)
+      .eq('deletado', false)
       .single();
 
     if (!mensagemExistente) {
-      return false; // Mensagem não encontrada
+      return false; // Mensagem não encontrada ou já deletada
     }
     
-    // Hard delete - remove a mensagem permanentemente
+    // Soft delete - marca a mensagem como deletada
     const { error } = await supabase
       .from('mensagens')
-      .delete()
+      .update({
+        deletado: true,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .eq('cliente_id', clienteId);
 
@@ -300,6 +311,7 @@ export const mensagemService = {
       .from('mensagens')
       .select('*')
       .eq('ativo', true)
+      .eq('deletado', false)
       .or(`texto_mensagem.ilike.%${texto}%,nome.ilike.%${texto}%`);
     
     if (clienteId) {

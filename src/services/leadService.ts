@@ -142,6 +142,7 @@ export class LeadService {
           escritorio: data.escritorio || null,
           responsavel: data.responsavel || null,
           cnpj: data.cnpj || null,
+          cpf: data.cpf || null,
           observacao: data.observacao || null,
           resumo: data.resumo || null,
           profile_picture_url: data.profile_picture_url || null,
@@ -272,6 +273,7 @@ export class LeadService {
             email: leadData.email,
             empresa: leadData.empresa,
             cargo: leadData.cargo,
+            cpf: (leadData as any).cpf || null,
             resumo: leadData.resumo || null,
             origem_id: origemId,
             cliente_id: clienteId
@@ -383,6 +385,7 @@ export class LeadService {
             email: leadData.email,
             empresa: leadData.empresa,
             cargo: leadData.cargo,
+            cpf: (leadData as any).cpf || null,
             resumo: leadData.resumo || null,
             origem_id: origemId,
             qualificacao_id: qualificacaoId,
@@ -671,18 +674,15 @@ export class LeadService {
     LeadService.checkSupabaseConnection();
 
     // Primeiro, contar o total de leads
-    let countQuery = supabase!
+    const countQuery = supabase!
       .from('leads')
       .select(`
         *,
         origem:origem_id (nome),
         qualificacao:qualificacao_id (*)
       `, { count: 'exact', head: true })
+      .eq('cliente_id', clienteId)
       .eq('deletado', false)
-
-    if (clienteId) {
-      countQuery = countQuery.eq('cliente_id', clienteId)
-    }
 
     const { count, error: countError } = await countQuery
 
@@ -692,18 +692,15 @@ export class LeadService {
     }
 
     // Depois, buscar os dados dos leads
-    let dataQuery = supabase!
+    const dataQuery = supabase!
       .from('leads')
       .select(`
         *,
         origem:origem_id (nome),
         qualificacao:qualificacao_id (*)
       `)
+      .eq('cliente_id', clienteId)
       .eq('deletado', false)
-
-    if (clienteId) {
-      dataQuery = dataQuery.eq('cliente_id', clienteId)
-    }
 
     const { data: leads, error } = await dataQuery.order('created_at', { ascending: false })
 

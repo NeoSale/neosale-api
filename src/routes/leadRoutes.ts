@@ -32,6 +32,8 @@ const router = Router()
  *           type: string
  *         cnpj:
  *           type: string
+ *         cpf:
+ *           type: string
  *         observacao:
  *           type: string
  *         segmento:
@@ -234,6 +236,9 @@ router.get('/stats', LeadController.obterEstatisticas)
  *               cnpj:
  *                 type: string
  *                 description: CNPJ (opcional)
+ *               cpf:
+ *                 type: string
+ *                 description: CPF (opcional)
  *               observacao:
  *                 type: string
  *                 description: Observação (opcional)
@@ -268,6 +273,7 @@ router.get('/stats', LeadController.obterEstatisticas)
  *               escritorio: "Escritório Central"
  *               responsavel: "Maria Santos"
  *               cnpj: "12.345.678/0001-90"
+ *               cpf: "123.456.789-01"
  *               observacao: "Cliente interessado em ERP"
  *               segmento: "Tecnologia"
  *               erp_atual: "SAP"
@@ -571,6 +577,9 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *               cnpj:
  *                 type: string
  *                 description: CNPJ
+ *               cpf:
+ *                 type: string
+ *                 description: CPF
  *               observacao:
  *                 type: string
  *                 description: Observação

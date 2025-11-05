@@ -9,6 +9,7 @@ export const importLeadsSchema = z.object({
       email: z.string(),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
+      cpf: z.string().optional(),
       resumo: z.string().optional(),
       origem: z.string().optional(),
       profile_picture_url: z.string().optional()
@@ -26,6 +27,7 @@ export const bulkLeadsSchema = z.object({
       email: z.string().optional(),
       empresa: z.string().optional(),
       cargo: z.string().optional(),
+      cpf: z.string().optional(),
       resumo: z.string().optional(),
       origem: z.string().optional(),
       profile_picture_url: z.string().optional()
@@ -87,6 +89,7 @@ export const updateLeadSchema = z.object({
   escritorio: z.string().optional(),
   responsavel: z.string().optional(),
   cnpj: z.string().optional(),
+  cpf: z.string().optional(),
   observacao: z.string().optional(),
   resumo: z.string().optional(),
   segmento: z.string().optional(),
@@ -139,6 +142,7 @@ export const createLeadSchema = z.object({
   escritorio: z.string().optional(),
   responsavel: z.string().optional(),
   cnpj: z.string().optional(),
+  cpf: z.string().optional(),
   observacao: z.string().optional(),
   resumo: z.string().optional(),
   segmento: z.string().optional(),
