@@ -676,11 +676,7 @@ export class LeadService {
     // Primeiro, contar o total de leads
     const countQuery = supabase!
       .from('leads')
-      .select(`
-        *,
-        origem:origem_id (nome),
-        qualificacao:qualificacao_id (*)
-      `, { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('cliente_id', clienteId)
       .eq('deletado', false)
 
@@ -691,28 +687,44 @@ export class LeadService {
       throw countError
     }
 
-    // Depois, buscar os dados dos leads
-    const dataQuery = supabase!
-      .from('leads')
-      .select(`
-        *,
-        origem:origem_id (nome),
-        qualificacao:qualificacao_id (*)
-      `)
-      .eq('cliente_id', clienteId)
-      .eq('deletado', false)
+    console.log(`📊 Total de leads encontrados: ${count}`)
 
-    const { data: leads, error } = await dataQuery.order('created_at', { ascending: false })
+    // Buscar todos os registros em lotes de 1000 (limite do Supabase)
+    const batchSize = 1000
+    const totalBatches = Math.ceil((count || 0) / batchSize)
+    let allLeads: any[] = []
 
-    if (error) {
-      console.error('❌ Erro ao listar leads:', error)
-      throw error
+    for (let i = 0; i < totalBatches; i++) {
+      const from = i * batchSize
+      const to = from + batchSize - 1
+
+      console.log(`🔄 Buscando lote ${i + 1}/${totalBatches} (registros ${from} a ${to})`)
+
+      const { data: batchLeads, error } = await supabase!
+        .from('leads')
+        .select(`
+          *,
+          origem:origem_id (nome),
+          qualificacao:qualificacao_id (*)
+        `)
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+      if (error) {
+        console.error(`❌ Erro ao buscar lote ${i + 1}:`, error)
+        throw error
+      }
+
+      allLeads = allLeads.concat(batchLeads || [])
+      console.log(`✅ Lote ${i + 1} carregado: ${batchLeads?.length || 0} registros`)
     }
 
-    console.log('✅ Leads listados:', leads?.length || 0, 'encontrados de', count, 'total')
+    console.log(`✅ Total de leads carregados: ${allLeads.length} de ${count}`)
 
     return {
-      leads: leads || [],
+      leads: allLeads,
       total: count || 0
     }
   }
