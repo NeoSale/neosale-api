@@ -1146,4 +1146,210 @@ export class LeadService {
       throw error
     }
   }
+
+  // Gerar relatório diário de atualizações de leads
+  static async gerarRelatorioDiario(clienteId: string, data: string) {
+    LeadService.checkSupabaseConnection()
+    console.log('📊 Gerando relatório diário para:', clienteId, 'data:', data)
+
+    try {
+      // Datas no formato local (sem timezone)
+      const dataInicio = `${data}T00:00:00`
+      const dataFim = `${data}T23:59:59.999`
+
+      console.log(`🔍 Buscando atualizações entre ${dataInicio} e ${dataFim}`)
+
+      // Buscar leads criados no dia em lotes
+      const { count: countCriados } = await supabase!
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+        .gte('created_at', dataInicio)
+        .lte('created_at', dataFim)
+
+      console.log(`📊 Total de leads criados: ${countCriados}`)
+
+      const batchSize = 1000
+      const totalBatchesCriados = Math.ceil((countCriados || 0) / batchSize)
+      let leadsCriados: any[] = []
+
+      for (let i = 0; i < totalBatchesCriados; i++) {
+        const from = i * batchSize
+        const to = from + batchSize - 1
+
+        console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesCriados} de leads criados`)
+
+        const { data: batchLeads, error: errorCriados } = await supabase!
+          .from('leads')
+          .select(`
+            id,
+            nome,
+            telefone,
+            email,
+            empresa,
+            created_at,
+            origem:origem_id (nome),
+            qualificacao:qualificacao_id (nome)
+          `)
+          .eq('cliente_id', clienteId)
+          .eq('deletado', false)
+          .gte('created_at', dataInicio)
+          .lte('created_at', dataFim)
+          .order('created_at', { ascending: false })
+          .range(from, to)
+
+        if (errorCriados) {
+          console.error('❌ Erro ao buscar leads criados:', errorCriados)
+          throw errorCriados
+        }
+
+        leadsCriados = leadsCriados.concat(batchLeads || [])
+        console.log(`✅ Lote ${i + 1} carregado: ${batchLeads?.length || 0} registros`)
+      }
+
+      // Buscar leads atualizados no dia (mas não criados no dia) em lotes
+      const { count: countAtualizados } = await supabase!
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('cliente_id', clienteId)
+        .eq('deletado', false)
+        .gte('updated_at', dataInicio)
+        .lte('updated_at', dataFim)
+        .lt('created_at', dataInicio)
+
+      console.log(`📊 Total de leads atualizados: ${countAtualizados}`)
+
+      const totalBatchesAtualizados = Math.ceil((countAtualizados || 0) / batchSize)
+      let leadsAtualizados: any[] = []
+
+      for (let i = 0; i < totalBatchesAtualizados; i++) {
+        const from = i * batchSize
+        const to = from + batchSize - 1
+
+        console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesAtualizados} de leads atualizados`)
+
+        const { data: batchLeads, error: errorAtualizados } = await supabase!
+          .from('leads')
+          .select(`
+            id,
+            nome,
+            telefone,
+            email,
+            empresa,
+            created_at,
+            updated_at,
+            origem:origem_id (nome),
+            qualificacao:qualificacao_id (nome)
+          `)
+          .eq('cliente_id', clienteId)
+          .eq('deletado', false)
+          .gte('updated_at', dataInicio)
+          .lte('updated_at', dataFim)
+          .lt('created_at', dataInicio)
+          .order('updated_at', { ascending: false })
+          .range(from, to)
+
+        if (errorAtualizados) {
+          console.error('❌ Erro ao buscar leads atualizados:', errorAtualizados)
+          throw errorAtualizados
+        }
+
+        leadsAtualizados = leadsAtualizados.concat(batchLeads || [])
+        console.log(`✅ Lote ${i + 1} carregado: ${batchLeads?.length || 0} registros`)
+      }
+
+      // Buscar leads deletados no dia em lotes
+      const { count: countDeletados } = await supabase!
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('cliente_id', clienteId)
+        .eq('deletado', true)
+        .gte('updated_at', dataInicio)
+        .lte('updated_at', dataFim)
+
+      console.log(`📊 Total de leads deletados: ${countDeletados}`)
+
+      const totalBatchesDeletados = Math.ceil((countDeletados || 0) / batchSize)
+      let leadsDeletados: any[] = []
+
+      for (let i = 0; i < totalBatchesDeletados; i++) {
+        const from = i * batchSize
+        const to = from + batchSize - 1
+
+        console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesDeletados} de leads deletados`)
+
+        const { data: batchLeads, error: errorDeletados } = await supabase!
+          .from('leads')
+          .select(`
+            id,
+            nome,
+            telefone,
+            email,
+            empresa,
+            updated_at,
+            origem:origem_id (nome),
+            qualificacao:qualificacao_id (nome)
+          `)
+          .eq('cliente_id', clienteId)
+          .eq('deletado', true)
+          .gte('updated_at', dataInicio)
+          .lte('updated_at', dataFim)
+          .order('updated_at', { ascending: false })
+          .range(from, to)
+
+        if (errorDeletados) {
+          console.error('❌ Erro ao buscar leads deletados:', errorDeletados)
+          throw errorDeletados
+        }
+
+        leadsDeletados = leadsDeletados.concat(batchLeads || [])
+        console.log(`✅ Lote ${i + 1} carregado: ${batchLeads?.length || 0} registros`)
+      }
+
+      // Agrupar por qualificação
+      const leadsPorQualificacao: Record<string, number> = {}
+      const leadsPorOrigem: Record<string, number> = {}
+
+      leadsCriados?.forEach((lead: any) => {
+        const qualificacao = lead.qualificacao?.nome || 'Sem qualificação'
+        const origem = lead.origem?.nome || 'Sem origem'
+        
+        leadsPorQualificacao[qualificacao] = (leadsPorQualificacao[qualificacao] || 0) + 1
+        leadsPorOrigem[origem] = (leadsPorOrigem[origem] || 0) + 1
+      })
+
+      // Montar resumo
+      const resumo = {
+        data: data, // Retorna a data exata passada (YYYY-MM-DD)
+        periodo: {
+          inicio: dataInicio,
+          fim: dataFim
+        },
+        totais: {
+          criados: leadsCriados?.length || 0,
+          atualizados: leadsAtualizados?.length || 0,
+          deletados: leadsDeletados?.length || 0,
+          total: (leadsCriados?.length || 0) + (leadsAtualizados?.length || 0)
+        },
+        distribuicao: {
+          por_qualificacao: leadsPorQualificacao,
+          por_origem: leadsPorOrigem
+        },
+        detalhes: {
+          leads_criados: leadsCriados || [],
+          leads_atualizados: leadsAtualizados || [],
+          leads_deletados: leadsDeletados || []
+        }
+      }
+
+      console.log('✅ Relatório diário gerado com sucesso')
+      console.log(`📊 Resumo: ${resumo.totais.criados} criados, ${resumo.totais.atualizados} atualizados, ${resumo.totais.deletados} deletados`)
+
+      return resumo
+    } catch (error) {
+      console.error('❌ Erro ao gerar relatório diário:', error)
+      throw error
+    }
+  }
 }

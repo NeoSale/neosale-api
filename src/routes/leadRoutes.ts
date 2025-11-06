@@ -971,4 +971,95 @@ router.put('/:id/qualificacao', LeadController.atualizarQualificacao)
  */
 router.get('/:id', LeadController.buscarLead)
 
+/**
+ * @swagger
+ * /api/leads/relatorio/diario:
+ *   get:
+ *     summary: Gerar relatório diário de atualizações de leads
+ *     tags: [Leads]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
+ *       - name: data
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2024-11-05"
+ *         description: Data do relatório (formato YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Relatório gerado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Relatório diário gerado com sucesso"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: string
+ *                       example: "2024-11-05"
+ *                     periodo:
+ *                       type: object
+ *                       properties:
+ *                         inicio:
+ *                           type: string
+ *                           format: date-time
+ *                         fim:
+ *                           type: string
+ *                           format: date-time
+ *                     totais:
+ *                       type: object
+ *                       properties:
+ *                         criados:
+ *                           type: integer
+ *                           example: 15
+ *                         atualizados:
+ *                           type: integer
+ *                           example: 23
+ *                         deletados:
+ *                           type: integer
+ *                           example: 2
+ *                         total:
+ *                           type: integer
+ *                           example: 38
+ *                     distribuicao:
+ *                       type: object
+ *                       properties:
+ *                         por_qualificacao:
+ *                           type: object
+ *                           example: {"Novo": 8, "Engajado": 5, "Decidido": 2}
+ *                         por_origem:
+ *                           type: object
+ *                           example: {"WhatsApp": 10, "Site": 3, "CRM": 2}
+ *                     detalhes:
+ *                       type: object
+ *                       properties:
+ *                         leads_criados:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         leads_atualizados:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         leads_deletados:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *       400:
+ *         description: Parâmetros inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/relatorio/diario', LeadController.gerarRelatorioDiario)
+
 export { router as leadRoutes }

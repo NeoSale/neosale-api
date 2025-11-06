@@ -627,4 +627,45 @@ export class LeadController {
       return LeadController.handleError(res, error)
     }
   }
+
+  // Gerar relatório diário de atualizações
+  static async gerarRelatorioDiario(req: Request, res: Response) {
+    try {
+      const cliente_id = req.headers.cliente_id as string
+      const { data } = req.query
+
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'cliente_id é obrigatório no header'
+        })
+      }
+
+      if (!data) {
+        return res.status(400).json({
+          success: false,
+          message: 'data é obrigatória nos parâmetros (formato: YYYY-MM-DD)'
+        })
+      }
+
+      // Validar formato da data
+      const dataRegex = /^\d{4}-\d{2}-\d{2}$/
+      if (!dataRegex.test(data as string)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Formato de data inválido. Use YYYY-MM-DD (ex: 2024-11-05)'
+        })
+      }
+
+      const relatorio = await LeadService.gerarRelatorioDiario(cliente_id, data as string)
+
+      return res.status(200).json({
+        success: true,
+        message: 'Relatório diário gerado com sucesso',
+        data: relatorio
+      })
+    } catch (error) {
+      return LeadController.handleError(res, error)
+    }
+  }
 }
