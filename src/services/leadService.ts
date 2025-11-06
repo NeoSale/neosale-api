@@ -1307,11 +1307,13 @@ export class LeadService {
         console.log(`✅ Lote ${i + 1} carregado: ${batchLeads?.length || 0} registros`)
       }
 
-      // Agrupar por qualificação
+      // Agrupar por qualificação e origem (todos os leads: criados + atualizados)
       const leadsPorQualificacao: Record<string, number> = {}
       const leadsPorOrigem: Record<string, number> = {}
 
-      leadsCriados?.forEach((lead: any) => {
+      const todosLeads = [...leadsCriados, ...leadsAtualizados]
+
+      todosLeads.forEach((lead: any) => {
         const qualificacao = lead.qualificacao?.nome || 'Sem qualificação'
         const origem = lead.origem?.nome || 'Sem origem'
         
