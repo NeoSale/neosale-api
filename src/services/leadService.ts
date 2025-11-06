@@ -1147,17 +1147,17 @@ export class LeadService {
     }
   }
 
-  // Gerar relatório diário de atualizações de leads
-  static async gerarRelatorioDiario(clienteId: string, data: string) {
+  // Gerar relatório de atualizações de leads por período
+  static async gerarRelatorioDiario(clienteId: string, dataInicio: string, dataFim: string) {
     LeadService.checkSupabaseConnection()
-    console.log('📊 Gerando relatório diário para:', clienteId, 'data:', data)
+    console.log('📊 Gerando relatório para:', clienteId, 'período:', dataInicio, 'até', dataFim)
 
     try {
       // Datas no formato local (sem timezone)
-      const dataInicio = `${data}T00:00:00`
-      const dataFim = `${data}T23:59:59.999`
+      const dataInicioFormatada = `${dataInicio}T00:00:00`
+      const dataFimFormatada = `${dataFim}T23:59:59.999`
 
-      console.log(`🔍 Buscando atualizações entre ${dataInicio} e ${dataFim}`)
+      console.log(`🔍 Buscando atualizações entre ${dataInicioFormatada} e ${dataFimFormatada}`)
 
       // Buscar leads criados no dia em lotes
       const { count: countCriados } = await supabase!
@@ -1165,8 +1165,8 @@ export class LeadService {
         .select('*', { count: 'exact', head: true })
         .eq('cliente_id', clienteId)
         .eq('deletado', false)
-        .gte('created_at', dataInicio)
-        .lte('created_at', dataFim)
+        .gte('created_at', dataInicioFormatada)
+        .lte('created_at', dataFimFormatada)
 
       console.log(`📊 Total de leads criados: ${countCriados}`)
 
@@ -1194,8 +1194,8 @@ export class LeadService {
           `)
           .eq('cliente_id', clienteId)
           .eq('deletado', false)
-          .gte('created_at', dataInicio)
-          .lte('created_at', dataFim)
+          .gte('created_at', dataInicioFormatada)
+          .lte('created_at', dataFimFormatada)
           .order('created_at', { ascending: false })
           .range(from, to)
 
@@ -1214,9 +1214,9 @@ export class LeadService {
         .select('*', { count: 'exact', head: true })
         .eq('cliente_id', clienteId)
         .eq('deletado', false)
-        .gte('updated_at', dataInicio)
-        .lte('updated_at', dataFim)
-        .lt('created_at', dataInicio)
+        .gte('updated_at', dataInicioFormatada)
+        .lte('updated_at', dataFimFormatada)
+        .lt('created_at', dataInicioFormatada)
 
       console.log(`📊 Total de leads atualizados: ${countAtualizados}`)
 
@@ -1244,9 +1244,9 @@ export class LeadService {
           `)
           .eq('cliente_id', clienteId)
           .eq('deletado', false)
-          .gte('updated_at', dataInicio)
-          .lte('updated_at', dataFim)
-          .lt('created_at', dataInicio)
+          .gte('updated_at', dataInicioFormatada)
+          .lte('updated_at', dataFimFormatada)
+          .lt('created_at', dataInicioFormatada)
           .order('updated_at', { ascending: false })
           .range(from, to)
 
@@ -1265,8 +1265,8 @@ export class LeadService {
         .select('*', { count: 'exact', head: true })
         .eq('cliente_id', clienteId)
         .eq('deletado', true)
-        .gte('updated_at', dataInicio)
-        .lte('updated_at', dataFim)
+        .gte('updated_at', dataInicioFormatada)
+        .lte('updated_at', dataFimFormatada)
 
       console.log(`📊 Total de leads deletados: ${countDeletados}`)
 
@@ -1293,8 +1293,8 @@ export class LeadService {
           `)
           .eq('cliente_id', clienteId)
           .eq('deletado', true)
-          .gte('updated_at', dataInicio)
-          .lte('updated_at', dataFim)
+          .gte('updated_at', dataInicioFormatada)
+          .lte('updated_at', dataFimFormatada)
           .order('updated_at', { ascending: false })
           .range(from, to)
 
@@ -1323,10 +1323,9 @@ export class LeadService {
 
       // Montar resumo
       const resumo = {
-        data: data, // Retorna a data exata passada (YYYY-MM-DD)
         periodo: {
-          inicio: dataInicio,
-          fim: dataFim
+          data_inicio: dataInicio,
+          data_fim: dataFim
         },
         totais: {
           criados: leadsCriados?.length || 0,

@@ -975,18 +975,26 @@ router.get('/:id', LeadController.buscarLead)
  * @swagger
  * /api/leads/relatorio/diario:
  *   get:
- *     summary: Gerar relatório diário de atualizações de leads
+ *     summary: Gerar relatório de atualizações de leads por período
  *     tags: [Leads]
  *     parameters:
  *       - $ref: '#/components/parameters/ClienteId'
- *       - name: data
+ *       - name: data_inicio
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2024-11-01"
+ *         description: Data inicial do período (formato YYYY-MM-DD)
+ *       - name: data_fim
  *         in: query
  *         required: true
  *         schema:
  *           type: string
  *           format: date
  *           example: "2024-11-05"
- *         description: Data do relatório (formato YYYY-MM-DD)
+ *         description: Data final do período (formato YYYY-MM-DD)
  *     responses:
  *       200:
  *         description: Relatório gerado com sucesso
@@ -1000,22 +1008,19 @@ router.get('/:id', LeadController.buscarLead)
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: "Relatório diário gerado com sucesso"
+ *                   example: "Relatório gerado com sucesso"
  *                 data:
  *                   type: object
  *                   properties:
- *                     data:
- *                       type: string
- *                       example: "2024-11-05"
  *                     periodo:
  *                       type: object
  *                       properties:
- *                         inicio:
+ *                         data_inicio:
  *                           type: string
- *                           format: date-time
- *                         fim:
+ *                           example: "2024-11-01"
+ *                         data_fim:
  *                           type: string
- *                           format: date-time
+ *                           example: "2024-11-05"
  *                     totais:
  *                       type: object
  *                       properties:

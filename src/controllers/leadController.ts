@@ -628,11 +628,11 @@ export class LeadController {
     }
   }
 
-  // Gerar relatório diário de atualizações
+  // Gerar relatório de atualizações por período
   static async gerarRelatorioDiario(req: Request, res: Response) {
     try {
       const cliente_id = req.headers.cliente_id as string
-      const { data } = req.query
+      const { data_inicio, data_fim } = req.query
 
       if (!cliente_id) {
         return res.status(400).json({
@@ -641,27 +641,35 @@ export class LeadController {
         })
       }
 
-      if (!data) {
+      if (!data_inicio || !data_fim) {
         return res.status(400).json({
           success: false,
-          message: 'data é obrigatória nos parâmetros (formato: YYYY-MM-DD)'
+          message: 'data_inicio e data_fim são obrigatórias nos parâmetros (formato: YYYY-MM-DD)'
         })
       }
 
-      // Validar formato da data
+      // Validar formato das datas
       const dataRegex = /^\d{4}-\d{2}-\d{2}$/
-      if (!dataRegex.test(data as string)) {
+      if (!dataRegex.test(data_inicio as string) || !dataRegex.test(data_fim as string)) {
         return res.status(400).json({
           success: false,
           message: 'Formato de data inválido. Use YYYY-MM-DD (ex: 2024-11-05)'
         })
       }
 
-      const relatorio = await LeadService.gerarRelatorioDiario(cliente_id, data as string)
+      // Validar que data_inicio <= data_fim
+      if (new Date(data_inicio as string) > new Date(data_fim as string)) {
+        return res.status(400).json({
+          success: false,
+          message: 'data_inicio deve ser menor ou igual a data_fim'
+        })
+      }
+
+      const relatorio = await LeadService.gerarRelatorioDiario(cliente_id, data_inicio as string, data_fim as string)
 
       return res.status(200).json({
         success: true,
-        message: 'Relatório diário gerado com sucesso',
+        message: 'Relatório gerado com sucesso',
         data: relatorio
       })
     } catch (error) {
