@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'node:crypto';
+import { EmailService } from './emailService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -283,5 +285,182 @@ export class AuthService {
     await this.criarSessao(payload.id, newToken);
 
     return newToken;
+  }
+
+  /**
+   * Solicitar reset de senha
+   * Gera token e envia email
+   */
+  static async forgotPassword(email: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    // Buscar usuário por email
+    const { data: usuario, error } = await supabase
+      .from('usuarios')
+      .select('id, nome, email, ativo')
+      .eq('email', email)
+      .single();
+
+    // Por segurança, não revelar se o email existe ou não
+    // Sempre retornar sucesso
+    if (error || !usuario) {
+      console.log(`Tentativa de reset para email não cadastrado: ${email}`);
+      return;
+    }
+
+    // Verificar se usuário está ativo
+    if (!usuario.ativo) {
+      console.log(`Tentativa de reset para usuário inativo: ${email}`);
+      return;
+    }
+
+    // Gerar token único
+    const token = randomUUID();
+
+    // Calcular data de expiração (1 hora)
+    const expiraEm = new Date();
+    expiraEm.setHours(expiraEm.getHours() + 1);
+
+    // Salvar token no banco
+    const { error: tokenError } = await supabase
+      .from('password_reset_tokens')
+      .insert({
+        usuario_id: usuario.id,
+        token,
+        expira_em: expiraEm.toISOString(),
+        usado: false,
+        updated_at: new Date().toISOString()
+      });
+
+    if (tokenError) {
+      console.error('Erro ao criar token de reset:', tokenError);
+      throw new Error('Erro ao processar solicitação de reset de senha');
+    }
+
+    // Enviar email
+    try {
+      await EmailService.enviarEmailResetSenha(usuario.email, usuario.nome, token);
+      console.log(`✅ Email de reset enviado para: ${usuario.email}`);
+    } catch (emailError) {
+      console.error('Erro ao enviar email de reset:', emailError);
+      // Não lançar erro, pois o token já foi criado
+    }
+
+    // Registrar log
+    await this.registrarLogAutenticacao(
+      usuario.id,
+      'reset_senha_solicitado',
+      'Solicitação de reset de senha'
+    );
+  }
+
+  /**
+   * Validar token de reset
+   */
+  static async validarTokenReset(token: string): Promise<{
+    valido: boolean;
+    usuario_id?: string;
+    mensagem?: string;
+  }> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    // Buscar token
+    const { data: tokenData, error } = await supabase
+      .from('password_reset_tokens')
+      .select('*')
+      .eq('token', token)
+      .single();
+
+    if (error || !tokenData) {
+      return {
+        valido: false,
+        mensagem: 'Token inválido ou expirado'
+      };
+    }
+
+    // Verificar se já foi usado
+    if (tokenData.usado) {
+      return {
+        valido: false,
+        mensagem: 'Token já foi utilizado'
+      };
+    }
+
+    // Verificar expiração
+    const agora = new Date();
+    const expiraEm = new Date(tokenData.expira_em);
+
+    if (agora > expiraEm) {
+      return {
+        valido: false,
+        mensagem: 'Token expirado'
+      };
+    }
+
+    return {
+      valido: true,
+      usuario_id: tokenData.usuario_id
+    };
+  }
+
+  /**
+   * Redefinir senha
+   */
+  static async resetPassword(token: string, novaSenha: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    // Validar token
+    const validacao = await this.validarTokenReset(token);
+
+    if (!validacao.valido) {
+      throw new Error(validacao.mensagem || 'Token inválido');
+    }
+
+    // Hash da nova senha
+    const senhaHash = await bcrypt.hash(novaSenha, 10);
+
+    // Atualizar senha do usuário
+    const { error: updateError } = await supabase
+      .from('usuarios')
+      .update({
+        senha: senhaHash,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', validacao.usuario_id);
+
+    if (updateError) {
+      throw new Error('Erro ao atualizar senha');
+    }
+
+    // Marcar token como usado
+    await supabase
+      .from('password_reset_tokens')
+      .update({
+        usado: true,
+        usado_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('token', token);
+
+    // Invalidar todas as sessões do usuário
+    await supabase
+      .from('sessoes')
+      .update({ ativo: false })
+      .eq('usuario_id', validacao.usuario_id);
+
+    // Registrar log
+    await this.registrarLogAutenticacao(
+      validacao.usuario_id!,
+      'reset_senha_sucesso',
+      'Senha redefinida com sucesso'
+    );
+
+    console.log(`✅ Senha redefinida com sucesso para usuário: ${validacao.usuario_id}`);
   }
 }

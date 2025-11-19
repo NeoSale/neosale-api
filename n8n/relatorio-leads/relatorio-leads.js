@@ -306,7 +306,7 @@ const html = `
                     <td style="padding:12px">
                       <table width="100%" cellspacing="0" cellpadding="0">
                         <tr>
-                          <td style="vertical-align:top">
+                          <td style="width:100%;vertical-align:top">
                             <p style="margin:0 0 6px;font:600 14px/1.4 Arial,sans-serif;color:#212529">${safe(l.nome)}</p>
                             <p style="margin:0 0 6px;font:400 13px/1.4 Arial,sans-serif;color:#6c757d">${fmtTel(l.telefone)}</p>
                             <span style="display:inline-block;padding:4px 8px;background:${qualColor.bg};color:${qualColor.text};border-radius:4px;font:600 11px/1.4 Arial,sans-serif">${qualNome}</span>
@@ -358,7 +358,7 @@ const html = `
                     <td style="padding:12px">
                       <table width="100%" cellspacing="0" cellpadding="0">
                         <tr>
-                          <td style="vertical-align:top">
+                          <td style="width:100%;vertical-align:top">
                             <p style="margin:0 0 6px;font:600 14px/1.4 Arial,sans-serif;color:#212529">${safe(l.nome)}</p>
                             <p style="margin:0 0 6px;font:400 13px/1.4 Arial,sans-serif;color:#6c757d">${fmtTel(l.telefone)}</p>
                             <span style="display:inline-block;padding:4px 8px;background:${qualColor.bg};color:${qualColor.text};border-radius:4px;font:600 11px/1.4 Arial,sans-serif">${qualNome}</span>

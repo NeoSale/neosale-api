@@ -285,4 +285,164 @@ router.post('/refresh', AuthController.refresh);
  */
 router.post('/verify', AuthController.verify);
 
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Solicitar reset de senha
+ *     description: Envia email com link para redefinir senha. Por segurança, sempre retorna sucesso mesmo se o email não existir.
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do usuário
+ *                 example: usuario@example.com
+ *     responses:
+ *       200:
+ *         description: Solicitação processada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Se o email estiver cadastrado, você receberá um link para redefinir sua senha
+ *       400:
+ *         description: Email não fornecido ou inválido
+ *       500:
+ *         description: Erro ao processar solicitação
+ */
+router.post('/forgot-password', AuthController.forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Redefinir senha
+ *     description: Redefine a senha do usuário usando o token recebido por email
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - nova_senha
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token recebido por email
+ *                 example: 550e8400-e29b-41d4-a716-446655440000
+ *               nova_senha:
+ *                 type: string
+ *                 format: password
+ *                 description: Nova senha (mínimo 6 caracteres)
+ *                 example: NovaSenha123!
+ *     responses:
+ *       200:
+ *         description: Senha redefinida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Senha redefinida com sucesso
+ *       400:
+ *         description: Token inválido, expirado ou senha muito curta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Token expirado
+ */
+router.post('/reset-password', AuthController.resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/validate-reset-token:
+ *   post:
+ *     summary: Validar token de reset
+ *     description: Verifica se o token de reset é válido antes de redefinir a senha
+ *     tags: [Autenticação]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token a ser validado
+ *                 example: 550e8400-e29b-41d4-a716-446655440000
+ *     responses:
+ *       200:
+ *         description: Token válido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     valido:
+ *                       type: boolean
+ *                       example: true
+ *                 message:
+ *                   type: string
+ *                   example: Token válido
+ *       400:
+ *         description: Token inválido ou expirado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     valido:
+ *                       type: boolean
+ *                       example: false
+ *                 message:
+ *                   type: string
+ *                   example: Token expirado
+ */
+router.post('/validate-reset-token', AuthController.validateResetToken);
+
 export default router;

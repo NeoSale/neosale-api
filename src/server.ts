@@ -44,6 +44,7 @@ import perfilRoutes from './routes/perfilRoutes'
 import conviteRoutes from './routes/conviteRoutes'
 import sessaoRoutes from './routes/sessaoRoutes'
 import authRoutes from './routes/authRoutes'
+import supabaseAuthRoutes from './routes/supabaseAuthRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -160,7 +161,8 @@ app.use('/api/google-calendar', googleCalendarRoutes)
 app.use('/api/perfis', perfilRoutes)
 app.use('/api/convites', conviteRoutes)
 app.use('/api/sessoes', sessaoRoutes)
-app.use('/api/auth', authRoutes)
+// app.use('/api/auth', authRoutes) // DEPRECATED: Usar supabaseAuthRoutes
+app.use('/api/auth', supabaseAuthRoutes) // Nova autenticação com Supabase
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

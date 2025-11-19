@@ -175,4 +175,130 @@ export class AuthController {
       });
     }
   }
+
+  /**
+   * POST /api/auth/forgot-password
+   * Solicitar reset de senha
+   */
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email é obrigatório'
+        });
+      }
+
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email inválido'
+        });
+      }
+
+      await AuthService.forgotPassword(email);
+
+      // Sempre retornar sucesso por segurança
+      return res.json({
+        success: true,
+        message: 'Se o email estiver cadastrado, você receberá um link para redefinir sua senha'
+      });
+    } catch (error) {
+      console.error('Erro ao processar forgot-password:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar solicitação'
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/reset-password
+   * Redefinir senha com token
+   */
+  static async resetPassword(req: Request, res: Response) {
+    try {
+      const { token, nova_senha } = req.body;
+
+      if (!token || !nova_senha) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token e nova senha são obrigatórios'
+        });
+      }
+
+      // Validar força da senha (mínimo 6 caracteres)
+      if (nova_senha.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'A senha deve ter no mínimo 6 caracteres'
+        });
+      }
+
+      await AuthService.resetPassword(token, nova_senha);
+
+      return res.json({
+        success: true,
+        message: 'Senha redefinida com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao redefinir senha:', error);
+      
+      const message = error instanceof Error ? error.message : 'Erro ao redefinir senha';
+      
+      return res.status(400).json({
+        success: false,
+        message
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/validate-reset-token
+   * Validar token de reset
+   */
+  static async validateResetToken(req: Request, res: Response) {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token é obrigatório'
+        });
+      }
+
+      const validacao = await AuthService.validarTokenReset(token);
+
+      if (!validacao.valido) {
+        return res.status(400).json({
+          success: false,
+          data: {
+            valido: false
+          },
+          message: validacao.mensagem
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          valido: true
+        },
+        message: 'Token válido'
+      });
+    } catch (error) {
+      console.error('Erro ao validar token:', error);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao validar token'
+      });
+    }
+  }
 }

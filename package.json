@@ -40,7 +40,8 @@
     "mammoth": "^1.11.0",
     "morgan": "^1.10.0",
     "openai": "^6.6.0",
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "^4.2.67",
+    "resend": "^3.5.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "zod": "^3.22.4"
