@@ -44,6 +44,7 @@ import perfilRoutes from './routes/perfilRoutes'
 import conviteRoutes from './routes/conviteRoutes'
 import sessaoRoutes from './routes/sessaoRoutes'
 import authRoutes from './routes/authRoutes'
+import profileRoutes from './routes/profileRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -161,6 +162,7 @@ app.use('/api/perfis', perfilRoutes)
 app.use('/api/convites', conviteRoutes)
 app.use('/api/sessoes', sessaoRoutes)
 app.use('/api/auth', authRoutes)
+app.use('/api/profiles', profileRoutes)
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
