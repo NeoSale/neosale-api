@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ProfileService, UserRole } from '../services/profileService';
+import { ProfileService, UserRole, InviteMemberInput } from '../services/profileService';
 import { z } from 'zod';
 
 // Validation schemas
@@ -18,6 +18,13 @@ const updateProfileSchema = z.object({
   avatar_url: z.string().url('URL do avatar inválida').optional().nullable(),
   role: z.enum(['super_admin', 'admin', 'member', 'viewer']).optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional().nullable()
+});
+
+const inviteMemberSchema = z.object({
+  email: z.string().email('Email inválido'),
+  full_name: z.string().optional(),
+  role: z.enum(['super_admin', 'admin', 'member', 'viewer']).optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido')
 });
 
 export class ProfileController {
@@ -388,6 +395,53 @@ export class ProfileController {
       });
     } catch (error) {
       console.error('Erro ao atualizar role:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  }
+
+  /**
+   * POST /api/profiles/members/invite
+   * Invite a new member
+   */
+  static async inviteMember(req: Request, res: Response) {
+    try {
+      const validationResult = inviteMemberSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Dados inválidos',
+          errors: validationResult.error.errors
+        });
+      }
+
+      const { email, full_name, role, cliente_id } = validationResult.data;
+
+      const result = await ProfileService.inviteMember({
+        email,
+        full_name,
+        role,
+        cliente_id
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: result.profile,
+        message: 'Convite enviado com sucesso'
+      });
+    } catch (error) {
+      console.error('Erro ao convidar membro:', error);
+      
+      if (error instanceof Error && error.message.includes('Já existe um usuário')) {
+        return res.status(409).json({
+          success: false,
+          message: error.message
+        });
+      }
+
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',

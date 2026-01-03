@@ -139,21 +139,44 @@ router.get('/', ProfileController.getAll);
 
 /**
  * @swagger
- * /api/profiles/{id}:
- *   get:
- *     summary: Get profile by ID
+ * /api/profiles/members/invite:
+ *   post:
+ *     summary: Invite a new member
  *     tags: [Profiles]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Profile ID (UUID from auth.users)
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - cliente_id
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do usuário a ser convidado
+ *               full_name:
+ *                 type: string
+ *                 description: Nome completo do usuário
+ *               role:
+ *                 type: string
+ *                 enum: [super_admin, admin, member, viewer]
+ *                 default: member
+ *                 description: Role do usuário
+ *               cliente_id:
+ *                 type: string
+ *                 format: uuid
+ *                 description: ID do cliente
+ *           example:
+ *             email: "novo@exemplo.com"
+ *             full_name: "Novo Usuário"
+ *             role: "member"
+ *             cliente_id: "f029ad69-3465-454e-ba85-e0cdb75c445f"
  *     responses:
- *       200:
- *         description: Profile found
+ *       201:
+ *         description: Convite enviado com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -164,12 +187,17 @@ router.get('/', ProfileController.getAll);
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/Profile'
- *       404:
- *         description: Profile not found
+ *                 message:
+ *                   type: string
+ *                   example: Convite enviado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       409:
+ *         description: Email já existe
  *       500:
- *         description: Internal server error
+ *         description: Erro interno do servidor
  */
-router.get('/:id', ProfileController.getById);
+router.post('/members/invite', ProfileController.inviteMember);
 
 /**
  * @swagger
@@ -242,6 +270,40 @@ router.get('/email/:email', ProfileController.getByEmail);
  *         description: Internal server error
  */
 router.get('/role/:role', ProfileController.getByRole);
+
+/**
+ * @swagger
+ * /api/profiles/{id}:
+ *   get:
+ *     summary: Get profile by ID
+ *     tags: [Profiles]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Profile ID (UUID from auth.users)
+ *     responses:
+ *       200:
+ *         description: Profile found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Profile'
+ *       404:
+ *         description: Profile not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/:id', ProfileController.getById);
 
 /**
  * @swagger

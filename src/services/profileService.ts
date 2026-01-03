@@ -22,6 +22,13 @@ export interface CreateProfileInput {
   cliente_id?: string | undefined;
 }
 
+export interface InviteMemberInput {
+  email: string;
+  full_name?: string | undefined;
+  role?: UserRole | undefined;
+  cliente_id: string;
+}
+
 export interface UpdateProfileInput {
   email?: string | undefined;
   full_name?: string | undefined;
@@ -86,11 +93,15 @@ export class ProfileService {
       throw new Error('Supabase client não está inicializado');
     }
 
+    console.log('email: ', email)
+
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('email', email)
       .single();
+
+    console.log('data: ', data);
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -207,5 +218,49 @@ export class ProfileService {
    */
   static async updateRole(id: string, role: UserRole): Promise<Profile> {
     return this.update(id, { role });
+  }
+
+  /**
+   * Invite a new member - creates user in auth and profile
+   */
+  static async inviteMember(input: InviteMemberInput): Promise<{ profile: Profile; inviteLink?: string }> {
+    if (!supabase) {
+      throw new Error('Supabase client não está inicializado');
+    }
+
+    // Check if email already exists
+    const existingProfile = await this.getByEmail(input.email);
+    if (existingProfile) {
+      throw new Error('Já existe um usuário com este email');
+    }
+
+    // Create user via Supabase Auth Admin API (invite)
+    const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(input.email, {
+      data: {
+        full_name: input.full_name,
+        cliente_id: input.cliente_id,
+        role: input.role || 'member'
+      },
+      redirectTo: process.env.INVITE_REDIRECT_URL || 'http://localhost:3001/auth/callback'
+    });
+
+    if (authError) {
+      throw new Error(`Erro ao convidar usuário: ${authError.message}`);
+    }
+
+    if (!authData.user) {
+      throw new Error('Erro ao criar usuário: dados não retornados');
+    }
+
+    // Create profile for the invited user
+    const profile = await this.create({
+      id: authData.user.id,
+      email: input.email,
+      full_name: input.full_name,
+      role: input.role || 'member',
+      cliente_id: input.cliente_id
+    });
+
+    return { profile };
   }
 }
