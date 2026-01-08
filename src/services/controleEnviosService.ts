@@ -74,7 +74,7 @@ export class ControleEnviosService {
     let em_execucao = false;
     if (clienteId) {
       const { data: configFollowup } = await supabase!
-        .from('configuracoes_followup')
+        .from('config_automatic_messages')
         .select('em_execucao')
         .eq('cliente_id', clienteId)
         .single();
@@ -103,7 +103,7 @@ export class ControleEnviosService {
     if (clienteId) {
       try {
         const { data: configFollowup, error } = await supabase!
-          .from('configuracoes_followup')
+          .from('config_automatic_messages')
           .select('qtd_envio_diario, em_execucao')
           .eq('cliente_id', clienteId)
           .single();

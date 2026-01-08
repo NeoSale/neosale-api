@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { CreateFollowupInput, UpdateFollowupInput, PaginationInput } from '../lib/validators'
 
-export class FollowupService {
+export class FollowupServiceOld {
   // Verificar conexão com Supabase
   private static checkSupabaseConnection() {
     if (!supabase) {
@@ -10,8 +10,8 @@ export class FollowupService {
   }
 
   // Listar todos os followups com paginação
-  static async listarTodos(params: PaginationInput & { clienteId?: string }) {
-    FollowupService.checkSupabaseConnection();
+  static async listarTodosOld(params: PaginationInput & { clienteId?: string }) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Listando followups com paginação:', params)
     
     const { page, limit, search, clienteId } = params
@@ -57,8 +57,8 @@ export class FollowupService {
   }
 
   // Buscar followup por ID
-  static async buscarPorId(id: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async buscarPorIdOld(id: string, clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando followup:', id)
     
     let query = supabase!
@@ -86,8 +86,8 @@ export class FollowupService {
   }
 
   // Buscar followups por lead
-  static async buscarPorLead(leadId: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async buscarPorLeadOld(leadId: string, clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando followups do lead:', leadId)
     
     let query = supabase!
@@ -115,8 +115,8 @@ export class FollowupService {
   }
 
   // Criar novo followup
-  static async criar(data: CreateFollowupInput & { cliente_id?: string }) {
-    FollowupService.checkSupabaseConnection();
+  static async criarOld(data: CreateFollowupInput & { cliente_id?: string }) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Criando followup:', data)
     
     const insertData: any = {
@@ -151,8 +151,8 @@ export class FollowupService {
   }
 
   // Atualizar followup
-  static async atualizar(id: string, data: UpdateFollowupInput, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async atualizarOld(id: string, data: UpdateFollowupInput, clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Atualizando followup:', id, data)
     
     const updateData: any = {
@@ -194,8 +194,8 @@ export class FollowupService {
   }
 
   // Deletar followup
-  static async deletar(id: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async deletarOld(id: string, clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Deletando followup:', id)
     
     let query = supabase!
@@ -219,8 +219,8 @@ export class FollowupService {
   }
 
   // Buscar followups por status
-  static async buscarPorStatus(status: 'sucesso' | 'erro', clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async buscarPorStatusOld(status: 'sucesso' | 'erro', clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando followups por status:', status)
     
     let query = supabase!
@@ -249,8 +249,8 @@ export class FollowupService {
   }
 
   // Buscar followups com embedding
-  static async buscarComEmbedding(clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
+  static async buscarComEmbeddingOld(clienteId?: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando followups com embedding')
     
     let query = supabase!
@@ -279,8 +279,8 @@ export class FollowupService {
   }
 
   // Buscar leads para envio de mensagens com priorização
-  static async buscarLeadsParaEnvio(clienteId: string, quantidade: number) {
-    FollowupService.checkSupabaseConnection();
+  static async buscarLeadsParaEnvioOld(clienteId: string, quantidade: number) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando leads para envio:', { clienteId, quantidade });
 
     // Query complexa que prioriza:
@@ -360,8 +360,8 @@ export class FollowupService {
   }
 
   // Buscar estatísticas de followups por dia
-  static async getEstatisticasPorDia(clienteId: string) {
-    FollowupService.checkSupabaseConnection();
+  static async getEstatisticasPorDiaOld(clienteId: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando estatísticas de followups por dia para cliente:', clienteId)
     
     // Buscar todos os registros usando paginação
@@ -426,8 +426,8 @@ export class FollowupService {
   }
 
   // Buscar detalhes de followups por data
-  static async getDetalhesPorData(clienteId: string, data: string) {
-    FollowupService.checkSupabaseConnection();
+  static async getDetalhesPorDataOld(clienteId: string, data: string) {
+    FollowupServiceOld.checkSupabaseConnection();
     console.log('🔄 Buscando detalhes de followups para cliente:', clienteId, 'data:', data)
     
     const dataInicio = `${data}T00:00:00.000Z`

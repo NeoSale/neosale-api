@@ -1,12 +1,18 @@
 // Carregar variáveis de ambiente PRIMEIRO
 import dotenv from 'dotenv'
-dotenv.config()
+import path from 'path'
+
+// Carregar .env do diretório raiz do projeto
+// Quando executado via ts-node/nodemon, __dirname é src/
+// Quando executado via node (compilado), __dirname é dist/
+const envPath = path.resolve(process.cwd(), '.env')
+dotenv.config({ path: envPath })
 
 // Configurar Node.js para aceitar certificados SSL auto-assinados
 // Isso resolve problemas de conectividade com alguns serviços em ambientes corporativos
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
-console.log('🚀 Iniciando servidor...') // Restart
+console.log('🚀 Iniciando servidor...')
 
 import express from 'express'
 import cors from 'cors'
@@ -19,7 +25,8 @@ import { controleEnviosRoutes } from './routes/controleEnviosRoutes'
 import referenciaRoutes from './routes/referenciaRoutes'
 import parametroRoutes from './routes/parametroRoutes'
 import mensagemRoutes from './routes/mensagemRoutes'
-import followupRoutes from './routes/followupRoutes'
+import followupRoutesOld from './routes/followupRoutesOld'
+import automaticMessagesRoutes from './routes/automaticMessagesRoutes'
 import configuracoesRoutes from './routes/configuracoesRoutes'
 import configuracaoFollowupRoutes from './routes/configuracaoFollowupRoutes'
 import provedorRoutes from './routes/provedorRoutes'
@@ -112,6 +119,7 @@ app.get('/', (req, res) => {
       parametros: `${BASE_URL}/api/parametros`,
       mensagens: `${BASE_URL}/api/mensagens`,
       followup: `${BASE_URL}/api/followup`,
+      automaticMessages: `${BASE_URL}/api/automatic-messages`,
       configuracoes: `${BASE_URL}/api/configuracoes`,
       configuracoesFollowup: `${BASE_URL}/api/configuracoes-followup`,
       provedores: `${BASE_URL}/api/provedores`,
@@ -137,7 +145,8 @@ app.use('/api/controle-envios', controleEnviosRoutes)
 app.use('/api/referencias', referenciaRoutes)
 app.use('/api/parametros', parametroRoutes)
 app.use('/api/mensagens', mensagemRoutes)
-app.use('/api/followup', followupRoutes)
+app.use('/api/followup', followupRoutesOld)
+app.use('/api/automatic-messages', automaticMessagesRoutes)
 app.use('/api/configuracoes', configuracoesRoutes)
 app.use('/api/configuracoes-followup', configuracaoFollowupRoutes)
 app.use('/api/provedores', provedorRoutes)
@@ -210,6 +219,7 @@ async function startServer() {
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`)
+      console.log(`🌍 Ambiente: ${process.env.NEXT_PUBLIC_NODE_ENV}`)
       console.log(`📚 Documentação disponível em ${BASE_URL}/api-docs`)
       console.log(`❤️ Health check em ${BASE_URL}/health`)
     })

@@ -473,9 +473,9 @@ export class LeadService {
       throw mensagemError
     }
 
-    // Atualizar followup com nova estrutura
-    const { data: followup, error: updateError } = await supabase!
-      .from('followup')
+    // Atualizar automatic_messages com nova estrutura
+    const { data: automaticMessage, error: updateError } = await supabase!
+      .from('automatic_messages')
       .update({
         id_mensagem: data.mensagem_id,
         id_lead: id,
@@ -489,12 +489,12 @@ export class LeadService {
       .single()
 
     if (updateError) {
-      console.error('❌ Erro ao atualizar followup:', updateError)
+      console.error('❌ Erro ao atualizar mensagem automática:', updateError)
       throw updateError
     }
 
     console.log('✅ Mensagem enviada com sucesso para lead:', id)
-    return followup
+    return automaticMessage
   }
 
   // Atualizar status de mensagem enviada
@@ -539,21 +539,21 @@ export class LeadService {
       updateData.mensagem_enviada = data.mensagem_enviada
     }
 
-    // Atualizar followup
-    const { data: followup, error: followupError } = await supabase!
-      .from('followup')
+    // Atualizar automatic_messages
+    const { data: automaticMessage, error: automaticMessageError } = await supabase!
+      .from('automatic_messages')
       .update(updateData)
       .eq('id', lead.followup_id)
       .select()
       .single()
 
-    if (followupError) {
-      console.error('❌ Erro ao atualizar status de mensagem:', followupError)
-      throw followupError
+    if (automaticMessageError) {
+      console.error('❌ Erro ao atualizar status de mensagem:', automaticMessageError)
+      throw automaticMessageError
     }
 
     console.log('✅ Status de mensagem atualizado com sucesso para lead:', id)
-    return followup
+    return automaticMessage
   }
 
   // Atualizar etapa do funil

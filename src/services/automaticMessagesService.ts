@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
-import { CreateFollowupInput, UpdateFollowupInput, PaginationInput } from '../lib/validators'
+import { CreateAutomaticMessageInput, UpdateAutomaticMessageInput, PaginationInput } from '../lib/validators'
 
-export class FollowupService {
+export class AutomaticMessagesService {
   // Verificar conexão com Supabase
   private static checkSupabaseConnection() {
     if (!supabase) {
@@ -9,10 +9,10 @@ export class FollowupService {
     }
   }
 
-  // Listar todos os followups com paginação
+  // Listar todas as mensagens automáticas com paginação
   static async listarTodos(params: PaginationInput & { clienteId?: string }) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Listando followups com paginação:', params)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Listando mensagens automáticas com paginação:', params)
     
     const { page, limit, search, clienteId } = params
     const offset = (page - 1) * limit
@@ -34,19 +34,19 @@ export class FollowupService {
       query = query.or(`mensagem_enviada.ilike.%${search}%,status.ilike.%${search}%`)
     }
     
-    const { data: followups, error, count } = await query
+    const { data: automaticMessages, error, count } = await query
       .range(offset, offset + limit - 1)
     
     if (error) {
-      console.error('❌ Erro ao listar followups:', error)
+      console.error('❌ Erro ao listar mensagens automáticas:', error)
       throw error
     }
     
     const totalPages = Math.ceil((count || 0) / limit)
     
-    console.log('✅ Followups listados:', followups?.length, 'de', count, 'total')
+    console.log('✅ Mensagens automáticas listadas:', automaticMessages?.length, 'de', count, 'total')
     return {
-      data: followups,
+      data: automaticMessages,
       pagination: {
         page,
         limit,
@@ -56,10 +56,10 @@ export class FollowupService {
     }
   }
 
-  // Buscar followup por ID
+  // Buscar mensagem automática por ID
   static async buscarPorId(id: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando followup:', id)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando mensagem automática:', id)
     
     let query = supabase!
       .from('automatic_messages')
@@ -74,21 +74,21 @@ export class FollowupService {
       query = query.eq('cliente_id', clienteId);
     }
 
-    const { data: followup, error } = await query.single();
+    const { data: automaticMessage, error } = await query.single();
     
     if (error) {
-      console.error('❌ Erro ao buscar followup:', error)
+      console.error('❌ Erro ao buscar mensagem automática:', error)
       throw error
     }
     
-    console.log('✅ Followup encontrado:', id)
-    return followup
+    console.log('✅ Mensagem automática encontrada:', id)
+    return automaticMessage
   }
 
-  // Buscar followups por lead
+  // Buscar mensagens automáticas por lead
   static async buscarPorLead(leadId: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando followups do lead:', leadId)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando mensagens automáticas do lead:', leadId)
     
     let query = supabase!
       .from('automatic_messages')
@@ -102,22 +102,22 @@ export class FollowupService {
       query = query.eq('cliente_id', clienteId);
     }
 
-    const { data: followups, error } = await query
+    const { data: automaticMessages, error } = await query
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('❌ Erro ao buscar followups do lead:', error)
+      console.error('❌ Erro ao buscar mensagens automáticas do lead:', error)
       throw error
     }
     
-    console.log('✅ Followups do lead encontrados:', followups?.length)
-    return followups
+    console.log('✅ Mensagens automáticas do lead encontradas:', automaticMessages?.length)
+    return automaticMessages
   }
 
-  // Criar novo followup
-  static async criar(data: CreateFollowupInput & { cliente_id?: string }) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Criando followup:', data)
+  // Criar nova mensagem automática
+  static async criar(data: CreateAutomaticMessageInput & { cliente_id?: string }) {
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Criando mensagem automática:', data)
     
     const insertData: any = {
       id_mensagem: data.id_mensagem,
@@ -131,7 +131,7 @@ export class FollowupService {
       insertData.cliente_id = data.cliente_id;
     }
 
-    const { data: followup, error } = await supabase!
+    const { data: automaticMessage, error } = await supabase!
       .from('automatic_messages')
       .insert(insertData)
       .select(`
@@ -142,18 +142,18 @@ export class FollowupService {
       .single()
     
     if (error) {
-      console.error('❌ Erro ao criar followup:', error)
+      console.error('❌ Erro ao criar mensagem automática:', error)
       throw error
     }
     
-    console.log('✅ Followup criado com sucesso:', followup.id)
-    return followup
+    console.log('✅ Mensagem automática criada com sucesso:', automaticMessage.id)
+    return automaticMessage
   }
 
-  // Atualizar followup
-  static async atualizar(id: string, data: UpdateFollowupInput, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Atualizando followup:', id, data)
+  // Atualizar mensagem automática
+  static async atualizar(id: string, data: UpdateAutomaticMessageInput, clienteId?: string) {
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Atualizando mensagem automática:', id, data)
     
     const updateData: any = {
       updated_at: new Date().toISOString()
@@ -176,7 +176,7 @@ export class FollowupService {
       query = query.eq('cliente_id', clienteId);
     }
 
-    const { data: followup, error } = await query
+    const { data: automaticMessage, error } = await query
       .select(`
         *,
         mensagem:id_mensagem(*),
@@ -185,18 +185,18 @@ export class FollowupService {
       .single()
     
     if (error) {
-      console.error('❌ Erro ao atualizar followup:', error)
+      console.error('❌ Erro ao atualizar mensagem automática:', error)
       throw error
     }
     
-    console.log('✅ Followup atualizado com sucesso:', id)
-    return followup
+    console.log('✅ Mensagem automática atualizada com sucesso:', id)
+    return automaticMessage
   }
 
-  // Deletar followup
+  // Deletar mensagem automática
   static async deletar(id: string, clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Deletando followup:', id)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Deletando mensagem automática:', id)
     
     let query = supabase!
       .from('automatic_messages')
@@ -210,18 +210,18 @@ export class FollowupService {
     const { error } = await query;
     
     if (error) {
-      console.error('❌ Erro ao deletar followup:', error)
+      console.error('❌ Erro ao deletar mensagem automática:', error)
       throw error
     }
     
-    console.log('✅ Followup deletado com sucesso:', id)
-    return { message: 'Followup deletado com sucesso' }
+    console.log('✅ Mensagem automática deletada com sucesso:', id)
+    return { message: 'Mensagem automática deletada com sucesso' }
   }
 
-  // Buscar followups por status
+  // Buscar mensagens automáticas por status
   static async buscarPorStatus(status: 'sucesso' | 'erro', clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando followups por status:', status)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando mensagens automáticas por status:', status)
     
     let query = supabase!
       .from('automatic_messages')
@@ -236,22 +236,22 @@ export class FollowupService {
       query = query.eq('cliente_id', clienteId);
     }
 
-    const { data: followups, error } = await query
+    const { data: automaticMessages, error } = await query
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('❌ Erro ao buscar followups por status:', error)
+      console.error('❌ Erro ao buscar mensagens automáticas por status:', error)
       throw error
     }
     
-    console.log('✅ Followups por status encontrados:', followups?.length)
-    return followups
+    console.log('✅ Mensagens automáticas por status encontradas:', automaticMessages?.length)
+    return automaticMessages
   }
 
-  // Buscar followups com embedding
+  // Buscar mensagens automáticas com embedding
   static async buscarComEmbedding(clienteId?: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando followups com embedding')
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando mensagens automáticas com embedding')
     
     let query = supabase!
       .from('automatic_messages')
@@ -265,27 +265,27 @@ export class FollowupService {
       query = query.eq('cliente_id', clienteId);
     }
 
-    const { data: followups, error } = await query
+    const { data: automaticMessages, error } = await query
       .not('embedding', 'is', null)
       .order('created_at', { ascending: false })
     
     if (error) {
-      console.error('❌ Erro ao buscar followups com embedding:', error)
+      console.error('❌ Erro ao buscar mensagens automáticas com embedding:', error)
       throw error
     }
     
-    console.log('✅ Followups com embedding encontrados:', followups?.length)
-    return followups
+    console.log('✅ Mensagens automáticas com embedding encontradas:', automaticMessages?.length)
+    return automaticMessages
   }
 
   // Buscar leads para envio de mensagens com priorização
   static async buscarLeadsParaEnvio(clienteId: string, quantidade: number) {
-    FollowupService.checkSupabaseConnection();
+    AutomaticMessagesService.checkSupabaseConnection();
     console.log('🔄 Buscando leads para envio:', { clienteId, quantidade });
 
     // Query complexa que prioriza:
-    // 1. Leads com followup anterior que precisam da próxima mensagem (ordenados por data da última followup + período)
-    // 2. Leads sem followup ainda (ordenados por data de criação)
+    // 1. Leads com mensagem automática anterior que precisam da próxima mensagem (ordenados por data da última mensagem + período)
+    // 2. Leads sem mensagem automática ainda (ordenados por data de criação)
     const { data: leadsParaEnvio, error } = await supabase!
       .rpc('buscar_leads_para_followup', {
         p_cliente_id: clienteId,
@@ -322,7 +322,7 @@ export class FollowupService {
           tem_followup_anterior: lead.tem_followup_anterior
         };
 
-        // Se tem followup anterior, buscar mensagens anteriores
+        // Se tem mensagem automática anterior, buscar mensagens anteriores
         if (lead.tem_followup_anterior) {
           const { data: mensagensAnteriores, error: errorMensagens } = await supabase!
             .from('automatic_messages')
@@ -359,10 +359,10 @@ export class FollowupService {
     return leadsFormatados;
   }
 
-  // Buscar estatísticas de followups por dia
+  // Buscar estatísticas de mensagens automáticas por dia
   static async getEstatisticasPorDia(clienteId: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando estatísticas de followups por dia para cliente:', clienteId)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando estatísticas de mensagens automáticas por dia para cliente:', clienteId)
     
     // Buscar todos os registros usando paginação
     let allData: any[] = []
@@ -382,7 +382,7 @@ export class FollowupService {
         .range(from, from + pageSize - 1)
       
       if (error) {
-        console.error('❌ Erro ao buscar estatísticas de followups:', error)
+        console.error('❌ Erro ao buscar estatísticas de mensagens automáticas:', error)
         throw error
       }
       
@@ -398,8 +398,8 @@ export class FollowupService {
     // Agrupar por data e status
     const estatisticas = new Map()
     
-    allData.forEach(followup => {
-      const data = new Date(followup.created_at).toISOString().split('T')[0] // YYYY-MM-DD
+    allData.forEach(automaticMessage => {
+      const data = new Date(automaticMessage.created_at).toISOString().split('T')[0] // YYYY-MM-DD
       
       if (!estatisticas.has(data)) {
         estatisticas.set(data, {
@@ -411,9 +411,9 @@ export class FollowupService {
       }
       
       const stats = estatisticas.get(data)
-      if (followup.status === 'sucesso') {
+      if (automaticMessage.status === 'sucesso') {
         stats.qtd_sucesso++
-      } else if (followup.status === 'erro') {
+      } else if (automaticMessage.status === 'erro') {
         stats.qtd_erro++
       }
       stats.total++
@@ -421,19 +421,19 @@ export class FollowupService {
     
     const resultado = Array.from(estatisticas.values()).sort((a, b) => b.data.localeCompare(a.data))
     
-    console.log('✅ Estatísticas de followups encontradas:', resultado.length, 'dias')
+    console.log('✅ Estatísticas de mensagens automáticas encontradas:', resultado.length, 'dias')
     return resultado
   }
 
-  // Buscar detalhes de followups por data
+  // Buscar detalhes de mensagens automáticas por data
   static async getDetalhesPorData(clienteId: string, data: string) {
-    FollowupService.checkSupabaseConnection();
-    console.log('🔄 Buscando detalhes de followups para cliente:', clienteId, 'data:', data)
+    AutomaticMessagesService.checkSupabaseConnection();
+    console.log('🔄 Buscando detalhes de mensagens automáticas para cliente:', clienteId, 'data:', data)
     
     const dataInicio = `${data}T00:00:00.000Z`
     const dataFim = `${data}T23:59:59.999Z`
     
-    const { data: followups, error } = await supabase!
+    const { data: automaticMessages, error } = await supabase!
       .from('automatic_messages')
       .select(`
         id,
@@ -453,24 +453,24 @@ export class FollowupService {
       .order('created_at', { ascending: false })
     
     if (error) {
-      console.error('❌ Erro ao buscar detalhes de followups:', error)
+      console.error('❌ Erro ao buscar detalhes de mensagens automáticas:', error)
       throw error
     }
     
-    const resultado = followups?.map(followup => {
-      const lead = Array.isArray(followup.lead) ? followup.lead[0] : followup.lead;
+    const resultado = automaticMessages?.map(automaticMessage => {
+      const lead = Array.isArray(automaticMessage.lead) ? automaticMessage.lead[0] : automaticMessage.lead;
       return {
         id_lead: lead?.id || null,
         nome_lead: lead?.nome || 'N/A',
         telefone_lead: lead?.telefone || 'N/A',
-        horario: followup.created_at,
-        status: followup.status,
-        mensagem_enviada: followup.mensagem_enviada,
-        mensagem_erro: followup.erro || null
+        horario: automaticMessage.created_at,
+        status: automaticMessage.status,
+        mensagem_enviada: automaticMessage.mensagem_enviada,
+        mensagem_erro: automaticMessage.erro || null
       }
     }) || []
     
-    console.log('✅ Detalhes de followups encontrados:', resultado.length, 'registros')
+    console.log('✅ Detalhes de mensagens automáticas encontrados:', resultado.length, 'registros')
     return resultado
   }
 }

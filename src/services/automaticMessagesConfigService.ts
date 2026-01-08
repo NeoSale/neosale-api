@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { CreateConfiguracaoFollowupInput, UpdateConfiguracaoFollowupInput } from '../lib/validators'
 
-export interface ConfiguracaoFollowup {
+export interface AutomaticMessagesConfig {
   id: string
   dia_horario_envio: {
     segunda: string
@@ -26,8 +26,8 @@ export interface ConfiguracaoFollowup {
   }
 }
 
-export class ConfiguracaoFollowupService {
-  static async getAll(): Promise<ConfiguracaoFollowup[]> {
+export class AutomaticMessagesConfigService {
+  static async getAll(): Promise<AutomaticMessagesConfig[]> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -39,8 +39,8 @@ export class ConfiguracaoFollowupService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Erro ao buscar configurações de follow-up:', error)
-        throw new Error(`Erro ao buscar configurações de follow-up: ${error.message}`)
+        console.error('Erro ao buscar configurações de mensagens automáticas:', error)
+        throw new Error(`Erro ao buscar configurações de mensagens automáticas: ${error.message}`)
       }
 
       return data || []
@@ -50,7 +50,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async getById(id: string): Promise<ConfiguracaoFollowup | null> {
+  static async getById(id: string): Promise<AutomaticMessagesConfig | null> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -66,8 +66,8 @@ export class ConfiguracaoFollowupService {
         if (error.code === 'PGRST116') {
           return null
         }
-        console.error('Erro ao buscar configuração de follow-up por ID:', error)
-        throw new Error(`Erro ao buscar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao buscar configuração de mensagens automáticas por ID:', error)
+        throw new Error(`Erro ao buscar configuração de mensagens automáticas: ${error.message}`)
       }
 
       return data
@@ -77,7 +77,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async getByClienteId(clienteId: string): Promise<ConfiguracaoFollowup | null> {
+  static async getByClienteId(clienteId: string): Promise<AutomaticMessagesConfig | null> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -93,8 +93,8 @@ export class ConfiguracaoFollowupService {
         if (error.code === 'PGRST116') {
           return null
         }
-        console.error('Erro ao buscar configuração de follow-up por cliente_id:', error)
-        throw new Error(`Erro ao buscar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao buscar configuração de mensagens automáticas por cliente_id:', error)
+        throw new Error(`Erro ao buscar configuração de mensagens automáticas: ${error.message}`)
       }
 
       return data
@@ -104,7 +104,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async create(input: CreateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
+  static async create(input: CreateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -121,8 +121,8 @@ export class ConfiguracaoFollowupService {
         .single()
 
       if (error) {
-        console.error('Erro ao criar configuração de follow-up:', error)
-        throw new Error(`Erro ao criar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao criar configuração de mensagens automáticas:', error)
+        throw new Error(`Erro ao criar configuração de mensagens automáticas: ${error.message}`)
       }
 
       return data
@@ -132,7 +132,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async update(id: string, input: UpdateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
+  static async update(id: string, input: UpdateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -149,8 +149,8 @@ export class ConfiguracaoFollowupService {
         .single()
 
       if (error) {
-        console.error('Erro ao atualizar configuração de follow-up:', error)
-        throw new Error(`Erro ao atualizar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao atualizar configuração de mensagens automáticas:', error)
+        throw new Error(`Erro ao atualizar configuração de mensagens automáticas: ${error.message}`)
       }
 
       return data
@@ -172,8 +172,8 @@ export class ConfiguracaoFollowupService {
         .eq('id', id)
 
       if (error) {
-        console.error('Erro ao deletar configuração de follow-up:', error)
-        throw new Error(`Erro ao deletar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao deletar configuração de mensagens automáticas:', error)
+        throw new Error(`Erro ao deletar configuração de mensagens automáticas: ${error.message}`)
       }
     } catch (error) {
       console.error('Erro no serviço delete:', error)
@@ -181,7 +181,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async getByAtivo(ativo: boolean): Promise<ConfiguracaoFollowup[]> {
+  static async getByAtivo(ativo: boolean): Promise<AutomaticMessagesConfig[]> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -200,8 +200,8 @@ export class ConfiguracaoFollowupService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Erro ao buscar configurações de follow-up por status ativo:', error)
-        throw new Error(`Erro ao buscar configurações de follow-up por status ativo: ${error.message}`)
+        console.error('Erro ao buscar configurações de mensagens automáticas por status ativo:', error)
+        throw new Error(`Erro ao buscar configurações de mensagens automáticas por status ativo: ${error.message}`)
       }
 
       return data || []
@@ -211,7 +211,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async updateIndex(clienteId: string, index: number): Promise<ConfiguracaoFollowup> {
+  static async updateIndex(clienteId: string, index: number): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -228,8 +228,8 @@ export class ConfiguracaoFollowupService {
         .single()
 
       if (error) {
-        console.error('Erro ao atualizar índice da configuração de follow-up:', error)
-        throw new Error(`Erro ao atualizar índice da configuração de follow-up: ${error.message}`)
+        console.error('Erro ao atualizar índice da configuração de mensagens automáticas:', error)
+        throw new Error(`Erro ao atualizar índice da configuração de mensagens automáticas: ${error.message}`)
       }
 
       return data
@@ -239,7 +239,7 @@ export class ConfiguracaoFollowupService {
     }
   }
 
-  static async updateById(id: string, clienteId: string, updateData: UpdateConfiguracaoFollowupInput): Promise<ConfiguracaoFollowup> {
+  static async updateById(id: string, clienteId: string, updateData: UpdateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -257,12 +257,12 @@ export class ConfiguracaoFollowupService {
         .single()
 
       if (error) {
-        console.error('Erro ao atualizar configuração de follow-up por ID:', error)
-        throw new Error(`Erro ao atualizar configuração de follow-up: ${error.message}`)
+        console.error('Erro ao atualizar configuração de mensagens automáticas por ID:', error)
+        throw new Error(`Erro ao atualizar configuração de mensagens automáticas: ${error.message}`)
       }
 
       if (!data) {
-        throw new Error('Configuração de follow-up não encontrada')
+        throw new Error('Configuração de mensagens automáticas não encontrada')
       }
 
       return data

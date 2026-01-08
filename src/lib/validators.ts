@@ -106,7 +106,7 @@ export const updateLeadSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-// Validator para criação de followup
+// Validator para criação de followup (mantido para compatibilidade)
 export const createFollowupSchema = z.object({
   id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido'),
   id_lead: z.string().uuid('id_lead deve ser um UUID válido'),
@@ -117,8 +117,33 @@ export const createFollowupSchema = z.object({
   mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória')
 })
 
-// Validator para atualização de followup
+// Validator para atualização de followup (mantido para compatibilidade)
 export const updateFollowupSchema = z.object({
+  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido').optional(),
+  id_lead: z.string().uuid('id_lead deve ser um UUID válido').optional(),
+  status: z.enum(['sucesso', 'erro'], {
+    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
+  }).optional(),
+  erro: z.string().optional(),
+  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória').optional(),
+  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional()
+}).refine(data => Object.keys(data).length > 0, {
+  message: 'Pelo menos um campo deve ser fornecido para atualização'
+})
+
+// Validator para criação de mensagem automática (automatic_messages)
+export const createAutomaticMessageSchema = z.object({
+  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido'),
+  id_lead: z.string().uuid('id_lead deve ser um UUID válido'),
+  status: z.enum(['sucesso', 'erro'], {
+    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
+  }),
+  erro: z.string().optional(),
+  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória')
+})
+
+// Validator para atualização de mensagem automática (automatic_messages)
+export const updateAutomaticMessageSchema = z.object({
   id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido').optional(),
   id_lead: z.string().uuid('id_lead deve ser um UUID válido').optional(),
   status: z.enum(['sucesso', 'erro'], {
@@ -167,6 +192,8 @@ export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
 export type CreateFollowupInput = z.infer<typeof createFollowupSchema>
 export type UpdateFollowupInput = z.infer<typeof updateFollowupSchema>
+export type CreateAutomaticMessageInput = z.infer<typeof createAutomaticMessageSchema>
+export type UpdateAutomaticMessageInput = z.infer<typeof updateAutomaticMessageSchema>
 export type CreateLeadInput = z.infer<typeof createLeadSchema>
 
 // Validator para criação de parâmetro
