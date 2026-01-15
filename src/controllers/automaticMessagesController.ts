@@ -579,24 +579,6 @@ export class AutomaticMessagesController {
   // Buscar configurações por status ativo
   static async getConfiguracaoByAtivo(req: Request, res: Response): Promise<Response> {
     try {
-      const cliente_id = req.headers['cliente_id'] as string;
-      
-      if (!cliente_id) {
-        return res.status(400).json({
-          success: false,
-          message: 'cliente_id é obrigatório no cabeçalho da requisição'
-        });
-      }
-      
-      try {
-        z.string().uuid().parse(cliente_id);
-      } catch {
-        return res.status(400).json({
-          success: false,
-          message: 'cliente_id deve ser um UUID válido'
-        });
-      }
-      
       const { ativo } = req.query;
       
       if (ativo === undefined) {

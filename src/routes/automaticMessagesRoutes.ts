@@ -469,13 +469,6 @@ router.post('/configuracao', AutomaticMessagesController.createConfiguracao)
  *     description: Retorna todas as configurações de mensagens automáticas filtradas por status ativo/inativo
  *     tags: [Automatic Messages - Configuração]
  *     parameters:
- *       - in: header
- *         name: cliente_id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID do cliente
  *       - in: query
  *         name: ativo
  *         required: true
