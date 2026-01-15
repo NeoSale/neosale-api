@@ -189,13 +189,7 @@ export class AutomaticMessagesConfigService {
 
       const { data, error } = await supabase
         .from('config_automatic_messages')
-        .select(`
-          *,
-          cliente:clientes(
-            id,
-            nome
-          )
-        `)
+        .select('*')
         .eq('ativo', ativo)
         .order('created_at', { ascending: false })
 
