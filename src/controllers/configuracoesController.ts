@@ -21,7 +21,7 @@ export class ConfiguracoesController {
         total: parametros.length
       });
     } catch (error) {
-      console.error('Erro ao buscar configurações de followup:', error);
+      console.error('Erro ao buscar configurações:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -46,7 +46,7 @@ export class ConfiguracoesController {
       if (!configuracao) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Configuração não encontrada'
         });
       }
 
@@ -55,7 +55,7 @@ export class ConfiguracoesController {
         data: configuracao
       });
     } catch (error) {
-      console.error('Erro ao buscar configuração de followup:', error);
+      console.error('Erro ao buscar configuração:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -93,10 +93,10 @@ export class ConfiguracoesController {
       return res.status(201).json({
         success: true,
         data: configuracao,
-        message: 'Configuração de followup criada com sucesso'
+        message: 'Configuração criada com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao criar configuração de followup:', error);
+      console.error('Erro ao criar configuração:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -131,7 +131,7 @@ export class ConfiguracoesController {
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Configuração não encontrada'
         });
       }
 
@@ -140,10 +140,10 @@ export class ConfiguracoesController {
       return res.json({
         success: true,
         data: configuracao,
-        message: 'Configuração de followup atualizada com sucesso'
+        message: 'Configuração atualizada com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao atualizar configuração de followup:', error);
+      console.error('Erro ao atualizar configuração:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',
@@ -168,7 +168,7 @@ export class ConfiguracoesController {
       if (!existingConfig) {
         return res.status(404).json({
           success: false,
-          message: 'Configuração de followup não encontrada'
+          message: 'Configuração não encontrada'
         });
       }
 
@@ -176,10 +176,10 @@ export class ConfiguracoesController {
       
       return res.json({
         success: true,
-        message: 'Configuração de followup deletada com sucesso'
+        message: 'Configuração deletada com sucesso'
       });
     } catch (error) {
-      console.error('Erro ao deletar configuração de followup:', error);
+      console.error('Erro ao deletar configuração:', error);
       return res.status(500).json({
         success: false,
         message: 'Erro interno do servidor',

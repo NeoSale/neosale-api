@@ -287,7 +287,7 @@ export class AutomaticMessagesService {
     // 1. Leads com mensagem automática anterior que precisam da próxima mensagem (ordenados por data da última mensagem + período)
     // 2. Leads sem mensagem automática ainda (ordenados por data de criação)
     const { data: leadsParaEnvio, error } = await supabase!
-      .rpc('buscar_leads_para_followup', {
+      .rpc('buscar_leads_para_automatic_messages', {
         p_cliente_id: clienteId,
         p_limite: quantidade
       });
@@ -319,11 +319,11 @@ export class AutomaticMessagesService {
             texto: lead.mensagem_texto,
             created_at: lead.mensagem_created_at
           },
-          tem_followup_anterior: lead.tem_followup_anterior
+          tem_automatic_messages_anterior: lead.tem_automatic_messages_anterior
         };
 
         // Se tem mensagem automática anterior, buscar mensagens anteriores
-        if (lead.tem_followup_anterior) {
+        if (lead.tem_automatic_messages_anterior) {
           const { data: mensagensAnteriores, error: errorMensagens } = await supabase!
             .from('automatic_messages')
             .select(`

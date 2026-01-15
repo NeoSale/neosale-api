@@ -106,31 +106,6 @@ export const updateLeadSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-// Validator para criação de followup (mantido para compatibilidade)
-export const createFollowupSchema = z.object({
-  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido'),
-  id_lead: z.string().uuid('id_lead deve ser um UUID válido'),
-  status: z.enum(['sucesso', 'erro'], {
-    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
-  }),
-  erro: z.string().optional(),
-  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória')
-})
-
-// Validator para atualização de followup (mantido para compatibilidade)
-export const updateFollowupSchema = z.object({
-  id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido').optional(),
-  id_lead: z.string().uuid('id_lead deve ser um UUID válido').optional(),
-  status: z.enum(['sucesso', 'erro'], {
-    errorMap: () => ({ message: 'Status deve ser sucesso ou erro' })
-  }).optional(),
-  erro: z.string().optional(),
-  mensagem_enviada: z.string().min(1, 'Mensagem enviada é obrigatória').optional(),
-  cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional()
-}).refine(data => Object.keys(data).length > 0, {
-  message: 'Pelo menos um campo deve ser fornecido para atualização'
-})
-
 // Validator para criação de mensagem automática (automatic_messages)
 export const createAutomaticMessageSchema = z.object({
   id_mensagem: z.string().uuid('id_mensagem deve ser um UUID válido'),
@@ -190,8 +165,6 @@ export type StatusInput = z.infer<typeof statusSchema>
 export type IdParam = z.infer<typeof idParamSchema>
 export type PaginationInput = z.infer<typeof paginationSchema>
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>
-export type CreateFollowupInput = z.infer<typeof createFollowupSchema>
-export type UpdateFollowupInput = z.infer<typeof updateFollowupSchema>
 export type CreateAutomaticMessageInput = z.infer<typeof createAutomaticMessageSchema>
 export type UpdateAutomaticMessageInput = z.infer<typeof updateAutomaticMessageSchema>
 export type CreateLeadInput = z.infer<typeof createLeadSchema>
@@ -215,9 +188,7 @@ export const updateParametroSchema = z.object({
 export type CreateParametroInput = z.infer<typeof createParametroSchema>
 export type UpdateParametroInput = z.infer<typeof updateParametroSchema>
 
-// ===== VALIDATORS PARA CONFIGURAÇÕES FOLLOWUP =====
-
-// Validator para criação de configuração followup
+// Validator para criação de configuração
 export const createConfiguracoesSchema = z.object({
   horario_inicio: z.string().optional().refine((val) => {
     if (!val || val === '') return true;
@@ -246,7 +217,7 @@ export const createConfiguracoesSchema = z.object({
   embedding: z.array(z.number()).optional()
 })
 
-// Validator para atualização de configuração followup
+// Validator para atualização de configuração
 export const updateConfiguracoesSchema = z.object({
   horario_inicio: z.string().optional().refine((val) => {
     if (!val || val === '') return true;
@@ -743,7 +714,7 @@ export type SessionIdParam = z.infer<typeof sessionIdParamSchema>
 export type NumericIdParam = z.infer<typeof numericIdParamSchema>
 
 // Validators para configurações de follow-up
-export const createConfiguracaoFollowupSchema = z.object({
+export const createConfigAutomaticMessagesSchema = z.object({
   dia_horario_envio: z.object({
     segunda: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
     terca: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"'),
@@ -760,7 +731,7 @@ export const createConfiguracaoFollowupSchema = z.object({
   embedding: z.array(z.number()).optional()
 })
 
-export const updateConfiguracaoFollowupSchema = z.object({
+export const updateConfigAutomaticMessagesSchema = z.object({
   dia_horario_envio: z.object({
     segunda: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
     terca: z.string().regex(/^(\d{2}:\d{2}-\d{2}:\d{2}|fechado)$/, 'Formato deve ser HH:MM-HH:MM ou "fechado"').optional(),
@@ -779,8 +750,8 @@ export const updateConfiguracaoFollowupSchema = z.object({
   message: 'Pelo menos um campo deve ser fornecido para atualização'
 })
 
-export type CreateConfiguracaoFollowupInput = z.infer<typeof createConfiguracaoFollowupSchema>
-export type UpdateConfiguracaoFollowupInput = z.infer<typeof updateConfiguracaoFollowupSchema>
+export type CreateConfigAutomaticMessagesInput = z.infer<typeof createConfigAutomaticMessagesSchema>
+export type UpdateConfigAutomaticMessagesInput = z.infer<typeof updateConfigAutomaticMessagesSchema>
 
 // Validators para TipoAgente
 export const createTipoAgenteSchema = z.object({

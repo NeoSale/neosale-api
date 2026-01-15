@@ -103,20 +103,6 @@ export function generateMensagemEmbedding(mensagem: any): number[] {
 }
 
 /**
- * Gera embedding para um followup (mantido para compatibilidade)
- * Combina informações da mensagem enviada e resultado
- */
-export function generateFollowupEmbedding(followup: any): number[] {
-  const followupData = {
-    mensagem_enviada: followup.mensagem_enviada,
-    status: followup.status,
-    erro: followup.erro
-  }
-  
-  return generateEmbedding(followupData)
-}
-
-/**
  * Gera embedding para uma mensagem automática (automatic_messages)
  * Combina informações da mensagem enviada e resultado
  */

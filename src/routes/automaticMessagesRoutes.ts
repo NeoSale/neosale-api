@@ -857,7 +857,7 @@ router.get('/status/:status', AutomaticMessagesController.buscarPorStatus)
  *                       proxima_mensagem_data:
  *                         type: string
  *                         format: date-time
- *                       tem_followup_anterior:
+ *                       tem_automatic_message_anterior:
  *                         type: boolean
  *                       prioridade:
  *                         type: integer

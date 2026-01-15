@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
-import { EvolutionApiV2, EvolutionApiInstanceDataV2, CreateEvolutionApiRequestV2, EvolutionApiFetchInstancesResponseV2 } from '../models/evolution-api-v2.model';
+import { EvolutionApiInstanceDataV2, CreateEvolutionApiRequestV2, EvolutionApiFetchInstancesResponseV2 } from '../models/evolution-api-v2.model';
 import axios from 'axios';
-import { EvolutionApiInstanceData } from '../models/evolution-api.model';
 
 class EvolutionApiV2Service {
   private baseUrl: string;
@@ -52,7 +51,7 @@ class EvolutionApiV2Service {
     }
   }
 
-  async getInstanceById(instanceId: string, clienteId: string): Promise<EvolutionApiInstanceData | null> {
+  async getInstanceById(instanceId: string, clienteId: string): Promise<EvolutionApiInstanceDataV2 | null> {
     try {
       console.log(`Getting instance by ID: ${instanceId} for client: ${clienteId}`);
 
@@ -83,7 +82,7 @@ class EvolutionApiV2Service {
     }
   }
 
-  async getInstanceByName(instanceName: string, clienteId: string): Promise<EvolutionApiInstanceData | null> {
+  async getInstanceByName(instanceName: string, clienteId: string): Promise<EvolutionApiInstanceDataV2 | null> {
     try {
       console.log(`Getting instance by name: ${instanceName} for client: ${clienteId}`);
 
@@ -552,7 +551,7 @@ class EvolutionApiV2Service {
     }
   }
 
-  async updateInstance(instanceId: string, updateData: any, clienteId: string): Promise<EvolutionApiInstanceData> {
+  async updateInstance(instanceId: string, updateData: any, clienteId: string): Promise<EvolutionApiInstanceDataV2> {
     if (!supabase) {
       throw new Error('Supabase client not initialized');
     }
@@ -628,7 +627,7 @@ class EvolutionApiV2Service {
     }
   }
 
-  async fetchInstancesFromEvolutionApi(instanceIds: string[]): Promise<EvolutionApiInstanceData[]> {
+  async fetchInstancesFromEvolutionApi(instanceIds: string[]): Promise<EvolutionApiInstanceDataV2[]> {
     try {
       const response = await axios.get(
         `${this.baseUrl}/instance/fetchInstances`,

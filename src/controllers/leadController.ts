@@ -10,7 +10,7 @@ import {
   idParamSchema,
   paginationSchema,
   updateLeadSchema,
-  updateFollowupSchema,
+  updateAutomaticMessageSchema,
   createLeadSchema
 } from '../lib/validators'
 import { ZodError } from 'zod'
@@ -517,7 +517,7 @@ export class LeadController {
       const id = LeadController.extractIdFromUrl(req)
       idParamSchema.parse({ id })
       
-      const validatedData = updateFollowupSchema.parse(req.body)
+      const validatedData = updateAutomaticMessageSchema.parse(req.body)
       const mensagemStatus = await LeadService.atualizarMensagem(id, validatedData)
       
       return res.status(200).json({

@@ -32,7 +32,7 @@ export class ConfiguracoesService {
     const { data, error } = await query.order('created_at', { ascending: true });
 
     if (error) {
-      throw new Error(`Erro ao buscar configurações de followup: ${error.message}`);
+      throw new Error(`Erro ao buscar configurações: ${error.message}`);
     }
 
     return data || [];
@@ -92,7 +92,7 @@ export class ConfiguracoesService {
       .single();
 
     if (error) {
-      throw new Error(`Erro ao criar configuração de followup: ${error.message}`);
+      throw new Error(`Erro ao criar configuração: ${error.message}`);
     }
 
     return data;
@@ -114,7 +114,7 @@ export class ConfiguracoesService {
       .single();
 
     if (error) {
-      throw new Error(`Erro ao atualizar configuração de followup: ${error.message}`);
+      throw new Error(`Erro ao atualizar configuração: ${error.message}`);
     }
 
     return data;
@@ -131,7 +131,7 @@ export class ConfiguracoesService {
       .eq('cliente_id', clienteId);
     
     if (error) {
-      throw new Error(`Erro ao deletar configuração de followup: ${error.message}`);
+      throw new Error(`Erro ao deletar configuração: ${error.message}`);
     }
   }
 }

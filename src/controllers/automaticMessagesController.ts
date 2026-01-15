@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
 import { AutomaticMessagesService } from '../services/automaticMessagesService'
 import { AutomaticMessagesConfigService } from '../services/automaticMessagesConfigService'
-import { createAutomaticMessageSchema, updateAutomaticMessageSchema, idParamSchema, paginationSchema, createConfiguracaoFollowupSchema, updateConfiguracaoFollowupSchema } from '../lib/validators'
+import { createAutomaticMessageSchema, updateAutomaticMessageSchema, idParamSchema, paginationSchema, createConfigAutomaticMessagesSchema, updateConfigAutomaticMessagesSchema } from '../lib/validators'
 import { z } from 'zod'
 
 export class AutomaticMessagesController {
@@ -500,7 +500,7 @@ export class AutomaticMessagesController {
         });
       }
       
-      const validatedData = createConfiguracaoFollowupSchema.parse(req.body)
+      const validatedData = createConfigAutomaticMessagesSchema.parse(req.body)
       
       const novaConfiguracao = await AutomaticMessagesConfigService.create({ ...validatedData, cliente_id })
       
@@ -549,7 +549,7 @@ export class AutomaticMessagesController {
       }
       
       const { id } = idParamSchema.parse(req.params)
-      const validatedData = updateConfiguracaoFollowupSchema.parse(req.body)
+      const validatedData = updateConfigAutomaticMessagesSchema.parse(req.body)
       
       const configuracaoAtualizada = await AutomaticMessagesConfigService.update(id, validatedData)
       
@@ -629,7 +629,7 @@ export class AutomaticMessagesController {
   static async updateConfiguracaoById(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = idParamSchema.parse(req.params)
-      const validatedData = updateConfiguracaoFollowupSchema.parse(req.body)
+      const validatedData = updateConfigAutomaticMessagesSchema.parse(req.body)
       const cliente_id = req.headers['cliente_id'] as string
       
       if (!cliente_id) {

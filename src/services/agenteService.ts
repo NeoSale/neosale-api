@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { CreateAgenteInput, UpdateAgenteInput } from '../lib/validators';
 import { ParametroService } from './parametroService';
-import evolutionApiService from './evolution-api.service';
+import evolutionApiService from './evolution-api-v2.service';
 import { HistoricoPromptService, CreateHistoricoPromptInput } from './historicoPromptService';
 
 export interface Agente {

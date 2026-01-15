@@ -70,17 +70,17 @@ export class ControleEnviosService {
       return await this.createControleEnvio(data, clienteId)
     }
     
-    // Buscar o campo em_execucao da tabela configuracoes_followup
+    // Buscar o campo em_execucao da tabela configuracoes_automatic_messages
     let em_execucao = false;
     if (clienteId) {
-      const { data: configFollowup } = await supabase!
+      const { data: configAutomaticMessages } = await supabase!
         .from('config_automatic_messages')
         .select('em_execucao')
         .eq('cliente_id', clienteId)
         .single();
       
-      if (configFollowup) {
-        em_execucao = configFollowup.em_execucao;
+      if (configAutomaticMessages) {
+        em_execucao = configAutomaticMessages.em_execucao;
       }
     }
     
@@ -96,24 +96,24 @@ export class ControleEnviosService {
     ControleEnviosService.checkSupabaseConnection();
     console.log('🔄 Criando novo controle de envio para data:', data)
     
-    // Pegar o limite diário específico do cliente da tabela configuracoes_followup
+    // Pegar o limite diário específico do cliente da tabela configuracoes_automatic_messages
     let limiteDiarioPadrao = 0; // valor padrão caso não encontre a configuração
     let em_execucao = false; // valor padrão para em_execucao
     
     if (clienteId) {
       try {
-        const { data: configFollowup, error } = await supabase!
+        const { data: configAutomaticMessages, error } = await supabase!
           .from('config_automatic_messages')
           .select('qtd_envio_diario, em_execucao')
           .eq('cliente_id', clienteId)
           .single();
         
-        if (configFollowup) {
-          if (configFollowup.qtd_envio_diario) {
-            limiteDiarioPadrao = configFollowup.qtd_envio_diario;
+        if (configAutomaticMessages) {
+          if (configAutomaticMessages.qtd_envio_diario) {
+            limiteDiarioPadrao = configAutomaticMessages.qtd_envio_diario;
             console.log('✅ Limite diário obtido das configurações do cliente:', limiteDiarioPadrao);
           }
-          em_execucao = configFollowup.em_execucao || false;
+          em_execucao = configAutomaticMessages.em_execucao || false;
           console.log('✅ Status em_execucao obtido das configurações do cliente:', em_execucao);
         } else {
           console.log('⚠️ Configuração de follow-up não encontrada para o cliente, usando valores padrão');
@@ -125,7 +125,7 @@ export class ControleEnviosService {
     } else {
       // Fallback para o parâmetro global se não houver cliente_id
       try {
-        const parametroLimite = await ParametroService.getByChave('qtd_envio_diario_followup');
+        const parametroLimite = await ParametroService.getByChave('qtd_envio_diario_automatic_messages');
         if (parametroLimite && parametroLimite.valor) {
           limiteDiarioPadrao = parseInt(parametroLimite.valor);
           console.log('✅ Limite diário obtido das configurações globais:', limiteDiarioPadrao);

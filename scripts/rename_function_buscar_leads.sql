@@ -1,11 +1,15 @@
--- Migration: 024_update_buscar_leads_followup_add_ai_habilitada
--- Description: Update buscar_leads_para_followup function to include ai_habilitada field
--- Dependencies: 023_create_buscar_leads_followup_function, 012_create_leads
+-- Script para renomear a função buscar_leads_para_followup para buscar_leads_para_automatic_messages
+-- Execute este script diretamente no banco de dados Supabase
 
--- Drop existing function
-DROP FUNCTION IF EXISTS buscar_leads_para_followup(uuid, integer) CASCADE;
+-- =====================================================
+-- STEP 1: Drop a função antiga
+-- =====================================================
+DROP FUNCTION IF EXISTS buscar_leads_para_automatic_messages(uuid, integer) CASCADE;
 
-CREATE OR REPLACE FUNCTION buscar_leads_para_followup(
+-- =====================================================
+-- STEP 2: Criar a função com o novo nome
+-- =====================================================
+CREATE OR REPLACE FUNCTION buscar_leads_para_automatic_messages(
     p_cliente_id uuid,
     p_limite integer
 )
@@ -21,7 +25,7 @@ RETURNS TABLE (
     mensagem_texto text,
     mensagem_ordem integer,
     mensagem_created_at timestamp,
-    tem_followup_anterior boolean,
+    tem_automatic_messages_anterior boolean,
     prioridade integer
 )
 LANGUAGE plpgsql
@@ -29,18 +33,18 @@ AS $$
 BEGIN
     RETURN QUERY
     WITH leads_com_ultimo_followup AS (
-        -- Buscar o último followup de cada lead com informações da próxima mensagem ativa
-        SELECT DISTINCT ON (f.id_lead)
-            f.id_lead,
-            f.id_mensagem,
-            f.created_at as ultimo_envio,
+        -- Buscar o último registro de cada lead com informações da próxima mensagem ativa
+        SELECT DISTINCT ON (am.id_lead)
+            am.id_lead,
+            am.id_mensagem,
+            am.created_at as ultimo_envio,
             m.ordem as ultima_ordem,
             m_proxima.intervalo_numero,
             m_proxima.intervalo_tipo,
             m_proxima.id as proxima_mensagem_id,
             m_proxima.ordem as proxima_ordem
-        FROM followup f
-        INNER JOIN mensagens m ON f.id_mensagem = m.id
+        FROM automatic_messages am
+        INNER JOIN mensagens m ON am.id_mensagem = m.id
         LEFT JOIN (
             SELECT DISTINCT ON (m1.id) 
                 m1.id as mensagem_atual_id,
@@ -57,9 +61,9 @@ BEGIN
             WHERE m1.cliente_id = p_cliente_id
             ORDER BY m1.id, m2.ordem ASC
         ) m_proxima ON m_proxima.mensagem_atual_id = m.id
-        WHERE f.status = 'sucesso'
-            AND f.cliente_id = p_cliente_id
-        ORDER BY f.id_lead, f.created_at DESC
+        WHERE am.status = 'sucesso'
+            AND am.cliente_id = p_cliente_id
+        ORDER BY am.id_lead, am.created_at DESC
     ),
     leads_prontos_proxima_mensagem AS (
         -- Leads que estão no prazo para receber a próxima mensagem
@@ -75,7 +79,7 @@ BEGIN
             m_proxima.texto_mensagem as mensagem_texto,
             luf.proxima_ordem as mensagem_ordem,
             m_proxima.created_at as mensagem_created_at,
-            true as tem_followup_anterior,
+            true as tem_automatic_messages_anterior,
             1 as prioridade,
             luf.ultimo_envio
         FROM leads l
@@ -110,7 +114,7 @@ BEGIN
             m.texto_mensagem as mensagem_texto,
             m.ordem as mensagem_ordem,
             m.created_at as mensagem_created_at,
-            false as tem_followup_anterior,
+            false as tem_automatic_messages_anterior,
             2 as prioridade,
             l.created_at as ultimo_envio
         FROM leads l
@@ -124,8 +128,8 @@ BEGIN
         WHERE l.cliente_id = p_cliente_id
             AND l.deletado = false
             AND NOT EXISTS (
-                SELECT 1 FROM followup f 
-                WHERE f.id_lead = l.id
+                SELECT 1 FROM automatic_messages am 
+                WHERE am.id_lead = l.id
             )
     )
     SELECT 
@@ -140,7 +144,7 @@ BEGIN
         resultado.mensagem_texto::text,
         resultado.mensagem_ordem::integer,
         resultado.mensagem_created_at::timestamp,
-        resultado.tem_followup_anterior::boolean,
+        resultado.tem_automatic_messages_anterior::boolean,
         resultado.prioridade::integer
     FROM (
         SELECT * FROM leads_prontos_proxima_mensagem
@@ -153,5 +157,5 @@ END;
 $$;
 
 -- Comment explaining the function
-COMMENT ON FUNCTION buscar_leads_para_followup(uuid, integer) IS 
-'Função consolidada para buscar leads para envio de mensagens de followup com priorização. Retorna ai_habilitada para cada lead.';
+COMMENT ON FUNCTION buscar_leads_para_automatic_messages(uuid, integer) IS 
+'Função consolidada para buscar leads para envio de mensagens automáticas com priorização. Retorna ai_habilitada para cada lead. Usa tabela automatic_messages.';

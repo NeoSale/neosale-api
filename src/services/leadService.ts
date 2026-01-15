@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateFollowupInput, CreateLeadInput } from '../lib/validators'
+import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, EtapaInput, StatusInput, PaginationInput, UpdateLeadInput, UpdateAutomaticMessageInput, CreateLeadInput } from '../lib/validators'
 import { generateLeadEmbedding } from '../lib/embedding'
 import { OrigemLeadsService } from './origemLeadsService'
 import { QualificacaoService } from './qualificacaoService'
@@ -498,7 +498,7 @@ export class LeadService {
   }
 
   // Atualizar status de mensagem enviada
-  static async atualizarMensagem(id: string, data: UpdateFollowupInput) {
+  static async atualizarMensagem(id: string, data: UpdateAutomaticMessageInput) {
     LeadService.checkSupabaseConnection();
     console.log('🔄 Atualizando status de mensagem do lead:', id)
 

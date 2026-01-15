@@ -18,12 +18,12 @@ ALTER INDEX IF EXISTS idx_followup_embedding RENAME TO idx_automatic_messages_em
 ALTER INDEX IF EXISTS idx_followup_lead_status RENAME TO idx_automatic_messages_lead_status;
 
 -- =====================================================
--- STEP 3: Update the buscar_leads_para_followup function
--- to use the new table name
+-- STEP 3: Rename buscar_leads_para_followup function
+-- to buscar_leads_para_automatic_messages
 -- =====================================================
 DROP FUNCTION IF EXISTS buscar_leads_para_followup(uuid, integer) CASCADE;
 
-CREATE OR REPLACE FUNCTION buscar_leads_para_followup(
+CREATE OR REPLACE FUNCTION buscar_leads_para_automatic_messages(
     p_cliente_id uuid,
     p_limite integer
 )
@@ -39,7 +39,7 @@ RETURNS TABLE (
     mensagem_texto text,
     mensagem_ordem integer,
     mensagem_created_at timestamp,
-    tem_followup_anterior boolean,
+    tem_automatic_messages_anterior boolean,
     prioridade integer
 )
 LANGUAGE plpgsql
@@ -93,7 +93,7 @@ BEGIN
             m_proxima.texto_mensagem as mensagem_texto,
             luf.proxima_ordem as mensagem_ordem,
             m_proxima.created_at as mensagem_created_at,
-            true as tem_followup_anterior,
+            true as tem_automatic_messages_anterior,
             1 as prioridade,
             luf.ultimo_envio
         FROM leads l
@@ -128,7 +128,7 @@ BEGIN
             m.texto_mensagem as mensagem_texto,
             m.ordem as mensagem_ordem,
             m.created_at as mensagem_created_at,
-            false as tem_followup_anterior,
+            false as tem_automatic_messages_anterior,
             2 as prioridade,
             l.created_at as ultimo_envio
         FROM leads l
@@ -158,7 +158,7 @@ BEGIN
         resultado.mensagem_texto::text,
         resultado.mensagem_ordem::integer,
         resultado.mensagem_created_at::timestamp,
-        resultado.tem_followup_anterior::boolean,
+        resultado.tem_automatic_messages_anterior::boolean,
         resultado.prioridade::integer
     FROM (
         SELECT * FROM leads_prontos_proxima_mensagem
@@ -171,7 +171,7 @@ END;
 $$;
 
 -- Comment explaining the function
-COMMENT ON FUNCTION buscar_leads_para_followup(uuid, integer) IS 
+COMMENT ON FUNCTION buscar_leads_para_automatic_messages(uuid, integer) IS 
 'Função consolidada para buscar leads para envio de mensagens automáticas com priorização. Retorna ai_habilitada para cada lead. Usa tabela automatic_messages.';
 
 -- =====================================================

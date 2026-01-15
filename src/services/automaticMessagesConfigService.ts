@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase'
-import { CreateConfiguracaoFollowupInput, UpdateConfiguracaoFollowupInput } from '../lib/validators'
+import { CreateConfigAutomaticMessagesInput, UpdateConfigAutomaticMessagesInput } from '../lib/validators'
 
 export interface AutomaticMessagesConfig {
   id: string
@@ -104,7 +104,7 @@ export class AutomaticMessagesConfigService {
     }
   }
 
-  static async create(input: CreateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
+  static async create(input: CreateConfigAutomaticMessagesInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -132,7 +132,7 @@ export class AutomaticMessagesConfigService {
     }
   }
 
-  static async update(id: string, input: UpdateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
+  static async update(id: string, input: UpdateConfigAutomaticMessagesInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
@@ -233,7 +233,7 @@ export class AutomaticMessagesConfigService {
     }
   }
 
-  static async updateById(id: string, clienteId: string, updateData: UpdateConfiguracaoFollowupInput): Promise<AutomaticMessagesConfig> {
+  static async updateById(id: string, clienteId: string, updateData: UpdateConfigAutomaticMessagesInput): Promise<AutomaticMessagesConfig> {
     try {
       if (!supabase) {
         throw new Error('Cliente Supabase não inicializado')
