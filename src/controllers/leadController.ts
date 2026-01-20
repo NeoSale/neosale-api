@@ -50,6 +50,14 @@ export class LeadController {
       })
     }
     
+    // Verificar se é erro de lead duplicado
+    if (error.message?.includes('Já existe um lead ativo com o telefone')) {
+      return res.status(409).json({
+        success: false,
+        message: error.message
+      })
+    }
+    
     return res.status(500).json({
       success: false,
       message: 'Erro interno do servidor',
