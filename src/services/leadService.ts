@@ -148,6 +148,8 @@ export class LeadService {
           profile_picture_url: data.profile_picture_url || null,
           segmento: data.segmento || null,
           erp_atual: data.erp_atual || null,
+          faturamento: data.faturamento || null,
+          numero_funcionarios: data.numero_funcionarios || null,
           origem_id: origemId,
           qualificacao_id: qualificacaoId || null,
           cliente_id: clienteId || null,

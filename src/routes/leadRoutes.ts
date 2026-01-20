@@ -40,6 +40,12 @@ const router = Router()
  *           type: string
  *         erp_atual:
  *           type: string
+ *         faturamento:
+ *           type: string
+ *           description: Faturamento da empresa do lead
+ *         numero_funcionarios:
+ *           type: integer
+ *           description: Número de funcionários da empresa do lead
  *         origem:
  *           type: string
  *           enum: [inbound, outbound]
@@ -248,6 +254,12 @@ router.get('/stats', LeadController.obterEstatisticas)
  *               erp_atual:
  *                 type: string
  *                 description: ERP Atual (opcional)
+ *               faturamento:
+ *                 type: string
+ *                 description: Faturamento da empresa do lead (opcional)
+ *               numero_funcionarios:
+ *                 type: integer
+ *                 description: Número de funcionários da empresa do lead (opcional)
  *               origem_id:
  *                 type: string
  *                 format: uuid
@@ -277,6 +289,8 @@ router.get('/stats', LeadController.obterEstatisticas)
  *               observacao: "Cliente interessado em ERP"
  *               segmento: "Tecnologia"
  *               erp_atual: "SAP"
+ *               faturamento: "1500000.00"
+ *               numero_funcionarios: 50
  *               origem_id: "123e4567-e89b-12d3-a456-426614174000"
  *               qualificacao_id: "456e7890-e89b-12d3-a456-426614174001"
  *               profile_picture_url: "https://example.com/profile.jpg"
@@ -589,6 +603,12 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *               erp_atual:
  *                 type: string
  *                 description: ERP Atual
+ *               faturamento:
+ *                 type: string
+ *                 description: Faturamento da empresa do lead
+ *               numero_funcionarios:
+ *                 type: integer
+ *                 description: Número de funcionários da empresa do lead
  *               origem_id:
  *                 type: string
  *                 format: uuid
@@ -616,6 +636,8 @@ router.put('/:id/status', LeadController.atualizarStatus)
  *               nome: "João Silva"
  *               telefone: "(11) 99999-9999"
  *               email: "joao@email.com"
+ *               faturamento: "2000000.00"
+ *               numero_funcionarios: 100
  *               profile_picture_url: "https://example.com/profile.jpg"
  *     responses:
  *       200:

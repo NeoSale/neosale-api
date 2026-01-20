@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS leads (
   resumo text, -- resumo do lead gerado pela IA ou inserido manualmente
   segmento text,
   erp_atual text,
+  faturamento text, -- faturamento da empresa do lead
+  numero_funcionarios integer, -- número de funcionários da empresa do lead
   origem_id uuid REFERENCES origens_leads(id),
   status_agendamento boolean DEFAULT false,
   mensagem_id uuid REFERENCES mensagens(id),
