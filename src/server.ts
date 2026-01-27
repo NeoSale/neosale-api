@@ -48,6 +48,7 @@ import conviteRoutes from './routes/conviteRoutes'
 import sessaoRoutes from './routes/sessaoRoutes'
 import authRoutes from './routes/authRoutes'
 import profileRoutes from './routes/profileRoutes'
+import leadAtribuicaoRoutes from './routes/leadAtribuicaoRoutes'
 
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
@@ -162,6 +163,8 @@ app.use('/api/convites', conviteRoutes)
 app.use('/api/sessoes', sessaoRoutes)
 app.use('/api/auth', authRoutes)
 app.use('/api/profiles', profileRoutes)
+app.use('/api/leads', leadAtribuicaoRoutes) // Rotas de atribuição de leads
+app.use('/api/vendedores', leadAtribuicaoRoutes) // Rota de dashboard de carga
 
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

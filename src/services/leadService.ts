@@ -3,6 +3,7 @@ import { ImportLeadsInput, BulkLeadsInput, AgendamentoInput, MensagemInput, Etap
 import { generateLeadEmbedding } from '../lib/embedding'
 import { OrigemLeadsService } from './origemLeadsService'
 import { QualificacaoService } from './qualificacaoService'
+import { LeadDistribuicaoService } from './leadDistribuicaoService'
 export class LeadService {
   // Função para formatar telefone com DDI 55 quando necessário
   private static formatarTelefone(telefone: string): string {
@@ -1104,10 +1105,10 @@ export class LeadService {
         throw new Error(`Qualificação '${nomeQualificacao}' não encontrada`)
       }
 
-      // Verificar se o lead existe
+      // Verificar se o lead existe e buscar dados completos para distribuição
       const { data: leadExistente, error: leadError } = await supabase!
         .from('leads')
-        .select('id, nome, qualificacao_id')
+        .select('id, nome, telefone, email, empresa, qualificacao_id, cliente_id')
         .eq('id', id)
         .eq('deletado', false)
         .single()
@@ -1142,6 +1143,32 @@ export class LeadService {
       }
 
       console.log('✅ Qualificação do lead atualizada com sucesso:', data)
+
+      // Hook: Se qualificação mudou para "Decidido", distribuir automaticamente
+      if (nomeQualificacao.toLowerCase() === 'decidido' && leadExistente.cliente_id) {
+        console.log('🎯 Lead qualificado como Decidido - iniciando distribuição automática')
+        try {
+          const resultado = await LeadDistribuicaoService.distribuirLeadDecidido({
+            id: leadExistente.id,
+            nome: leadExistente.nome,
+            telefone: leadExistente.telefone,
+            email: leadExistente.email,
+            empresa: leadExistente.empresa,
+            cliente_id: leadExistente.cliente_id
+          })
+
+          if (resultado.sucesso) {
+            if (resultado.naFila) {
+              console.log('📋 Lead adicionado à fila de espera (sem vendedor disponível)')
+            } else {
+              console.log('✅ Lead distribuído para vendedor:', resultado.vendedor?.nome)
+            }
+          }
+        } catch (distError) {
+          console.error('⚠️ Erro na distribuição automática (não crítico):', distError)
+        }
+      }
+
       return data
     } catch (error) {
       console.error('❌ Erro ao atualizar qualificação do lead:', error)
