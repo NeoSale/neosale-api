@@ -1,193 +1,257 @@
-# NeoSale API - Express
+# 🔌 NeoSale API
 
-API REST para gerenciamento de leads do sistema NeoSale, construída com Express.js e TypeScript.
+Backend REST API com Express.js + TypeScript. Gerencia leads, chats, documentos e integração com agentes IA e Evolution API (WhatsApp).
 
-## 🚀 Tecnologias
+**Versão:** 1.0.0 | **Status:** Ativo | **Stack:** Express + TypeScript + PostgreSQL (Supabase)
 
-- **Express.js** - Framework web para Node.js
-- **TypeScript** - Superset tipado do JavaScript
-- **Supabase** - Backend as a Service (BaaS)
-- **Zod** - Validação de schemas
-- **Swagger** - Documentação da API
-- **Helmet** - Middleware de segurança
-- **CORS** - Cross-Origin Resource Sharing
-- **Morgan** - Logger HTTP
+## 🚀 Início Rápido
 
-## 📁 Estrutura do Projeto
+### Pré-requisitos
+- Node.js 20+
+- npm 10+
+- PostgreSQL (via Supabase) ou local
 
-```
-src/
-├── controllers/     # Controladores da aplicação
-├── services/        # Lógica de negócio
-├── routes/          # Definição das rotas
-├── middleware/      # Middlewares customizados
-├── lib/            # Utilitários e configurações
-├── types/          # Definições de tipos TypeScript
-└── server.ts       # Arquivo principal do servidor
-```
+### Instalação
 
-## 🛠️ Instalação
-
-1. **Clone o repositório**
-```bash
-git clone <url-do-repositorio>
-cd neosale-api
-```
-
-2. **Instale as dependências**
 ```bash
 npm install
 ```
 
-3. **Configure as variáveis de ambiente**
-
-Crie um arquivo `.env.local` na raiz do projeto:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
-PORT=3000
-```
-
-## 🚀 Execução
-
 ### Desenvolvimento
+
 ```bash
 npm run dev
 ```
 
-### Produção
+Servidor rodando em `http://localhost:3000`
+Swagger API Docs: `http://localhost:3000/api-docs`
+
+### Build & Produção
+
 ```bash
 npm run build
 npm start
 ```
 
-### Linting
-```bash
-npm run lint
+## 📋 Scripts Disponíveis
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Inicia com nodemon (watch mode) |
+| `npm run build` | Compila TypeScript → dist/ |
+| `npm start` | Executa código compilado |
+| `npm run lint` | ESLint check |
+| `npm run migrate` | Executa migrations no banco |
+| `npm run migrate:docker` | Migrations em Docker |
+| `npm run deploy` | Deploy automático (Docker) |
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── server.ts              # Entry point principal
+├── controllers/           # 20+ request handlers
+├── services/              # 20+ business logic
+├── routes/                # 25+ route definitions
+├── middleware/            # Auth, error handling
+├── models/                # Database models
+├── migrations/            # SQL migrations
+├── lib/                   # Utilities, Swagger config
+└── types/                 # TypeScript interfaces
 ```
 
-## 📚 Documentação da API
-
-Após iniciar o servidor, a documentação Swagger estará disponível em:
-- **Swagger UI**: http://localhost:3000/api-docs
-- **Health Check**: http://localhost:3000/health
-
-## 🛣️ Endpoints Principais
+## 🎯 Principais Endpoints
 
 ### Leads
-- `GET /api/leads` - Lista todos os leads
-- `GET /api/leads/paginated` - Lista leads com paginação
-- `POST /api/leads/import` - Importa leads
-- `GET /api/leads/import/info` - Informações de importação
-- `POST /api/leads/:id/agendar` - Agenda um lead
-- `POST /api/leads/:id/mensagem` - Envia mensagem
-- `PUT /api/leads/:id/etapa` - Atualiza etapa do funil
-- `PUT /api/leads/:id/status` - Atualiza status de negociação
-
-### Parâmetros de Paginação
-
-- `page` (opcional): Número da página (padrão: 1)
-- `limit` (opcional): Itens por página (padrão: 10, máximo: 100)
-- `search` (opcional): Termo de busca para nome, email ou telefone
-
-**Exemplo:**
-```
-GET /api/leads/paginated?page=2&limit=20&search=joão
+```bash
+GET    /api/leads                    # Listar leads
+POST   /api/leads                    # Criar lead
+PUT    /api/leads/:id                # Atualizar lead
+DELETE /api/leads/:id                # Deletar lead
+POST   /api/leads/import              # Importar em bulk
+GET    /api/leads/search              # Buscar leads
 ```
 
-### Documentos - Busca Híbrida
-
-**Endpoint:** `POST /api/documentos/search`
-
-Busca híbrida que combina busca por texto exato + busca semântica usando embeddings OpenAI.
-
-**Características:**
-- ✅ Prioriza documentos com match de texto (score 1.0-1.5)
-- ✅ Complementa com busca semântica (score 0-0.5)
-- ✅ Normalização automática de termos (ex: "artigo 77" → "art. 77")
-- ✅ Extração automática de termos da query
-- ✅ Suporte a chunks de documentos
-
-**Body:**
-```json
-{
-  "cliente_id": "uuid",
-  "base_id": ["uuid"],
-  "query": "o que diz o artigo 77 da Lei Complementar 214/2025?",
-  "limit": 10
-}
+### Chat & Mensagens
+```bash
+GET    /api/chat/sessions             # Listar conversas
+POST   /api/chat/messages              # Enviar mensagem
+GET    /api/chat/messages/:sessionId   # Histórico
 ```
 
-**Extração e Normalização Automática:**
-O sistema extrai e normaliza automaticamente termos da query:
-- `"artigo 77"` → extrai e busca: `"artigo 77"`, `"art. 77"`, `"art 77"`
-- `"art 77"` → extrai e busca: `"art 77"`, `"art. 77"`, `"artigo 77"`
-- `"Lei Complementar 214"` → extrai e busca: `"Lei Complementar 214"`, `"Lei 214"`
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "10 documento(s) encontrado(s)",
-  "data": [
-    {
-      "id": "uuid",
-      "nome": "ref (Parte 12)",
-      "nome_arquivo": "Lei Complementar 214_2025.pdf",
-      "chunk_index": 11,
-      "chunk_texto": "Art. 77. As diferenças percentuais...",
-      "similarity": 0.41,
-      "combined_score": 1.205,
-      "text_match": true,
-      "matched_term": "art. 77"
-    }
-  ]
-}
+### Documentos
+```bash
+POST   /api/documentos/search          # Busca semântica
+POST   /api/documentos/upload          # Upload de arquivo
 ```
 
-## 🔒 Segurança
+### Agentes IA
+```bash
+GET    /api/agentes                    # Listar agentes
+PATCH  /api/agentes/:id                # Configurar agente
+POST   /api/agentes/:id/test            # Testar agente
+```
 
-- **Helmet**: Configuração de headers de segurança
-- **CORS**: Controle de acesso entre origens
-- **Validação**: Schemas Zod para validação de entrada
-- **Variáveis de ambiente**: Configuração segura de credenciais
+Veja [docs/API.md](docs/API.md) para referência completa.
 
-## 🗄️ Banco de Dados
+## 🔧 Configuração
 
-O projeto utiliza Supabase como backend, com as seguintes tabelas principais:
+### Environment Variables
 
-- `leads` - Informações dos leads
-- `mensagem_status` - Status das mensagens
-- `origem` - Origem dos leads
-- `etapa_funil` - Etapas do funil de vendas
-- `status_negociacao` - Status de negociação
+Crie `.env` na raiz:
 
-## 🔧 Scripts Disponíveis
+```env
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/neosale
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_KEY=sua-chave-service-role
 
-- `npm run dev` - Inicia o servidor em modo desenvolvimento
-- `npm run build` - Compila o TypeScript para JavaScript
-- `npm start` - Inicia o servidor em modo produção
-- `npm run lint` - Executa o linter
+# Auth
+JWT_SECRET=sua-chave-super-secreta-aqui-min-32-chars
+JWT_EXPIRY=24h
 
-## 📝 Logs
+# OpenAI (Embeddings para busca semântica)
+OPENAI_API_KEY=sk-proj-...
 
-O sistema utiliza Morgan para logging HTTP e console.log para logs customizados com emojis para melhor visualização:
+# Evolution API (WhatsApp)
+EVOLUTION_API_URL=http://localhost:8080
+EVOLUTION_API_KEY=sua-chave
 
-- 🔄 Operações em andamento
-- ✅ Operações bem-sucedidas
-- ❌ Erros
-- 📋 Listagens
-- 🚀 Inicialização do servidor
+# Server
+PORT=3000
+NODE_ENV=development
+```
 
-## 🤝 Contribuição
+Veja [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) para completo.
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+### Database Migrations
 
-## 📄 Licença
+```bash
+# Rodar migrations
+npm run migrate
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+# Verificar status
+npm run migrate:status
+```
+
+## 📚 Documentação
+
+- [SETUP.md](docs/SETUP.md) - Setup detalhado
+- [ENVIRONMENT.md](docs/ENVIRONMENT.md) - Variáveis de ambiente
+- [API.md](docs/API.md) - Referência de endpoints
+- [DATABASE.md](docs/DATABASE.md) - Schema e queries
+
+## 🚢 Deployment
+
+### Docker
+
+```bash
+npm run deploy              # Auto-detecta versão
+npm run deploy:patch        # Force patch
+npm run deploy:minor        # Force minor
+npm run deploy:major        # Force major
+```
+
+Processo:
+1. Build Docker image
+2. Push para Docker Hub
+3. Git commit + tag
+4. Deploy em EasyPanel (opcional)
+
+Veja [../../DEPLOYMENT.md](../../neosale-docs/DEPLOYMENT.md) para detalhes.
+
+## 📦 Dependências Principais
+
+- **express:** Web framework
+- **typescript:** Type-safe JavaScript
+- **@supabase/supabase-js:** Database + Auth
+- **openai:** AI embeddings
+- **jsonwebtoken:** JWT authentication
+- **zod:** Validation
+- **swagger:** API documentation
+- **nodemon:** Dev server
+
+## 🤝 Contribuindo
+
+```bash
+# 1. Crie branch
+git checkout -b feature/sua-feature
+
+# 2. Develop
+npm run dev
+
+# 3. Lint
+npm run lint
+
+# 4. Commit
+git commit -m 'feat: descrição'
+
+# 5. Push & PR
+git push origin feature/sua-feature
+```
+
+## 📊 Monitoramento
+
+### Health Check
+```bash
+curl http://localhost:3000/api/health
+```
+
+### Logs
+```bash
+# Em desenvolvimento
+npm run dev  # Mostra logs de console
+
+# Em produção
+docker logs <container-id>
+```
+
+### Performance
+```bash
+# Check response times
+curl -w "Time: %{time_total}s\n" http://localhost:3000/api/leads
+```
+
+## 🐛 Troubleshooting
+
+### "Database connection error"
+```bash
+# Verifique DATABASE_URL em .env
+# Verifique se Postgres está rodando
+```
+
+### "OpenAI API error"
+```bash
+# Verifique OPENAI_API_KEY em .env
+# Verifique saldo da conta OpenAI
+```
+
+### "Port 3000 already in use"
+```bash
+# Use PORT alternativa
+PORT=3001 npm run dev
+```
+
+## 🔐 Segurança
+
+- ✅ JWT authentication em todos endpoints privados
+- ✅ CORS configurado
+- ✅ Rate limiting
+- ✅ Input validation com Zod
+- ✅ SQL injection protection (Supabase)
+- ✅ LGPD compliance para dados pessoais
+
+## 📝 Licença
+
+MIT
+
+## 📞 Suporte
+
+- **Issues:** GitHub Issues
+- **Email:** dev@neosale.io
+- **API Docs:** http://localhost:3000/api-docs (Swagger)
+
+---
+
+**Mantido por:** Equipe NeoSale
+**Última atualização:** Fevereiro 2026
