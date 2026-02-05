@@ -43,7 +43,8 @@
     "pdfjs-dist": "^3.11.174",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -58,6 +59,7 @@
     "eslint": "^8",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/node-cron": "^3.0.11"
   }
 }

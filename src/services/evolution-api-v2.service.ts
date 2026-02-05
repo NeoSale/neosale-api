@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { EvolutionApiInstanceDataV2, CreateEvolutionApiRequestV2, EvolutionApiFetchInstancesResponseV2 } from '../models/evolution-api-v2.model';
 import axios from 'axios';
 
-class EvolutionApiV2Service {
+export class EvolutionApiV2Service {
   private baseUrl: string;
   private apiKey: string;
   private timeout: number;
@@ -718,7 +718,7 @@ class EvolutionApiV2Service {
               qtd_envios_diarios: localInstance?.qtd_envios_diarios ?? 50,
               // Dados completos do agente
               agente: localInstance?.agente ?? null,
-            } as EvolutionApiInstanceDataV2; 
+            } as EvolutionApiInstanceDataV2;
           })
       );
 
@@ -1026,7 +1026,7 @@ class EvolutionApiV2Service {
 
       console.log(`✅ Response status: ${response.status}`);
       console.log(`📄 Found ${response.data.length || 0} contacts`);
-      
+
       // Retornar todos os dados brutos da Evolution API sem processar
       return response.data;
     } catch (error: any) {

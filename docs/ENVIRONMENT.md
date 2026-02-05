@@ -26,7 +26,7 @@ NODE_ENV=development
 LOG_LEVEL=info
 
 # ==================== CORS ====================
-CORS_ORIGIN=http://localhost:3000,http://localhost:3001,http://localhost:3003
+CORS_ORIGIN=http://localhost:3000,http://localhost:3001,http://localhost:5000
 
 # ==================== RATE LIMITING ====================
 RATE_LIMIT_WINDOW=15

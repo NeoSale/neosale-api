@@ -50,8 +50,11 @@ import authRoutes from './routes/authRoutes'
 import profileRoutes from './routes/profileRoutes'
 import leadAtribuicaoRoutes from './routes/leadAtribuicaoRoutes'
 
+import prospectingRoutes from './routes/prospectingRoutes'
+import linkedinRoutes from './routes/linkedinRoutes'
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
+import { ProspectingScheduler } from './schedulers/prospectingScheduler'
 import packageJson from '../package.json'
 
 const app = express()
@@ -108,6 +111,7 @@ app.get('/', (req, res) => {
     message: 'Bem-vindo à NeoSale API! 🚀',
     version: packageJson.version,
     endpoints: {
+      prospecting: `${BASE_URL}/api/prospecting`,
       documentation: `${BASE_URL}/api-docs`,
       health: `${BASE_URL}/health`,
       leads: `${BASE_URL}/api/leads`,
@@ -166,6 +170,8 @@ app.use('/api/profiles', profileRoutes)
 app.use('/api/leads', leadAtribuicaoRoutes) // Rotas de atribuição de leads
 app.use('/api/vendedores', leadAtribuicaoRoutes) // Rota de dashboard de carga
 
+app.use('/api/prospecting', prospectingRoutes)
+app.use('/api/linkedin', linkedinRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   swaggerOptions: {
@@ -179,10 +185,10 @@ app.use('/api-docs', cors(), swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.get('/health', (req, res) => {
   // Usar fuso horário do Brasil para timestamp (formato pt-BR)
   const agora = new Date()
-  const brasilTime = agora.toLocaleString("pt-BR", {timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'})
-  
-  res.json({ 
-    status: 'OK', 
+  const brasilTime = agora.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+  res.json({
+    status: 'OK',
     timestamp: brasilTime,
     timezone: 'America/Sao_Paulo',
     uptime: process.uptime()
@@ -208,7 +214,10 @@ async function startServer() {
     // console.log('🔄 Executando migrations...')
     // await migrationRunner.runMigrations()
     // await migrationRunner.markMigrationsAsExecuted()
-    
+
+    // Inicializar ProspectingScheduler (node-cron)
+    await ProspectingScheduler.init()
+
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`)

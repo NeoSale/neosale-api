@@ -16,8 +16,8 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_NODE_ENV === 'production' 
-          ? process.env.NEXT_PUBLIC_API_BASE_URL 
+        url: process.env.NEXT_PUBLIC_NODE_ENV === 'production'
+          ? process.env.NEXT_PUBLIC_API_BASE_URL
           : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_PORT}`,
         description: 'Servidor NeoSale'
       }
@@ -122,6 +122,18 @@ const options: swaggerJSDoc.Options = {
       {
         name: 'Autenticação',
         description: 'Operações de login, logout e gerenciamento de tokens JWT'
+      },
+      {
+        name: 'Prospecção',
+        description: 'Prospecção ativa de leads via LinkedIn (NeoHunter)'
+      },
+      {
+        name: 'Sequências',
+        description: 'Templates de mensagens para prospecção ativa'
+      },
+      {
+        name: 'LinkedIn',
+        description: 'Configuração e integração com LinkedIn API v2 (OAuth, busca, convites)'
       }
     ],
     components: {
@@ -1056,6 +1068,221 @@ const options: swaggerJSDoc.Options = {
             }
           }
         },
+        LinkedInProspect: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            linkedin_id: { type: 'string', description: 'ID único do LinkedIn' },
+            nome: { type: 'string' },
+            cargo: { type: 'string' },
+            empresa: { type: 'string' },
+            setor: { type: 'string', enum: ['clinicas', 'energia_solar', 'imobiliarias'] },
+            tamanho_empresa: { type: 'string', enum: ['pequena', 'media', 'grande'] },
+            url_perfil: { type: 'string' },
+            status: {
+              type: 'string',
+              enum: ['novo', 'contato_enviado', 'conexao_aceita', 'respondeu', 'qualificado', 'em_negociacao', 'cliente', 'desqualificado'],
+              default: 'novo'
+            },
+            lead_score: { type: 'integer', minimum: 0, maximum: 100 },
+            score_breakdown: {
+              type: 'object',
+              example: { setor_match: 20, cargo_seniority: 20, company_size: 15, engagement: 10 }
+            },
+            conexao_aceita: { type: 'boolean' },
+            aceita_at: { type: 'string', format: 'date-time', nullable: true },
+            primeira_msg_enviada: { type: 'boolean' },
+            primeira_msg_at: { type: 'string', format: 'date-time', nullable: true },
+            respondeu: { type: 'boolean' },
+            respondeu_at: { type: 'string', format: 'date-time', nullable: true },
+            ultima_resposta_texto: { type: 'string', nullable: true },
+            whatsapp_enviado: { type: 'boolean' },
+            whatsapp_number: { type: 'string', nullable: true },
+            sequencia_name: { type: 'string', nullable: true },
+            sequencia_step: { type: 'integer' },
+            notas: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' },
+            touched_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        UpdateProspectRequest: {
+          type: 'object',
+          properties: {
+            status: { type: 'string', enum: ['novo', 'contato_enviado', 'conexao_aceita', 'respondeu', 'qualificado', 'em_negociacao', 'cliente', 'desqualificado'] },
+            lead_score: { type: 'integer', minimum: 0, maximum: 100 },
+            notas: { type: 'string' },
+            whatsapp_number: { type: 'string' },
+            conexao_aceita: { type: 'boolean' },
+            respondeu: { type: 'boolean' }
+          }
+        },
+        ProspectionSequence: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            name: { type: 'string', example: 'Clinicas - Abordagem Inicial' },
+            setor: { type: 'string', enum: ['clinicas', 'energia_solar', 'imobiliarias'] },
+            tipo: { type: 'string', enum: ['conexao', 'dms', 'whatsapp'] },
+            messages: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  step: { type: 'integer' },
+                  delay_days: { type: 'integer' },
+                  message: { type: 'string' }
+                }
+              }
+            },
+            performance_metrics: {
+              type: 'object',
+              example: { aceitacao_pct: 25, resposta_pct: 15, conversao_pct: 5 }
+            },
+            is_active: { type: 'boolean' },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        CreateSequenceRequest: {
+          type: 'object',
+          required: ['name', 'setor', 'tipo', 'messages'],
+          properties: {
+            name: { type: 'string', example: 'Clinicas - Follow Up' },
+            setor: { type: 'string', enum: ['clinicas', 'energia_solar', 'imobiliarias'] },
+            tipo: { type: 'string', enum: ['conexao', 'dms', 'whatsapp'] },
+            messages: {
+              type: 'array',
+              items: {
+                type: 'object',
+                required: ['step', 'delay_days', 'message'],
+                properties: {
+                  step: { type: 'integer', example: 1 },
+                  delay_days: { type: 'integer', example: 0 },
+                  message: { type: 'string', example: 'Oi [NOME]! Vi que voce atua na area de saude...' }
+                }
+              },
+              minItems: 1
+            },
+            is_active: { type: 'boolean', default: true }
+          }
+        },
+        UpdateSequenceRequest: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            setor: { type: 'string', enum: ['clinicas', 'energia_solar', 'imobiliarias'] },
+            tipo: { type: 'string', enum: ['conexao', 'dms', 'whatsapp'] },
+            messages: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  step: { type: 'integer' },
+                  delay_days: { type: 'integer' },
+                  message: { type: 'string' }
+                }
+              }
+            },
+            is_active: { type: 'boolean' }
+          }
+        },
+        ProspectionActivity: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            prospect_id: { type: 'string', format: 'uuid' },
+            acao: {
+              type: 'string',
+              enum: ['conexao_enviada', 'conexao_aceita', 'dms_enviada', 'resposta_recebida', 'qualificacao_executada', 'whatsapp_enviado', 'status_alterado', 'nota_adicionada']
+            },
+            detalhes: { type: 'string', nullable: true },
+            criado_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        ProspectStats: {
+          type: 'object',
+          properties: {
+            total: { type: 'integer', example: 150 },
+            by_status: {
+              type: 'object',
+              example: { novo: 50, contato_enviado: 30, conexao_aceita: 20, respondeu: 15, qualificado: 10 }
+            },
+            by_setor: {
+              type: 'object',
+              example: { clinicas: 60, energia_solar: 50, imobiliarias: 40 }
+            },
+            avg_score: { type: 'number', example: 45.5 },
+            conversion_rate: { type: 'number', example: 12.5 }
+          }
+        },
+        LinkedInConfig: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            cliente_id: { type: 'string', format: 'uuid' },
+            client_id: { type: 'string', description: 'LinkedIn App Client ID' },
+            client_secret: { type: 'string', description: 'LinkedIn App Client Secret' },
+            redirect_uri: { type: 'string', description: 'URL de callback OAuth' },
+            scopes: { type: 'string', default: 'r_liteprofile r_emailaddress w_member_social' },
+            access_token: { type: 'string', nullable: true },
+            refresh_token: { type: 'string', nullable: true },
+            token_expiry: { type: 'string', format: 'date-time', nullable: true },
+            linkedin_user_id: { type: 'string', nullable: true },
+            linkedin_user_name: { type: 'string', nullable: true },
+            daily_search_limit: { type: 'integer', default: 25 },
+            daily_invite_limit: { type: 'integer', default: 25 },
+            search_keywords: { type: 'array', items: { type: 'string' } },
+            target_industries: { type: 'array', items: { type: 'string' } },
+            target_locations: { type: 'array', items: { type: 'string' } },
+            ativo: { type: 'boolean' },
+            last_sync_at: { type: 'string', format: 'date-time', nullable: true },
+            last_error: { type: 'string', nullable: true },
+            created_at: { type: 'string', format: 'date-time' },
+            updated_at: { type: 'string', format: 'date-time' }
+          }
+        },
+        CreateLinkedInConfigRequest: {
+          type: 'object',
+          required: ['client_id', 'client_secret', 'redirect_uri'],
+          properties: {
+            client_id: { type: 'string', description: 'LinkedIn App Client ID' },
+            client_secret: { type: 'string', description: 'LinkedIn App Client Secret' },
+            redirect_uri: { type: 'string', description: 'URL de callback OAuth', example: 'http://localhost:3001/api/linkedin/auth/callback' },
+            scopes: { type: 'string' },
+            daily_search_limit: { type: 'integer', default: 25 },
+            daily_invite_limit: { type: 'integer', default: 25 },
+            search_keywords: { type: 'array', items: { type: 'string' }, example: ['CTO clinica', 'diretor energia solar'] },
+            target_industries: { type: 'array', items: { type: 'string' }, example: ['Health Care', 'Renewables'] },
+            target_locations: { type: 'array', items: { type: 'string' }, example: ['Brazil', 'Sao Paulo'] }
+          }
+        },
+        UpdateLinkedInConfigRequest: {
+          type: 'object',
+          properties: {
+            client_id: { type: 'string' },
+            client_secret: { type: 'string' },
+            redirect_uri: { type: 'string' },
+            scopes: { type: 'string' },
+            daily_search_limit: { type: 'integer' },
+            daily_invite_limit: { type: 'integer' },
+            search_keywords: { type: 'array', items: { type: 'string' } },
+            target_industries: { type: 'array', items: { type: 'string' } },
+            target_locations: { type: 'array', items: { type: 'string' } },
+            ativo: { type: 'boolean' }
+          }
+        },
+        SchedulerStatus: {
+          type: 'object',
+          properties: {
+            enabled: { type: 'boolean' },
+            is_running: { type: 'boolean' },
+            last_prospecting_run: { type: 'string', format: 'date-time', nullable: true },
+            last_qualification_run: { type: 'string', format: 'date-time', nullable: true },
+            next_prospecting_run: { type: 'string', format: 'date-time', nullable: true },
+            next_qualification_run: { type: 'string', format: 'date-time', nullable: true }
+          }
+        },
         UsuarioPerfilResponse: {
           type: 'object',
           properties: {
@@ -1181,15 +1408,6 @@ const options: swaggerJSDoc.Options = {
     path.join(__dirname, '../controllers/*.ts'),
     path.join(__dirname, '../controllers/*.js')
   ]
-}
-
-const routesPath = path.join(__dirname, '../routes')
-console.log('🔍 Swagger __dirname:', __dirname)
-console.log('🔍 Routes path:', routesPath)
-console.log('🔍 Routes path exists:', fs.existsSync(routesPath))
-if (fs.existsSync(routesPath)) {
-  const files = fs.readdirSync(routesPath)
-  console.log('🔍 Route files found:', files.filter(f => f.endsWith('.ts') || f.endsWith('.js')))
 }
 
 export const swaggerSpec = swaggerJSDoc(options)

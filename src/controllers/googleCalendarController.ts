@@ -179,8 +179,8 @@ export class GoogleCalendarController {
       const dadosValidados = updateGoogleCalendarIntegracaoSchema.parse(req.body)
 
       const configuracaoAtualizada = await GoogleCalendarService.atualizarConfiguracao(
-        id, 
-        dadosValidados, 
+        id,
+        dadosValidados,
         clienteId
       )
 
@@ -191,8 +191,8 @@ export class GoogleCalendarController {
       }
 
       // Se atualizou client_id ou client_secret, tentar gerar access_token automaticamente
-      if ((dadosValidados.client_id || dadosValidados.client_secret) && 
-          configuracaoAtualizada.client_id && configuracaoAtualizada.client_secret) {
+      if ((dadosValidados.client_id || dadosValidados.client_secret) &&
+        configuracaoAtualizada.client_id && configuracaoAtualizada.client_secret) {
         try {
           const resultado = await GoogleCalendarService.gerarAccessTokenAutomatico(
             configuracaoAtualizada.id || '',
@@ -342,8 +342,8 @@ export class GoogleCalendarController {
       const dadosValidados = updateGoogleCalendarAgendamentoSchema.parse(req.body)
 
       const agendamentoAtualizado = await GoogleCalendarService.atualizarAgendamento(
-        id, 
-        dadosValidados, 
+        id,
+        dadosValidados,
         clienteId
       )
 
@@ -407,8 +407,8 @@ export class GoogleCalendarController {
       }
 
       const scopes = configuracao.scope || 'https://www.googleapis.com/auth/calendar'
-      const redirectUri = configuracao.redirect_uri || 'http://localhost:3000/api/google-calendar/callback'
-      
+      const redirectUri = configuracao.redirect_uri || 'http://localhost:3001/api/google-calendar/callback'
+
       const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
         `client_id=${encodeURIComponent(configuracao.client_id || '')}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
