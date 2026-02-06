@@ -726,9 +726,95 @@ export class LeadService {
 
     console.log(`✅ Total de leads carregados: ${allLeads.length} de ${count}`)
 
+    // Buscar atribuições ativas com dados do vendedor
+    const leadIds = allLeads.map(l => l.id)
+    if (leadIds.length > 0) {
+      const { data: atribuicoes, error: atribError } = await supabase!
+        .from('lead_atribuicoes')
+        .select(`
+          lead_id,
+          vendedor_id,
+          vendedor:vendedor_id (
+            id,
+            full_name,
+            email
+          )
+        `)
+        .eq('cliente_id', clienteId)
+        .eq('status', 'ativo')
+        .in('lead_id', leadIds)
+
+      if (!atribError && atribuicoes) {
+        // Criar mapa de lead_id -> vendedor
+        const vendedorMap = new Map<string, any>()
+        for (const atrib of atribuicoes) {
+          vendedorMap.set(atrib.lead_id, atrib.vendedor)
+        }
+
+        // Adicionar vendedor a cada lead
+        allLeads = allLeads.map(lead => ({
+          ...lead,
+          vendedor: vendedorMap.get(lead.id) || null
+        }))
+
+        console.log(`✅ Vendedores atribuídos carregados para ${atribuicoes.length} leads`)
+      }
+    }
+
     return {
       leads: allLeads,
       total: count || 0
+    }
+  }
+
+  // List leads assigned to a specific salesperson
+  static async listBySalesperson(clienteId: string, vendedorId: string) {
+    LeadService.checkSupabaseConnection()
+    console.log(`🔄 Listing leads for salesperson: ${vendedorId}`)
+
+    // Get lead IDs from active assignments for this salesperson
+    const { data: assignments, error: assignmentError } = await supabase!
+      .from('lead_atribuicoes')
+      .select('lead_id')
+      .eq('cliente_id', clienteId)
+      .eq('vendedor_id', vendedorId)
+      .eq('status', 'ativo')
+
+    if (assignmentError) {
+      console.error('❌ Error fetching assignments:', assignmentError)
+      throw assignmentError
+    }
+
+    const leadIds = assignments?.map(a => a.lead_id) || []
+
+    if (leadIds.length === 0) {
+      console.log('✅ No leads assigned to this salesperson')
+      return { leads: [], total: 0 }
+    }
+
+    // Fetch leads using the IDs
+    const { data: leads, error } = await supabase!
+      .from('leads')
+      .select(`
+        *,
+        origem:origem_id (nome),
+        qualificacao:qualificacao_id (*)
+      `)
+      .eq('cliente_id', clienteId)
+      .eq('deletado', false)
+      .in('id', leadIds)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('❌ Error fetching leads for salesperson:', error)
+      throw error
+    }
+
+    console.log(`✅ Found ${leads?.length || 0} leads for salesperson ${vendedorId}`)
+
+    return {
+      leads: leads || [],
+      total: leads?.length || 0
     }
   }
 

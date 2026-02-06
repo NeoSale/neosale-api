@@ -371,9 +371,10 @@ export class LeadController {
   
   // Listar todos os leads por cliente
   static async listarLeads(req: Request, res: Response) {
-    
+
     try {
       const cliente_id = req.headers['cliente_id'] as string;
+      const vendedor_id = req.query.vendedor_id as string;
 
       if (!cliente_id) {
         return res.status(400).json({
@@ -381,8 +382,11 @@ export class LeadController {
           message: 'cliente_id é obrigatório'
         });
       }
-      
-      const result = await LeadService.listarTodos(cliente_id)
+
+      // If vendedor_id is provided, filter leads by salesperson assignment
+      const result = vendedor_id
+        ? await LeadService.listBySalesperson(cliente_id, vendedor_id)
+        : await LeadService.listarTodos(cliente_id)
       
       return res.status(200).json({
         success: true,

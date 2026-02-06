@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { LeadNotificationService } from './leadNotificationService'
 
 interface Usuario {
   id: string
@@ -200,6 +201,31 @@ export class LeadDistribuicaoService {
         p_vendedor_id: vendedorId,
         p_cliente_id: clienteId
       })
+
+      // Enviar notificação para o vendedor (async, não bloqueia)
+      try {
+        const { data: lead } = await supabase!
+          .from('leads')
+          .select('id, nome, telefone, email, empresa')
+          .eq('id', leadId)
+          .single()
+
+        if (lead) {
+          LeadNotificationService.notifyLeadAssignment(
+            clienteId,
+            vendedorId,
+            lead,
+            atribuidoPor
+          ).then((result) => {
+            console.log('🔔 Notificação enviada:', result)
+          }).catch((err) => {
+            console.error('⚠️ Erro ao enviar notificação:', err)
+          })
+        }
+      } catch (notifError) {
+        console.error('⚠️ Erro ao preparar notificação:', notifError)
+        // Não falha a atribuição se a notificação falhar
+      }
 
       console.log('✅ Lead atribuído com sucesso')
       return atribuicao

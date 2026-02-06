@@ -49,6 +49,8 @@ import sessaoRoutes from './routes/sessaoRoutes'
 import authRoutes from './routes/authRoutes'
 import profileRoutes from './routes/profileRoutes'
 import leadAtribuicaoRoutes from './routes/leadAtribuicaoRoutes'
+import notificationSettingsRoutes from './routes/notificationSettingsRoutes'
+import distributionReportRoutes from './routes/distributionReportRoutes'
 
 import prospectingRoutes from './routes/prospectingRoutes'
 import linkedinRoutes from './routes/linkedinRoutes'
@@ -169,6 +171,8 @@ app.use('/api/auth', authRoutes)
 app.use('/api/profiles', profileRoutes)
 app.use('/api/leads', leadAtribuicaoRoutes) // Rotas de atribuição de leads
 app.use('/api/vendedores', leadAtribuicaoRoutes) // Rota de dashboard de carga
+app.use('/api/settings/notifications', notificationSettingsRoutes) // Configurações de notificação
+app.use('/api/relatorios/distribuicao', distributionReportRoutes) // Relatórios de distribuição
 
 app.use('/api/prospecting', prospectingRoutes)
 app.use('/api/linkedin', linkedinRoutes)

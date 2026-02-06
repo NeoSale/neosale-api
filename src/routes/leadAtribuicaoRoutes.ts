@@ -31,4 +31,7 @@ router.post('/:leadId/distribuir', LeadAtribuicaoController.distribuirLead)
 // Processar fila de espera
 router.post('/fila/processar', LeadAtribuicaoController.processarFila)
 
+// Dashboard de carga por vendedor
+router.get('/carga', LeadAtribuicaoController.dashboardCarga)
+
 export default router
