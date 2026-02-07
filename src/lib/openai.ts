@@ -1,9 +1,18 @@
 import OpenAI from 'openai'
 
-// Inicializar cliente OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY
-})
+// Cliente OpenAI (inicialização lazy)
+let _openai: OpenAI | null = null
+
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    const apiKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY não configurada. Configure a variável de ambiente OPENAI_API_KEY.')
+    }
+    _openai = new OpenAI({ apiKey })
+  }
+  return _openai
+}
 
 /**
  * Gera embedding usando a API da OpenAI
@@ -26,7 +35,7 @@ export async function generateOpenAIEmbedding(
       console.warn(`Texto truncado de ${text.length} para ${maxChars} caracteres para embedding`)
     }
 
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
       model: model,
       input: truncatedText,
       encoding_format: 'float'
@@ -75,7 +84,7 @@ export async function generateOpenAIEmbeddingsBatch(
       return batches.flat()
     }
 
-    const response = await openai.embeddings.create({
+    const response = await getOpenAI().embeddings.create({
       model: model,
       input: texts,
       encoding_format: 'float'
@@ -88,4 +97,4 @@ export async function generateOpenAIEmbeddingsBatch(
   }
 }
 
-export { openai }
+export { getOpenAI }

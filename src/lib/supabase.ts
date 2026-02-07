@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import https from 'https'
+import path from 'path'
 
-// Carregar variáveis de ambiente
-dotenv.config()
+// Carregar variáveis de ambiente do diretório raiz
+const envPath = path.resolve(process.cwd(), '.env')
+dotenv.config({ path: envPath })
 
 // Configurar agente HTTPS para ignorar certificados SSL
 const httpsAgent = new https.Agent({
