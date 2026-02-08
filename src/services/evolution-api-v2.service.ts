@@ -17,8 +17,17 @@ export class EvolutionApiV2Service {
     // console.log('API Key:', this.apiKey ? '[CONFIGURED]' : '[NOT CONFIGURED]');
   }
 
+  isConfigured(): boolean {
+    return !!(this.baseUrl && this.apiKey);
+  }
+
   async getAllInstances(clienteId: string): Promise<EvolutionApiInstanceDataV2[]> {
     try {
+      // If Evolution API is not configured, return empty list
+      if (!this.isConfigured()) {
+        return [];
+      }
+
       // 1. Buscar IDs das instâncias na tabela local
       if (!supabase) {
         throw new Error('Supabase client not initialized');
@@ -29,6 +38,8 @@ export class EvolutionApiV2Service {
         .select('id, followup')
         .eq('cliente_id', clienteId)
         .order('created_at', { ascending: false });
+
+      console.log("data:", localInstances);
 
       if (error) {
         console.error('Error fetching local instances:', error);
