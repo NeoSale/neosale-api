@@ -318,7 +318,7 @@ if [ $? -eq 0 ]; then
     # Configurações do EasyPanel (ajuste conforme necessário)
     EASYPANEL_URL="https://evolution-api-neosale-api.mrzt3w.easypanel.host"
     EASYPANEL_PROJECT="neosale-api"
-    EASYPANEL_TOKEN="seu_token_aqui"  # Token fixo no código
+    EASYPANEL_TOKEN="http://159.203.110.18:3000/api/deploy/dcf2e402bee5edf3df25547834324e9781104b5f3cddf35a"  # Token fixo no código
     
     # Verificar se o token está definido
     if [ -z "$EASYPANEL_TOKEN" ] || [ "$EASYPANEL_TOKEN" = "seu_token_aqui" ]; then
