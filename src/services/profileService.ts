@@ -1,12 +1,13 @@
 import { supabase } from '../lib/supabase';
 
-export type UserRole = 'super_admin' | 'admin' | 'member' | 'viewer';
+export type UserRole = 'super_admin' | 'admin' | 'manager' | 'salesperson' | 'member' | 'viewer';
 
 export interface Profile {
   id: string;
   email: string;
   full_name?: string;
   avatar_url?: string;
+  phone?: string;
   role: UserRole;
   cliente_id?: string;
   created_at: string;
@@ -18,6 +19,7 @@ export interface CreateProfileInput {
   email: string;
   full_name?: string | undefined;
   avatar_url?: string | undefined;
+  phone?: string | undefined;
   role?: UserRole | undefined;
   cliente_id?: string | undefined;
 }
@@ -33,6 +35,7 @@ export interface UpdateProfileInput {
   email?: string | undefined;
   full_name?: string | undefined;
   avatar_url?: string | null | undefined;
+  phone?: string | null | undefined;
   role?: UserRole | undefined;
   cliente_id?: string | null | undefined;
 }
