@@ -16,9 +16,7 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: process.env.NEXT_PUBLIC_NODE_ENV === 'production'
-          ? process.env.NEXT_PUBLIC_API_BASE_URL
-          : `${process.env.NEXT_PUBLIC_API_BASE_URL}:${process.env.NEXT_PUBLIC_PORT}`,
+        url: process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 3000}`,
         description: 'Servidor NeoSale'
       }
     ],
