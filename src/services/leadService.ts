@@ -1263,9 +1263,9 @@ export class LeadService {
   }
 
   // Gerar relatório de atualizações de leads por período
-  static async gerarRelatorioDiario(clienteId: string, dataInicio: string, dataFim: string) {
+  static async gerarRelatorioDiario(clienteId: string, dataInicio: string, dataFim: string, vendedorId?: string) {
     LeadService.checkSupabaseConnection()
-    console.log('📊 Gerando relatório para:', clienteId, 'período:', dataInicio, 'até', dataFim)
+    console.log('📊 Gerando relatório para:', clienteId, 'período:', dataInicio, 'até', dataFim, vendedorId ? `vendedor: ${vendedorId}` : '(all leads)')
 
     try {
       // Datas no formato local (sem timezone)
@@ -1274,14 +1274,52 @@ export class LeadService {
 
       console.log(`🔍 Buscando atualizações entre ${dataInicioFormatada} e ${dataFimFormatada}`)
 
+      // If vendedorId is provided, get assigned lead IDs first
+      let assignedLeadIds: string[] | null = null
+      if (vendedorId) {
+        const { data: assignments, error: assignmentError } = await supabase!
+          .from('lead_atribuicoes')
+          .select('lead_id')
+          .eq('cliente_id', clienteId)
+          .eq('vendedor_id', vendedorId)
+          .eq('status', 'ativo')
+
+        if (assignmentError) {
+          console.error('❌ Error fetching assignments:', assignmentError)
+          throw assignmentError
+        }
+
+        assignedLeadIds = assignments?.map(a => a.lead_id) || []
+        console.log(`📊 Salesperson has ${assignedLeadIds.length} assigned leads`)
+
+        if (assignedLeadIds.length === 0) {
+          return {
+            periodo: { data_inicio: dataInicio, data_fim: dataFim },
+            totais: { criados: 0, atualizados: 0, deletados: 0, total: 0 },
+            distribuicao: { por_qualificacao: {}, por_origem: {} },
+            detalhes: { leads_criados: [], leads_atualizados: [], leads_deletados: [] }
+          }
+        }
+      }
+
+      // Helper to apply vendedor filter to a query
+      const applyVendedorFilter = (query: any) => {
+        if (assignedLeadIds) {
+          return query.in('id', assignedLeadIds)
+        }
+        return query
+      }
+
       // Buscar leads criados no dia em lotes
-      const { count: countCriados } = await supabase!
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('cliente_id', clienteId)
-        .eq('deletado', false)
-        .gte('created_at', dataInicioFormatada)
-        .lte('created_at', dataFimFormatada)
+      const { count: countCriados } = await applyVendedorFilter(
+        supabase!
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('cliente_id', clienteId)
+          .eq('deletado', false)
+          .gte('created_at', dataInicioFormatada)
+          .lte('created_at', dataFimFormatada)
+      )
 
       console.log(`📊 Total de leads criados: ${countCriados}`)
 
@@ -1295,24 +1333,26 @@ export class LeadService {
 
         console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesCriados} de leads criados`)
 
-        const { data: batchLeads, error: errorCriados } = await supabase!
-          .from('leads')
-          .select(`
-            id,
-            nome,
-            telefone,
-            email,
-            empresa,
-            created_at,
-            origem:origem_id (nome),
-            qualificacao:qualificacao_id (nome)
-          `)
-          .eq('cliente_id', clienteId)
-          .eq('deletado', false)
-          .gte('created_at', dataInicioFormatada)
-          .lte('created_at', dataFimFormatada)
-          .order('created_at', { ascending: false })
-          .range(from, to)
+        const { data: batchLeads, error: errorCriados } = await applyVendedorFilter(
+          supabase!
+            .from('leads')
+            .select(`
+              id,
+              nome,
+              telefone,
+              email,
+              empresa,
+              created_at,
+              origem:origem_id (nome),
+              qualificacao:qualificacao_id (nome)
+            `)
+            .eq('cliente_id', clienteId)
+            .eq('deletado', false)
+            .gte('created_at', dataInicioFormatada)
+            .lte('created_at', dataFimFormatada)
+            .order('created_at', { ascending: false })
+            .range(from, to)
+        )
 
         if (errorCriados) {
           console.error('❌ Erro ao buscar leads criados:', errorCriados)
@@ -1324,14 +1364,16 @@ export class LeadService {
       }
 
       // Buscar leads atualizados no dia (mas não criados no dia) em lotes
-      const { count: countAtualizados } = await supabase!
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('cliente_id', clienteId)
-        .eq('deletado', false)
-        .gte('updated_at', dataInicioFormatada)
-        .lte('updated_at', dataFimFormatada)
-        .lt('created_at', dataInicioFormatada)
+      const { count: countAtualizados } = await applyVendedorFilter(
+        supabase!
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('cliente_id', clienteId)
+          .eq('deletado', false)
+          .gte('updated_at', dataInicioFormatada)
+          .lte('updated_at', dataFimFormatada)
+          .lt('created_at', dataInicioFormatada)
+      )
 
       console.log(`📊 Total de leads atualizados: ${countAtualizados}`)
 
@@ -1344,26 +1386,28 @@ export class LeadService {
 
         console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesAtualizados} de leads atualizados`)
 
-        const { data: batchLeads, error: errorAtualizados } = await supabase!
-          .from('leads')
-          .select(`
-            id,
-            nome,
-            telefone,
-            email,
-            empresa,
-            created_at,
-            updated_at,
-            origem:origem_id (nome),
-            qualificacao:qualificacao_id (nome)
-          `)
-          .eq('cliente_id', clienteId)
-          .eq('deletado', false)
-          .gte('updated_at', dataInicioFormatada)
-          .lte('updated_at', dataFimFormatada)
-          .lt('created_at', dataInicioFormatada)
-          .order('updated_at', { ascending: false })
-          .range(from, to)
+        const { data: batchLeads, error: errorAtualizados } = await applyVendedorFilter(
+          supabase!
+            .from('leads')
+            .select(`
+              id,
+              nome,
+              telefone,
+              email,
+              empresa,
+              created_at,
+              updated_at,
+              origem:origem_id (nome),
+              qualificacao:qualificacao_id (nome)
+            `)
+            .eq('cliente_id', clienteId)
+            .eq('deletado', false)
+            .gte('updated_at', dataInicioFormatada)
+            .lte('updated_at', dataFimFormatada)
+            .lt('created_at', dataInicioFormatada)
+            .order('updated_at', { ascending: false })
+            .range(from, to)
+        )
 
         if (errorAtualizados) {
           console.error('❌ Erro ao buscar leads atualizados:', errorAtualizados)
@@ -1375,13 +1419,15 @@ export class LeadService {
       }
 
       // Buscar leads deletados no dia em lotes
-      const { count: countDeletados } = await supabase!
-        .from('leads')
-        .select('*', { count: 'exact', head: true })
-        .eq('cliente_id', clienteId)
-        .eq('deletado', true)
-        .gte('updated_at', dataInicioFormatada)
-        .lte('updated_at', dataFimFormatada)
+      const { count: countDeletados } = await applyVendedorFilter(
+        supabase!
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .eq('cliente_id', clienteId)
+          .eq('deletado', true)
+          .gte('updated_at', dataInicioFormatada)
+          .lte('updated_at', dataFimFormatada)
+      )
 
       console.log(`📊 Total de leads deletados: ${countDeletados}`)
 
@@ -1394,24 +1440,26 @@ export class LeadService {
 
         console.log(`🔄 Buscando lote ${i + 1}/${totalBatchesDeletados} de leads deletados`)
 
-        const { data: batchLeads, error: errorDeletados } = await supabase!
-          .from('leads')
-          .select(`
-            id,
-            nome,
-            telefone,
-            email,
-            empresa,
-            updated_at,
-            origem:origem_id (nome),
-            qualificacao:qualificacao_id (nome)
-          `)
-          .eq('cliente_id', clienteId)
-          .eq('deletado', true)
-          .gte('updated_at', dataInicioFormatada)
-          .lte('updated_at', dataFimFormatada)
-          .order('updated_at', { ascending: false })
-          .range(from, to)
+        const { data: batchLeads, error: errorDeletados } = await applyVendedorFilter(
+          supabase!
+            .from('leads')
+            .select(`
+              id,
+              nome,
+              telefone,
+              email,
+              empresa,
+              updated_at,
+              origem:origem_id (nome),
+              qualificacao:qualificacao_id (nome)
+            `)
+            .eq('cliente_id', clienteId)
+            .eq('deletado', true)
+            .gte('updated_at', dataInicioFormatada)
+            .lte('updated_at', dataFimFormatada)
+            .order('updated_at', { ascending: false })
+            .range(from, to)
+        )
 
         if (errorDeletados) {
           console.error('❌ Erro ao buscar leads deletados:', errorDeletados)

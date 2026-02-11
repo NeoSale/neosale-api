@@ -644,7 +644,7 @@ export class LeadController {
   static async gerarRelatorioDiario(req: Request, res: Response) {
     try {
       const cliente_id = req.headers.cliente_id as string
-      const { data_inicio, data_fim } = req.query
+      const { data_inicio, data_fim, vendedor_id } = req.query
 
       if (!cliente_id) {
         return res.status(400).json({
@@ -677,7 +677,12 @@ export class LeadController {
         })
       }
 
-      const relatorio = await LeadService.gerarRelatorioDiario(cliente_id, data_inicio as string, data_fim as string)
+      const relatorio = await LeadService.gerarRelatorioDiario(
+        cliente_id,
+        data_inicio as string,
+        data_fim as string,
+        vendedor_id as string | undefined
+      )
 
       return res.status(200).json({
         success: true,
