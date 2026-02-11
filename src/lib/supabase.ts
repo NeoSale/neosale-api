@@ -27,9 +27,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // Criar cliente Supabase apenas se as credenciais estiverem configuradas
-export const supabase = (!supabaseUrl || !supabaseAnonKey) 
-  ? null 
+export const supabase = (!supabaseUrl || !supabaseAnonKey)
+  ? null
   : createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+// Service role client for server-side operations that need to bypass RLS
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+export const supabaseAdmin = (!supabaseUrl || !supabaseServiceKey)
+  ? null
+  : createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false

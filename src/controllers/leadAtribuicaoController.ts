@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { LeadDistribuicaoService } from '../services/leadDistribuicaoService'
+import { supabase } from '../lib/supabase'
 
 /**
  * @swagger
@@ -555,6 +556,72 @@ export class LeadAtribuicaoController {
           vendedor: resultado.vendedor,
           atribuicao: resultado.atribuicao
         }
+      })
+    } catch (error) {
+      return LeadAtribuicaoController.handleError(res, error)
+    }
+  }
+
+  /**
+   * @swagger
+   * /api/vendedores/{id}/distribution-active:
+   *   patch:
+   *     summary: Toggle vendor distribution active status
+   *     tags: [Lead Atribuições]
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *           format: uuid
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               active:
+   *                 type: boolean
+   *     responses:
+   *       200:
+   *         description: Status updated
+   */
+  static async toggleDistributionActive(req: Request, res: Response) {
+    try {
+      const { id } = req.params
+      const { active } = req.body
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vendor ID is required',
+          error: 'VALIDATION_ERROR'
+        })
+      }
+
+      if (typeof active !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'active must be a boolean',
+          error: 'VALIDATION_ERROR'
+        })
+      }
+
+      const { error } = await supabase!
+        .from('profiles')
+        .update({ distribution_active: active })
+        .eq('id', id)
+
+      if (error) {
+        throw error
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Vendor distribution ${active ? 'activated' : 'deactivated'}`,
+        data: { id, distribution_active: active }
       })
     } catch (error) {
       return LeadAtribuicaoController.handleError(res, error)

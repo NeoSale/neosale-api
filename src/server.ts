@@ -72,7 +72,7 @@ app.use(helmet())
 app.use(cors({
   origin: '*',
   credentials: false,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'cliente_id', 'cliente_id', 'X-Requested-With']
 }))
 

@@ -11,13 +11,11 @@ export interface NotificationSettingsData {
   smtp_from_name?: string | null
   smtp_secure?: boolean
   smtp_enabled?: boolean
-  evolution_api_base_url?: string | null
-  evolution_api_key?: string | null
-  evolution_instance_name?: string | null
   whatsapp_enabled?: boolean
   email_template_subject?: string
   email_template_body?: string
   whatsapp_template?: string
+  notification_agent_id?: string | null
   created_at?: string
   updated_at?: string
 }

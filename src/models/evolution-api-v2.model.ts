@@ -5,6 +5,7 @@ export interface EvolutionApiV2 {
     id_agente?: string;
     followup: boolean;
     qtd_envios_diarios: number;
+    apikey?: string;
     created_at: string;
     updated_at: string;
 }

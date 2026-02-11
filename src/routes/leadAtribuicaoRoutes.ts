@@ -34,4 +34,7 @@ router.post('/fila/processar', LeadAtribuicaoController.processarFila)
 // Dashboard de carga por vendedor
 router.get('/carga', LeadAtribuicaoController.dashboardCarga)
 
+// Toggle vendor distribution active status
+router.patch('/:id/distribution-active', LeadAtribuicaoController.toggleDistributionActive)
+
 export default router

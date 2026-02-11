@@ -190,6 +190,14 @@ export class EvolutionApiV2Service {
         throw new Error('Failed to retrieve created instance data');
       }
 
+      // 4. Save apikey (token) from Evolution API to local DB
+      if (fullInstanceData.apiKey) {
+        await supabase
+          .from('evolution_api_v2')
+          .update({ apikey: fullInstanceData.apiKey })
+          .eq('id', instanceId);
+      }
+
       return fullInstanceData;
     } catch (error: any) {
       const errorMessage = error.response?.data?.response?.message ||

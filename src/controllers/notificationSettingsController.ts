@@ -21,7 +21,7 @@ export class NotificationSettingsController {
       const settings = await NotificationSettingsService.getByClienteId(clienteId)
 
       if (!settings) {
-        return res.status(404).json({ error: 'Notification settings not found' })
+        return res.json(null)
       }
 
       return res.json(settings)

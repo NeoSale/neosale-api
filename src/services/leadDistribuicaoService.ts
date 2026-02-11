@@ -43,6 +43,7 @@ interface VendedorContador {
 interface VendedorComCarga extends Usuario {
   leads_ativos: number
   ultima_atribuicao?: string
+  distribution_active?: boolean
 }
 
 export class LeadDistribuicaoService {
@@ -116,12 +117,13 @@ export class LeadDistribuicaoService {
     console.log('🔍 Buscando próximo vendedor para cliente:', clienteId)
 
     try {
-      // Buscar vendedores ativos (role = salesperson na tabela profiles)
+      // Buscar vendedores ativos (role = salesperson na tabela profiles, distribution_active = true)
       const { data: vendedores, error } = await supabase!
         .from('profiles')
         .select('id, full_name, email, phone, cliente_id')
         .eq('cliente_id', clienteId)
         .eq('role', 'salesperson')
+        .neq('distribution_active', false)
 
       if (error || !vendedores?.length) {
         console.log('⚠️ Nenhum vendedor encontrado')
@@ -541,7 +543,7 @@ export class LeadDistribuicaoService {
       // Buscar vendedores (role = salesperson na tabela profiles)
       const { data: vendedores, error } = await supabase!
         .from('profiles')
-        .select('id, full_name, email, phone, cliente_id')
+        .select('id, full_name, email, phone, cliente_id, distribution_active')
         .eq('cliente_id', clienteId)
         .eq('role', 'salesperson')
 
@@ -570,6 +572,7 @@ export class LeadDistribuicaoService {
           telefone: v.phone,
           cliente_id: v.cliente_id,
           leads_ativos: contador?.leads_ativos || 0,
+          distribution_active: v.distribution_active !== false,
           ...(contador?.ultima_atribuicao && { ultima_atribuicao: contador.ultima_atribuicao })
         }
       })
