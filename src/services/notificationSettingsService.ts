@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabaseAdmin, supabase } from '../lib/supabase'
 
 export interface NotificationSettingsData {
   id?: string
@@ -28,9 +28,10 @@ export class NotificationSettingsService {
    * Get notification settings for a client
    */
   static async getByClienteId(clienteId: string): Promise<NotificationSettingsData | null> {
-    if (!supabase) throw new Error('Supabase not initialized')
+    const db = supabaseAdmin || supabase
+    if (!db) throw new Error('Supabase not initialized')
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('notification_settings')
       .select('*')
       .eq('cliente_id', clienteId)
@@ -55,7 +56,8 @@ export class NotificationSettingsService {
     clienteId: string,
     settings: Partial<NotificationSettingsData>
   ): Promise<NotificationSettingsData> {
-    if (!supabase) throw new Error('Supabase not initialized')
+    const db = supabaseAdmin || supabase
+    if (!db) throw new Error('Supabase not initialized')
 
     const payload = {
       ...settings,
@@ -68,7 +70,7 @@ export class NotificationSettingsService {
 
     if (existing) {
       // Update existing
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('notification_settings')
         .update(payload)
         .eq('cliente_id', clienteId)
@@ -84,7 +86,7 @@ export class NotificationSettingsService {
       return data
     } else {
       // Insert new
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('notification_settings')
         .insert(payload)
         .select()
@@ -104,9 +106,10 @@ export class NotificationSettingsService {
    * Delete notification settings
    */
   static async delete(clienteId: string): Promise<boolean> {
-    if (!supabase) throw new Error('Supabase not initialized')
+    const db = supabaseAdmin || supabase
+    if (!db) throw new Error('Supabase not initialized')
 
-    const { error } = await supabase
+    const { error } = await db
       .from('notification_settings')
       .delete()
       .eq('cliente_id', clienteId)

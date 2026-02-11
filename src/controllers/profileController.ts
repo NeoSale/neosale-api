@@ -2,13 +2,16 @@ import { Request, Response } from 'express';
 import { ProfileService, UserRole, InviteMemberInput } from '../services/profileService';
 import { z } from 'zod';
 
+// All valid roles in the system
+const validRolesEnum = ['super_admin', 'admin', 'manager', 'salesperson', 'member', 'viewer'] as const;
+
 // Validation schemas
 const createProfileSchema = z.object({
   id: z.string().uuid('ID deve ser um UUID válido'),
   email: z.string().email('Email inválido'),
   full_name: z.string().optional(),
   avatar_url: z.string().url('URL do avatar inválida').optional(),
-  role: z.enum(['super_admin', 'admin', 'member', 'viewer']).optional(),
+  role: z.enum(validRolesEnum).optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional()
 });
 
@@ -16,14 +19,14 @@ const updateProfileSchema = z.object({
   email: z.string().email('Email inválido').optional(),
   full_name: z.string().optional(),
   avatar_url: z.string().url('URL do avatar inválida').optional().nullable(),
-  role: z.enum(['super_admin', 'admin', 'member', 'viewer']).optional(),
+  role: z.enum(validRolesEnum).optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido').optional().nullable()
 });
 
 const inviteMemberSchema = z.object({
   email: z.string().email('Email inválido'),
   full_name: z.string().optional(),
-  role: z.enum(['super_admin', 'admin', 'member', 'viewer']).optional(),
+  role: z.enum(validRolesEnum).optional(),
   cliente_id: z.string().uuid('cliente_id deve ser um UUID válido')
 });
 
@@ -143,11 +146,10 @@ export class ProfileController {
         });
       }
 
-      const validRoles = ['super_admin', 'admin', 'member', 'viewer'];
-      if (!validRoles.includes(role)) {
+      if (!validRolesEnum.includes(role as any)) {
         return res.status(400).json({
           success: false,
-          message: `Role inválido. Valores permitidos: ${validRoles.join(', ')}`
+          message: `Role inválido. Valores permitidos: ${validRolesEnum.join(', ')}`
         });
       }
 
