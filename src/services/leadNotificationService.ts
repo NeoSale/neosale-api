@@ -9,6 +9,7 @@ interface Lead {
   telefone: string
   email?: string
   empresa?: string
+  resumo?: string
 }
 
 interface NotificationPayload {
@@ -16,6 +17,7 @@ interface NotificationPayload {
   leadPhone: string
   leadEmail?: string
   leadCompany?: string
+  leadSummary?: string
   assignedAt: string
   assignedBy?: string
 }
@@ -36,6 +38,7 @@ function parseTemplate(template: string, payload: NotificationPayload): string {
     .replace(/\{\{lead_phone\}\}/g, payload.leadPhone)
     .replace(/\{\{lead_email\}\}/g, payload.leadEmail || 'N/A')
     .replace(/\{\{lead_company\}\}/g, payload.leadCompany || 'N/A')
+    .replace(/\{\{resumo_lead\}\}/g, payload.leadSummary || 'N/A')
     .replace(/\{\{assigned_at\}\}/g, payload.assignedAt)
     .replace(/\{\{assigned_by\}\}/g, payload.assignedBy || 'System')
 }
@@ -150,6 +153,7 @@ export class LeadNotificationService {
       }
       if (lead.email) payload.leadEmail = lead.email
       if (lead.empresa) payload.leadCompany = lead.empresa
+      if (lead.resumo) payload.leadSummary = lead.resumo
 
       // Send email notification
       const smtpConfigured = settings.smtp_enabled && settings.smtp_host && settings.smtp_user && settings.smtp_password

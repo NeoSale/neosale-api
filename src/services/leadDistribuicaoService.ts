@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabaseAdmin, supabase } from '../lib/supabase'
 import { LeadNotificationService } from './leadNotificationService'
 
 interface Usuario {
@@ -47,15 +47,23 @@ interface VendedorComCarga extends Usuario {
 }
 
 export class LeadDistribuicaoService {
+  private static get db() {
+    const client = supabaseAdmin || supabase
+    if (!client) {
+      throw new Error('Supabase não está configurado')
+    }
+    return client
+  }
+
   private static checkSupabaseConnection() {
-    if (!supabase) {
+    if (!supabaseAdmin && !supabase) {
       throw new Error('Supabase não está configurado')
     }
   }
 
   // Incrementar contador do vendedor (upsert)
   private static async incrementarContadorVendedor(vendedorId: string, clienteId: string): Promise<void> {
-    const { data: existing } = await supabase!
+    const { data: existing } = await this.db
       .from('vendedor_contador_leads')
       .select('total_leads, leads_ativos')
       .eq('vendedor_id', vendedorId)
@@ -63,7 +71,7 @@ export class LeadDistribuicaoService {
       .single()
 
     if (existing) {
-      await supabase!
+      await this.db
         .from('vendedor_contador_leads')
         .update({
           total_leads: existing.total_leads + 1,
@@ -74,7 +82,7 @@ export class LeadDistribuicaoService {
         .eq('vendedor_id', vendedorId)
         .eq('cliente_id', clienteId)
     } else {
-      await supabase!
+      await this.db
         .from('vendedor_contador_leads')
         .insert({
           vendedor_id: vendedorId,
@@ -88,7 +96,7 @@ export class LeadDistribuicaoService {
 
   // Decrementar leads ativos do vendedor
   private static async decrementarLeadsAtivos(vendedorId: string, clienteId: string, concluido: boolean = false): Promise<void> {
-    const { data: existing } = await supabase!
+    const { data: existing } = await this.db
       .from('vendedor_contador_leads')
       .select('leads_ativos, leads_concluidos')
       .eq('vendedor_id', vendedorId)
@@ -103,7 +111,7 @@ export class LeadDistribuicaoService {
       if (concluido) {
         updateData.leads_concluidos = existing.leads_concluidos + 1
       }
-      await supabase!
+      await this.db
         .from('vendedor_contador_leads')
         .update(updateData)
         .eq('vendedor_id', vendedorId)
@@ -118,7 +126,7 @@ export class LeadDistribuicaoService {
 
     try {
       // Buscar vendedores ativos (role = salesperson na tabela profiles, distribution_active = true)
-      const { data: vendedores, error } = await supabase!
+      const { data: vendedores, error } = await this.db
         .from('profiles')
         .select('id, full_name, email, phone, cliente_id')
         .eq('cliente_id', clienteId)
@@ -132,7 +140,7 @@ export class LeadDistribuicaoService {
 
       // Buscar contadores de cada vendedor
       const vendedorIds = vendedores.map(v => v.id)
-      const { data: contadores } = await supabase!
+      const { data: contadores } = await this.db
         .from('vendedor_contador_leads')
         .select('*')
         .eq('cliente_id', clienteId)
@@ -179,7 +187,7 @@ export class LeadDistribuicaoService {
 
     try {
       // Verificar se já existe atribuição ativa
-      const { data: existente } = await supabase!
+      const { data: existente } = await this.db
         .from('lead_atribuicoes')
         .select('id')
         .eq('lead_id', leadId)
@@ -192,7 +200,7 @@ export class LeadDistribuicaoService {
       }
 
       // Criar atribuição
-      const { data: atribuicao, error } = await supabase!
+      const { data: atribuicao, error } = await this.db
         .from('lead_atribuicoes')
         .insert({
           lead_id: leadId,
@@ -215,9 +223,9 @@ export class LeadDistribuicaoService {
 
       // Enviar notificação para o vendedor (async, não bloqueia)
       try {
-        const { data: lead } = await supabase!
+        const { data: lead } = await this.db
           .from('leads')
-          .select('id, nome, telefone, email, empresa')
+          .select('id, nome, telefone, email, empresa, resumo')
           .eq('id', leadId)
           .single()
 
@@ -259,7 +267,7 @@ export class LeadDistribuicaoService {
 
     try {
       // Buscar atribuição ativa atual
-      const { data: atribuicaoAtual, error: buscaError } = await supabase!
+      const { data: atribuicaoAtual, error: buscaError } = await this.db
         .from('lead_atribuicoes')
         .select('*')
         .eq('lead_id', leadId)
@@ -275,7 +283,7 @@ export class LeadDistribuicaoService {
       const vendedorAnteriorId = atribuicaoAtual.vendedor_id
 
       // Marcar atribuição atual como transferida
-      await supabase!
+      await this.db
         .from('lead_atribuicoes')
         .update({
           status: 'transferido',
@@ -313,7 +321,7 @@ export class LeadDistribuicaoService {
     console.log('🔄 Concluindo atribuição do lead:', leadId)
 
     try {
-      const { data: atribuicao, error: buscaError } = await supabase!
+      const { data: atribuicao, error: buscaError } = await this.db
         .from('lead_atribuicoes')
         .select('*')
         .eq('lead_id', leadId)
@@ -326,7 +334,7 @@ export class LeadDistribuicaoService {
       }
 
       // Atualizar status
-      await supabase!
+      await this.db
         .from('lead_atribuicoes')
         .update({
           status: 'concluido',
@@ -350,7 +358,7 @@ export class LeadDistribuicaoService {
     this.checkSupabaseConnection()
 
     try {
-      const { error } = await supabase!
+      const { error } = await this.db
         .from('lead_atribuicoes')
         .update({
           notificado: true,
@@ -378,7 +386,7 @@ export class LeadDistribuicaoService {
     console.log('🔄 Adicionando lead à fila de espera:', leadId)
 
     try {
-      const { error } = await supabase!
+      const { error } = await this.db
         .from('lead_fila_espera')
         .insert({
           lead_id: leadId,
@@ -410,7 +418,7 @@ export class LeadDistribuicaoService {
 
     try {
       // Buscar leads na fila
-      const { data: fila, error } = await supabase!
+      const { data: fila, error } = await this.db
         .from('lead_fila_espera')
         .select('*')
         .eq('cliente_id', clienteId)
@@ -435,7 +443,7 @@ export class LeadDistribuicaoService {
         await this.atribuirLead(item.lead_id, vendedor.id, clienteId)
 
         // Marcar como processado
-        await supabase!
+        await this.db
           .from('lead_fila_espera')
           .update({
             processado: true,
@@ -463,7 +471,7 @@ export class LeadDistribuicaoService {
     this.checkSupabaseConnection()
 
     try {
-      let query = supabase!
+      let query = this.db
         .from('lead_atribuicoes')
         .select(`
           *,
@@ -501,7 +509,7 @@ export class LeadDistribuicaoService {
     this.checkSupabaseConnection()
 
     try {
-      let query = supabase!
+      let query = this.db
         .from('lead_atribuicoes')
         .select(`
           *,
@@ -541,7 +549,7 @@ export class LeadDistribuicaoService {
 
     try {
       // Buscar vendedores (role = salesperson na tabela profiles)
-      const { data: vendedores, error } = await supabase!
+      const { data: vendedores, error } = await this.db
         .from('profiles')
         .select('id, full_name, email, phone, cliente_id, distribution_active')
         .eq('cliente_id', clienteId)
@@ -553,7 +561,7 @@ export class LeadDistribuicaoService {
 
       // Buscar contadores
       const vendedorIds = vendedores.map(v => v.id)
-      const { data: contadores } = await supabase!
+      const { data: contadores } = await this.db
         .from('vendedor_contador_leads')
         .select('*')
         .eq('cliente_id', clienteId)

@@ -15,6 +15,7 @@ interface NotificationPayload {
   leadPhone: string
   leadEmail?: string
   leadCompany?: string
+  leadSummary?: string
   assignedAt: string
   assignedBy?: string
 }
@@ -57,6 +58,7 @@ export class EmailNotificationService {
       .replace(/\{\{lead_phone\}\}/g, payload.leadPhone)
       .replace(/\{\{lead_email\}\}/g, payload.leadEmail || 'N/A')
       .replace(/\{\{lead_company\}\}/g, payload.leadCompany || 'N/A')
+      .replace(/\{\{resumo_lead\}\}/g, (payload.leadSummary || 'N/A').replace(/\n/g, '<br>'))
       .replace(/\{\{assigned_at\}\}/g, payload.assignedAt)
       .replace(/\{\{assigned_by\}\}/g, payload.assignedBy || 'System')
   }
