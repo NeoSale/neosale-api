@@ -52,67 +52,76 @@ export class LeadDistribuicaoService {
     }
   }
 
+  // Incrementar contador do vendedor (upsert)
+  private static async incrementarContadorVendedor(vendedorId: string, clienteId: string): Promise<void> {
+    const { data: existing } = await supabase!
+      .from('vendedor_contador_leads')
+      .select('total_leads, leads_ativos')
+      .eq('vendedor_id', vendedorId)
+      .eq('cliente_id', clienteId)
+      .single()
+
+    if (existing) {
+      await supabase!
+        .from('vendedor_contador_leads')
+        .update({
+          total_leads: existing.total_leads + 1,
+          leads_ativos: existing.leads_ativos + 1,
+          ultima_atribuicao: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('vendedor_id', vendedorId)
+        .eq('cliente_id', clienteId)
+    } else {
+      await supabase!
+        .from('vendedor_contador_leads')
+        .insert({
+          vendedor_id: vendedorId,
+          cliente_id: clienteId,
+          total_leads: 1,
+          leads_ativos: 1,
+          ultima_atribuicao: new Date().toISOString()
+        })
+    }
+  }
+
+  // Decrementar leads ativos do vendedor
+  private static async decrementarLeadsAtivos(vendedorId: string, clienteId: string, concluido: boolean = false): Promise<void> {
+    const { data: existing } = await supabase!
+      .from('vendedor_contador_leads')
+      .select('leads_ativos, leads_concluidos')
+      .eq('vendedor_id', vendedorId)
+      .eq('cliente_id', clienteId)
+      .single()
+
+    if (existing) {
+      const updateData: Record<string, unknown> = {
+        leads_ativos: Math.max(existing.leads_ativos - 1, 0),
+        updated_at: new Date().toISOString()
+      }
+      if (concluido) {
+        updateData.leads_concluidos = existing.leads_concluidos + 1
+      }
+      await supabase!
+        .from('vendedor_contador_leads')
+        .update(updateData)
+        .eq('vendedor_id', vendedorId)
+        .eq('cliente_id', clienteId)
+    }
+  }
+
   // Buscar próximo vendedor com menor carga (round-robin)
   static async buscarProximoVendedor(clienteId: string): Promise<Usuario | null> {
     this.checkSupabaseConnection()
     console.log('🔍 Buscando próximo vendedor para cliente:', clienteId)
 
     try {
-      // Usar função do banco para buscar vendedor
-      const { data: vendedorId, error: rpcError } = await supabase!
-        .rpc('buscar_proximo_vendedor', { p_cliente_id: clienteId })
-
-      if (rpcError) {
-        console.error('❌ Erro ao buscar vendedor via RPC:', rpcError)
-        // Fallback: buscar manualmente
-        return this.buscarProximoVendedorManual(clienteId)
-      }
-
-      if (!vendedorId) {
-        console.log('⚠️ Nenhum vendedor disponível')
-        return null
-      }
-
-      // Buscar dados completos do vendedor
-      const { data: vendedor, error } = await supabase!
-        .from('usuarios')
-        .select('id, nome, email, telefone, cliente_id')
-        .eq('id', vendedorId)
-        .single()
-
-      if (error) {
-        console.error('❌ Erro ao buscar dados do vendedor:', error)
-        return null
-      }
-
-      console.log('✅ Vendedor encontrado:', vendedor.nome)
-      return vendedor
-    } catch (error) {
-      console.error('❌ Erro ao buscar próximo vendedor:', error)
-      return null
-    }
-  }
-
-  // Fallback: buscar vendedor manualmente
-  private static async buscarProximoVendedorManual(clienteId: string): Promise<Usuario | null> {
-    console.log('🔄 Buscando vendedor manualmente...')
-
-    try {
-      // Buscar vendedores ativos com perfil "Vendedor"
+      // Buscar vendedores ativos (role = salesperson na tabela profiles)
       const { data: vendedores, error } = await supabase!
-        .from('usuarios')
-        .select(`
-          id, nome, email, telefone, cliente_id,
-          usuario_perfis!inner(
-            perfil_id,
-            ativo,
-            perfis!inner(nome)
-          )
-        `)
+        .from('profiles')
+        .select('id, full_name, email, phone, cliente_id')
         .eq('cliente_id', clienteId)
-        .eq('ativo', true)
-        .eq('usuario_perfis.ativo', true)
-        .eq('usuario_perfis.perfis.nome', 'Vendedor')
+        .eq('role', 'salesperson')
 
       if (error || !vendedores?.length) {
         console.log('⚠️ Nenhum vendedor encontrado')
@@ -131,24 +140,27 @@ export class LeadDistribuicaoService {
       const contadorMap = new Map<string, VendedorContador>()
       contadores?.forEach(c => contadorMap.set(c.vendedor_id, c))
 
-      // Ordenar por menor carga
+      // Ordenar por menor carga, desempate pela atribuição mais antiga
       const vendedoresOrdenados = vendedores.sort((a, b) => {
         const cargaA = contadorMap.get(a.id)?.leads_ativos || 0
         const cargaB = contadorMap.get(b.id)?.leads_ativos || 0
-        return cargaA - cargaB
+        if (cargaA !== cargaB) return cargaA - cargaB
+        const ultimaA = contadorMap.get(a.id)?.ultima_atribuicao || '1970-01-01'
+        const ultimaB = contadorMap.get(b.id)?.ultima_atribuicao || '1970-01-01'
+        return ultimaA < ultimaB ? -1 : 1
       })
 
       const vendedor = vendedoresOrdenados[0]
-      console.log('✅ Vendedor encontrado (manual):', vendedor.nome)
+      console.log('✅ Vendedor encontrado:', vendedor.full_name)
       return {
         id: vendedor.id,
-        nome: vendedor.nome,
+        nome: vendedor.full_name,
         email: vendedor.email,
-        telefone: vendedor.telefone,
+        telefone: vendedor.phone,
         cliente_id: vendedor.cliente_id
       }
     } catch (error) {
-      console.error('❌ Erro ao buscar vendedor manualmente:', error)
+      console.error('❌ Erro ao buscar próximo vendedor:', error)
       return null
     }
   }
@@ -197,10 +209,7 @@ export class LeadDistribuicaoService {
       }
 
       // Incrementar contador do vendedor
-      await supabase!.rpc('incrementar_contador_vendedor', {
-        p_vendedor_id: vendedorId,
-        p_cliente_id: clienteId
-      })
+      await this.incrementarContadorVendedor(vendedorId, clienteId)
 
       // Enviar notificação para o vendedor (async, não bloqueia)
       try {
@@ -274,11 +283,7 @@ export class LeadDistribuicaoService {
         .eq('id', atribuicaoAtual.id)
 
       // Decrementar contador do vendedor anterior
-      await supabase!.rpc('decrementar_leads_ativos', {
-        p_vendedor_id: vendedorAnteriorId,
-        p_cliente_id: clienteId,
-        p_concluido: false
-      })
+      await this.decrementarLeadsAtivos(vendedorAnteriorId, clienteId, false)
 
       // Criar nova atribuição
       const novaAtribuicao = await this.atribuirLead(
@@ -328,11 +333,7 @@ export class LeadDistribuicaoService {
         .eq('id', atribuicao.id)
 
       // Decrementar leads ativos e incrementar concluídos
-      await supabase!.rpc('decrementar_leads_ativos', {
-        p_vendedor_id: atribuicao.vendedor_id,
-        p_cliente_id: clienteId,
-        p_concluido: sucesso
-      })
+      await this.decrementarLeadsAtivos(atribuicao.vendedor_id, clienteId, sucesso)
 
       console.log('✅ Atribuição concluída')
       return true
@@ -537,17 +538,12 @@ export class LeadDistribuicaoService {
     this.checkSupabaseConnection()
 
     try {
-      // Buscar vendedores com perfil "Vendedor"
+      // Buscar vendedores (role = salesperson na tabela profiles)
       const { data: vendedores, error } = await supabase!
-        .from('usuarios')
-        .select(`
-          id, nome, email, telefone, cliente_id,
-          usuario_perfis!inner(perfil_id, ativo, perfis!inner(nome))
-        `)
+        .from('profiles')
+        .select('id, full_name, email, phone, cliente_id')
         .eq('cliente_id', clienteId)
-        .eq('ativo', true)
-        .eq('usuario_perfis.ativo', true)
-        .eq('usuario_perfis.perfis.nome', 'Vendedor')
+        .eq('role', 'salesperson')
 
       if (error || !vendedores?.length) {
         return []
@@ -569,9 +565,9 @@ export class LeadDistribuicaoService {
         const contador = contadorMap.get(v.id)
         return {
           id: v.id,
-          nome: v.nome,
+          nome: v.full_name,
           email: v.email,
-          telefone: v.telefone,
+          telefone: v.phone,
           cliente_id: v.cliente_id,
           leads_ativos: contador?.leads_ativos || 0,
           ...(contador?.ultima_atribuicao && { ultima_atribuicao: contador.ultima_atribuicao })
