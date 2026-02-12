@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { CreateClienteInput, UpdateClienteInput } from '../lib/validators';
 import { generateNickname, ensureUniqueNickname } from '../lib/utils';
+import { PromptGeneratorService } from './promptGeneratorService';
 
 export interface Cliente {
   id: string;
@@ -315,6 +316,10 @@ export class ClienteService {
     if (error) {
       throw new Error(`Erro ao criar cliente: ${error.message}`);
     }
+
+    // Fire-and-forget: generate personalized prompts for the new client
+    PromptGeneratorService.generateForNewClient(data.id)
+      .catch(err => console.error('[PromptGenerator] Error generating prompts:', err));
 
     return data;
   }

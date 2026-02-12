@@ -99,6 +99,31 @@ router.delete('/:context', PromptConfigController.delete)
 
 /**
  * @swagger
+ * /api/prompt-config/{context}/generate:
+ *   post:
+ *     summary: Generate a personalized prompt using LLM
+ *     tags: [Prompt Config]
+ *     parameters:
+ *       - in: path
+ *         name: context
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [follow_up, prospeccao]
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Generated prompt text
+ */
+router.post('/:context/generate', PromptConfigController.generate)
+
+/**
+ * @swagger
  * /api/prompt-config/{context}/history:
  *   get:
  *     summary: Get prompt change history for a context

@@ -489,4 +489,101 @@ router.post('/tracking/:leadId/cancel', validateClienteId, FollowupController.ca
  */
 router.get('/stats', validateClienteId, FollowupController.getStats)
 
+/**
+ * @swagger
+ * /api/followup/leads-report:
+ *   get:
+ *     summary: Relatório de leads em follow-up
+ *     description: |
+ *       Retorna lista de leads com tracking de follow-up ativo,
+ *       incluindo nome do lead, status, step atual, próximo envio, etc.
+ *     tags: [Follow-up]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
+ *     responses:
+ *       200:
+ *         description: Lista de leads em follow-up
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       lead_id:
+ *                         type: string
+ *                       lead_name:
+ *                         type: string
+ *                       lead_phone:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *                       current_step:
+ *                         type: integer
+ *                       step_name:
+ *                         type: string
+ *                       next_send_at:
+ *                         type: string
+ *                         nullable: true
+ *                       cycle_count:
+ *                         type: integer
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.get('/leads-report', validateClienteId, FollowupController.getLeadsReport)
+
+/**
+ * @swagger
+ * /api/followup/config/step-template/generate:
+ *   post:
+ *     summary: Gera template de mensagem para um step usando IA
+ *     description: |
+ *       Usa o prompt do agente de follow-up e dados do cliente para
+ *       gerar um template de mensagem personalizado para o step especificado.
+ *     tags: [Follow-up]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ClienteId'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - step_number
+ *               - total_steps
+ *             properties:
+ *               step_number:
+ *                 type: integer
+ *                 description: Número do step (1-based)
+ *               total_steps:
+ *                 type: integer
+ *                 description: Total de steps configurados
+ *     responses:
+ *       200:
+ *         description: Template gerado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     template:
+ *                       type: string
+ *       400:
+ *         description: Parâmetros inválidos
+ *       500:
+ *         description: Erro interno do servidor
+ */
+router.post('/config/step-template/generate', validateClienteId, FollowupController.generateStepTemplate)
+
 export default router

@@ -992,6 +992,8 @@ export const updateFollowupConfigSchema = z.object({
   is_active: z.boolean().optional(),
   max_attempts: z.number().int().min(1).max(10).optional(),
   intervals: z.array(z.number().int().min(1)).optional(),
+  step_names: z.array(z.string()).optional(),
+  step_templates: z.array(z.string()).optional(),
   sending_schedule: z.object({
     segunda: z.string().optional(),
     terca: z.string().optional(),

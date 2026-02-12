@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { ParametroService } from './parametroService'
 
 export interface LlmConfig {
   id: string
@@ -109,8 +110,8 @@ export class LlmConfigService {
   }
 
   /**
-   * Get LLM config for a client, falling back to environment defaults.
-   * Priority: llm_config table → env OPENAI_API_KEY → error
+   * Get LLM config for a client, falling back to system defaults.
+   * Priority: llm_config table → parametros Anthropic → env OPENAI_API_KEY → error
    */
   static async getOrDefault(clienteId: string): Promise<LlmConfigResolved> {
     const config = await this.getByClienteId(clienteId)
@@ -123,6 +124,23 @@ export class LlmConfigService {
         temperature: Number(config.temperature),
         maxTokens: config.max_tokens
       }
+    }
+
+    // Fallback to Anthropic params from parametros table
+    try {
+      const apiKeyParam = await ParametroService.getByChave('apikey_anthropic')
+      if (apiKeyParam?.valor) {
+        const modelParam = await ParametroService.getByChave('modelo_anthropic')
+        return {
+          provider: 'anthropic',
+          model: modelParam?.valor || 'claude-sonnet-4-5-20250929',
+          apiKey: apiKeyParam.valor,
+          temperature: 0.7,
+          maxTokens: 1024
+        }
+      }
+    } catch {
+      // Ignore errors, continue to next fallback
     }
 
     // Fallback to environment variable

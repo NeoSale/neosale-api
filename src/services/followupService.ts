@@ -10,6 +10,8 @@ export interface FollowupConfig {
   is_active: boolean
   max_attempts: number
   intervals: number[]
+  step_names: string[]
+  step_templates: string[]
   sending_schedule: Record<string, string>
   daily_send_limit: number
   created_at: string
@@ -222,13 +224,16 @@ export class FollowupService {
       .update({ status: 'in_progress', updated_at: toBrazilTimestamp() })
       .eq('id', tracking.id)
 
-    // 8. Execute AI Agent
+    // 8. Execute AI Agent (with step template if available)
+    const stepTemplates = (config.step_templates as string[]) || []
+    const stepTemplate = stepTemplates[step - 1] || ''
+
     try {
       const result = await AiAgentService.execute({
         leadId: lead_id,
         clienteId: cliente_id,
         context: 'follow_up',
-        metadata: { stepNumber: step },
+        metadata: { stepNumber: step, stepTemplate },
       })
 
       if (!result.success) {
@@ -379,6 +384,8 @@ export class FollowupService {
     is_active?: boolean | undefined
     max_attempts?: number | undefined
     intervals?: number[] | undefined
+    step_names?: string[] | undefined
+    step_templates?: string[] | undefined
     sending_schedule?: Record<string, string | undefined> | undefined
     daily_send_limit?: number | undefined
   }): Promise<FollowupConfig> {
@@ -509,9 +516,13 @@ export class FollowupService {
     total_sent: number
     total_responded: number
     response_rate: number
-    by_step: { step: number; sent: number; responded: number }[]
+    by_step: { step: number; name: string; sent: number; responded: number }[]
   }> {
     if (!supabase) throw new Error('Supabase client not initialized')
+
+    // Load config for step names
+    const config = await this.getConfig(clienteId)
+    const stepNames = (config?.step_names as string[]) || []
 
     // Active follow-ups (waiting or in_progress)
     const { data: activeData } = await supabase
@@ -559,10 +570,76 @@ export class FollowupService {
     }
 
     const by_step = Array.from(stepMap.entries())
-      .map(([step, data]) => ({ step, ...data }))
+      .map(([step, data]) => ({
+        step,
+        name: stepNames[step - 1] || '',
+        ...data,
+      }))
       .sort((a, b) => a.step - b.step)
 
     return { active_followups, total_sent, total_responded, response_rate, by_step }
+  }
+
+  // =============================================
+  // LEADS REPORT
+  // =============================================
+
+  static async getLeadsReport(clienteId: string): Promise<{
+    lead_id: string
+    lead_name: string
+    lead_phone: string
+    status: string
+    current_step: number
+    step_name: string
+    next_send_at: string | null
+    last_ai_message_at: string | null
+    last_lead_message_at: string | null
+    cycle_count: number
+    updated_at: string
+  }[]> {
+    if (!supabase) throw new Error('Supabase client not initialized')
+
+    // Load config for step names
+    const config = await this.getConfig(clienteId)
+    const stepNames = (config?.step_names as string[]) || []
+
+    // Get trackings with lead data
+    const { data: trackings, error } = await supabase
+      .from('followup_tracking')
+      .select('*')
+      .eq('cliente_id', clienteId)
+      .in('status', ['waiting', 'in_progress', 'responded', 'exhausted'])
+      .order('updated_at', { ascending: false })
+      .limit(100)
+
+    if (error) throw new Error(`Error fetching leads report: ${error.message}`)
+    if (!trackings || trackings.length === 0) return []
+
+    // Get lead details
+    const leadIds = trackings.map(t => t.lead_id)
+    const { data: leads } = await supabase
+      .from('leads')
+      .select('id, nome, telefone')
+      .in('id', leadIds)
+
+    const leadMap = new Map<string, { nome: string; telefone: string }>()
+    for (const lead of leads || []) {
+      leadMap.set(lead.id, { nome: lead.nome || '', telefone: lead.telefone || '' })
+    }
+
+    return trackings.map(t => ({
+      lead_id: t.lead_id,
+      lead_name: leadMap.get(t.lead_id)?.nome || 'Desconhecido',
+      lead_phone: leadMap.get(t.lead_id)?.telefone || '',
+      status: t.status,
+      current_step: t.current_step,
+      step_name: stepNames[t.current_step - 1] || '',
+      next_send_at: t.next_send_at,
+      last_ai_message_at: t.last_ai_message_at,
+      last_lead_message_at: t.last_lead_message_at,
+      cycle_count: t.cycle_count,
+      updated_at: t.updated_at,
+    }))
   }
 
   // =============================================

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { PromptConfigService } from '../services/promptConfigService'
+import { PromptGeneratorService } from '../services/promptGeneratorService'
 import { upsertPromptConfigSchema } from '../lib/validators'
 
 export class PromptConfigController {
@@ -108,6 +109,27 @@ export class PromptConfigController {
       })
     } catch (error) {
       console.error('Error deleting prompt config:', error)
+      return res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+  }
+
+  static async generate(req: Request, res: Response) {
+    try {
+      const clienteId = req.headers.cliente_id as string
+      if (!clienteId) {
+        return res.status(400).json({ success: false, message: 'cliente_id is required' })
+      }
+
+      const { context } = req.params
+
+      const prompt = await PromptGeneratorService.generateForContext(clienteId, context)
+
+      return res.status(200).json({ success: true, data: { prompt } })
+    } catch (error) {
+      console.error('Error generating prompt:', error)
       return res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Unknown error',

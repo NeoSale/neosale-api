@@ -337,6 +337,10 @@ export class AiAgentService {
       parts.push(`Follow-up step: ${params.metadata.stepNumber}`)
     }
 
+    if (params.metadata?.stepTemplate) {
+      parts.push(`Template de mensagem para este follow-up (use como base, adapte com naturalidade):\n${params.metadata.stepTemplate}`)
+    }
+
     if (params.promptTools) {
       parts.push(params.promptTools)
     }

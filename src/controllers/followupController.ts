@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { EventQueueService } from '../services/eventQueueService'
 import { EventQueueProcessor } from '../schedulers/eventQueueProcessor'
 import { FollowupService } from '../services/followupService'
+import { PromptGeneratorService } from '../services/promptGeneratorService'
 import {
   followupTriggerSchema,
   followupCancelSchema,
@@ -191,6 +192,46 @@ export class FollowupController {
       })
     } catch (error: any) {
       console.error('[FollowupController] getStats error:', error.message)
+      return res.status(500).json({ success: false, error: error.message })
+    }
+  }
+
+  static async getLeadsReport(req: Request, res: Response) {
+    try {
+      const clienteId = req.headers['cliente_id'] as string
+      const data = await FollowupService.getLeadsReport(clienteId)
+
+      return res.json({
+        success: true,
+        data,
+      })
+    } catch (error: any) {
+      console.error('[FollowupController] getLeadsReport error:', error.message)
+      return res.status(500).json({ success: false, error: error.message })
+    }
+  }
+
+  static async generateStepTemplate(req: Request, res: Response) {
+    try {
+      const clienteId = req.headers['cliente_id'] as string
+      const { step_number, total_steps } = req.body
+
+      if (!step_number || !total_steps) {
+        return res.status(400).json({ success: false, error: 'step_number and total_steps are required' })
+      }
+
+      const template = await PromptGeneratorService.generateStepTemplate(
+        clienteId,
+        step_number,
+        total_steps
+      )
+
+      return res.json({
+        success: true,
+        data: { template },
+      })
+    } catch (error: any) {
+      console.error('[FollowupController] generateStepTemplate error:', error.message)
       return res.status(500).json({ success: false, error: error.message })
     }
   }
