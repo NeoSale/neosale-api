@@ -77,6 +77,15 @@ export class EventQueueProcessor {
     }
   }
 
+  /**
+   * Trigger immediate processing without waiting for the next poll interval.
+   * Used for high-priority events (e.g., lead cancellation) that need <5s response.
+   */
+  static async triggerImmediate(): Promise<void> {
+    if (!this.isRunning) return
+    await this.pollAndProcess()
+  }
+
   static stop(): void {
     this.isRunning = false
     if (this.intervalId) {

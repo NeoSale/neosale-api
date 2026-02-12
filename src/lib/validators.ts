@@ -969,3 +969,42 @@ export const upsertPromptConfigSchema = z.object({
   prompt: z.string().min(1),
   changed_by: z.string().uuid().optional(),
 })
+
+// ============================================================
+// Follow-up Validators
+// ============================================================
+
+export const followupTriggerSchema = z.object({
+  lead_id: z.string().uuid(),
+  cliente_id: z.string().uuid(),
+})
+
+export const followupCancelSchema = z.object({
+  lead_id: z.string().uuid(),
+})
+
+export const followupOptOutSchema = z.object({
+  lead_id: z.string().uuid(),
+  cliente_id: z.string().uuid(),
+})
+
+export const updateFollowupConfigSchema = z.object({
+  is_active: z.boolean().optional(),
+  max_attempts: z.number().int().min(1).max(10).optional(),
+  intervals: z.array(z.number().int().min(1)).optional(),
+  sending_schedule: z.object({
+    segunda: z.string().optional(),
+    terca: z.string().optional(),
+    quarta: z.string().optional(),
+    quinta: z.string().optional(),
+    sexta: z.string().optional(),
+    sabado: z.string().optional(),
+    domingo: z.string().optional(),
+  }).optional(),
+  daily_send_limit: z.number().int().min(1).optional(),
+})
+
+export type FollowupTriggerInput = z.infer<typeof followupTriggerSchema>
+export type FollowupCancelInput = z.infer<typeof followupCancelSchema>
+export type FollowupOptOutInput = z.infer<typeof followupOptOutSchema>
+export type UpdateFollowupConfigInput = z.infer<typeof updateFollowupConfigSchema>

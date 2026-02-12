@@ -54,12 +54,14 @@ import distributionReportRoutes from './routes/distributionReportRoutes'
 
 import llmConfigRoutes from './routes/llmConfigRoutes'
 import promptConfigRoutes from './routes/promptConfigRoutes'
+import followupRoutes from './routes/followupRoutes'
 import prospectingRoutes from './routes/prospectingRoutes'
 import linkedinRoutes from './routes/linkedinRoutes'
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { ProspectingScheduler } from './schedulers/prospectingScheduler'
 import { EventQueueProcessor } from './schedulers/eventQueueProcessor'
+import { FollowupService } from './services/followupService'
 import packageJson from '../package.json'
 
 const app = express()
@@ -179,6 +181,7 @@ app.use('/api/relatorios/distribuicao', distributionReportRoutes) // Relatórios
 
 app.use('/api/llm-config', llmConfigRoutes)
 app.use('/api/prompt-config', promptConfigRoutes)
+app.use('/api/followup', followupRoutes)
 app.use('/api/prospecting', prospectingRoutes)
 app.use('/api/linkedin', linkedinRoutes)
 app.use('/api/admin', adminRoutes)
@@ -226,6 +229,14 @@ async function startServer() {
 
     // Inicializar ProspectingScheduler (node-cron)
     await ProspectingScheduler.init()
+
+    // Register follow-up event handlers
+    EventQueueProcessor.registerHandler('ai_message_sent', (event) => FollowupService.handleAiMessageSent(event))
+    EventQueueProcessor.registerHandler('lead_message_received', (event) => FollowupService.handleLeadMessageReceived(event))
+    EventQueueProcessor.registerHandler('follow_up_send', (event) => FollowupService.handleFollowUpSend(event))
+    EventQueueProcessor.registerHandler('follow_up_exhausted', (event) => FollowupService.handleFollowUpExhausted(event))
+    EventQueueProcessor.registerHandler('lead_opted_out', (event) => FollowupService.handleLeadOptedOut(event))
+    EventQueueProcessor.registerHandler('daily_limit_reached', (event) => FollowupService.handleDailyLimitReached(event))
 
     // Inicializar EventQueueProcessor
     await EventQueueProcessor.init()
