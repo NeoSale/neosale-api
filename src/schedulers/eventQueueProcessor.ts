@@ -1,5 +1,17 @@
 import { EventQueueService, EventQueueItem } from '../services/eventQueueService'
 
+/**
+ * Throw DeferEvent inside a handler to signal that the event should be
+ * reset to 'pending' and retried on the next poll cycle (~15s).
+ * Use when conditions aren't met yet (e.g., outside business hours, daily limit).
+ */
+export class DeferEvent extends Error {
+  constructor(message?: string) {
+    super(message || 'Event deferred')
+    this.name = 'DeferEvent'
+  }
+}
+
 export type EventHandler = (event: EventQueueItem) => Promise<void>
 
 const POLL_INTERVAL_MS = 15000 // 15 seconds
@@ -66,8 +78,16 @@ export class EventQueueProcessor {
         await EventQueueService.complete(event.id)
         console.log(`[EventQueueProcessor] Event ${event.id} completed`)
       } catch (handlerError: any) {
-        console.error(`[EventQueueProcessor] Handler error for ${event.event_type}:`, handlerError.message)
-        await EventQueueService.fail(event.id, handlerError.message || 'Unknown handler error')
+        if (handlerError instanceof DeferEvent) {
+          // Handler wants to retry later — reset to pending for next poll cycle
+          await EventQueueService.defer(event.id)
+          console.log(`[EventQueueProcessor] Event ${event.id} deferred: ${handlerError.message}`)
+          // Return false to break the polling loop — wait for next 15s cycle
+          return false
+        } else {
+          console.error(`[EventQueueProcessor] Handler error for ${event.event_type}:`, handlerError.message)
+          await EventQueueService.fail(event.id, handlerError.message || 'Unknown handler error')
+        }
       }
 
       return true

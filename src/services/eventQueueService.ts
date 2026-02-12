@@ -16,6 +16,16 @@ export interface EventQueueItem {
   created_at: string
 }
 
+/**
+ * Returns a Brazil-timezone timestamp string for TIMESTAMP WITHOUT TIME ZONE columns.
+ * Format: '2026-02-12 02:21:32' (Brazil local time, no timezone suffix).
+ */
+export function toBrazilTimestamp(date?: Date): string {
+  const d = date || new Date()
+  // 'sv-SE' locale gives ISO-like format: '2026-02-12 02:21:32'
+  return d.toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+}
+
 export class EventQueueService {
   static async enqueue(
     clienteId: string,
@@ -33,9 +43,7 @@ export class EventQueueService {
         event_type: eventType,
         payload,
         priority: priority ?? 5,
-        scheduled_at: scheduledAt
-          ? scheduledAt.toISOString()
-          : new Date().toISOString(),
+        scheduled_at: toBrazilTimestamp(scheduledAt),
       })
       .select()
       .single()
@@ -46,22 +54,61 @@ export class EventQueueService {
   }
 
   /**
-   * Dequeue the next pending event using FOR UPDATE SKIP LOCKED via RPC.
+   * Dequeue the next pending event.
+   * Uses SELECT + conditional UPDATE instead of RPC to avoid PostgREST schema cache issues.
+   * The .eq('status', 'pending') on UPDATE acts as an optimistic lock.
    */
   static async dequeue(): Promise<EventQueueItem | null> {
     if (!supabase) throw new Error('Supabase client not initialized')
 
-    const { data, error } = await supabase.rpc('dequeue_event')
+    // 1. Find next pending event that is ready to process
+    const { data: events, error: selectError } = await supabase
+      .from('event_queue')
+      .select('*')
+      .eq('status', 'pending')
+      .lte('scheduled_at', toBrazilTimestamp())
+      .order('priority', { ascending: true })
+      .order('scheduled_at', { ascending: true })
+      .limit(1)
 
-    if (error) {
-      console.error('[EventQueue] Error dequeuing:', error.message)
+    if (selectError) {
+      console.error('[EventQueue] Error selecting next event:', selectError.message)
       return null
     }
 
-    if (!data || (Array.isArray(data) && data.length === 0)) return null
+    if (!events || events.length === 0) return null
 
-    const event = Array.isArray(data) ? data[0] : data
-    return event || null
+    // 2. Atomically update to 'processing' (only if still pending)
+    const { data: updated, error: updateError } = await supabase
+      .from('event_queue')
+      .update({ status: 'processing', started_at: toBrazilTimestamp() })
+      .eq('id', events[0].id)
+      .eq('status', 'pending')
+      .select()
+      .single()
+
+    if (updateError || !updated) return null
+
+    return updated
+  }
+
+  /**
+   * Defer an event back to 'pending' so it gets picked up on the next poll cycle (~15s).
+   * Used when conditions aren't met yet (e.g., outside business hours) but we don't
+   * want to reschedule to a specific time — just retry every poll.
+   */
+  static async defer(id: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase client not initialized')
+
+    const { error } = await supabase
+      .from('event_queue')
+      .update({
+        status: 'pending',
+        started_at: null,
+      })
+      .eq('id', id)
+
+    if (error) throw new Error(`Error deferring event: ${error.message}`)
   }
 
   static async complete(id: string): Promise<void> {
@@ -71,7 +118,7 @@ export class EventQueueService {
       .from('event_queue')
       .update({
         status: 'completed',
-        completed_at: new Date().toISOString(),
+        completed_at: toBrazilTimestamp(),
       })
       .eq('id', id)
 
@@ -107,7 +154,7 @@ export class EventQueueService {
           status: 'pending',
           retry_count: newRetryCount,
           error_message: errorMessage,
-          scheduled_at: nextAttempt.toISOString(),
+          scheduled_at: toBrazilTimestamp(nextAttempt),
           started_at: null,
         })
         .eq('id', id)
@@ -122,7 +169,7 @@ export class EventQueueService {
           status: 'failed',
           retry_count: newRetryCount,
           error_message: errorMessage,
-          completed_at: new Date().toISOString(),
+          completed_at: toBrazilTimestamp(),
         })
         .eq('id', id)
 
@@ -132,7 +179,8 @@ export class EventQueueService {
   }
 
   /**
-   * Cancel all pending events matching a filter on payload fields.
+   * Cancel all pending events for a specific lead.
+   * Uses JSONB containment operator (@>) which is reliable in Supabase JS.
    */
   static async cancelByLeadId(leadId: string): Promise<number> {
     if (!supabase) throw new Error('Supabase client not initialized')
@@ -141,7 +189,7 @@ export class EventQueueService {
       .from('event_queue')
       .update({ status: 'cancelled' })
       .eq('status', 'pending')
-      .eq('payload->>lead_id', leadId)
+      .contains('payload', { lead_id: leadId })
       .select('id')
 
     if (error) throw new Error(`Error cancelling events: ${error.message}`)
@@ -155,17 +203,13 @@ export class EventQueueService {
   static async cancelByFilter(eventType: string, payloadFilter: Record<string, any>): Promise<number> {
     if (!supabase) throw new Error('Supabase client not initialized')
 
-    let query = supabase
+    const { data, error } = await supabase
       .from('event_queue')
       .update({ status: 'cancelled' })
       .eq('status', 'pending')
       .eq('event_type', eventType)
-
-    for (const [key, value] of Object.entries(payloadFilter)) {
-      query = query.eq(`payload->>${key}`, String(value))
-    }
-
-    const { data, error } = await query.select('id')
+      .contains('payload', payloadFilter)
+      .select('id')
 
     if (error) throw new Error(`Error cancelling events: ${error.message}`)
     return data?.length || 0

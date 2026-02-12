@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
-import { EventQueueService, EventQueueItem } from './eventQueueService'
+import { EventQueueService, EventQueueItem, toBrazilTimestamp } from './eventQueueService'
+import { DeferEvent } from '../schedulers/eventQueueProcessor'
 import { AiAgentService } from './aiAgentService'
 import { ControleEnviosService } from './controleEnviosService'
 
@@ -82,14 +83,13 @@ export class FollowupService {
     const tracking = await this.upsertTracking(lead_id, cliente_id)
 
     // 4. Calculate next_send_at = now + intervals[0] minutes
+    //    Business hours check happens at execution time in handleFollowUpSend,
+    //    so config changes take effect even after scheduling.
     const intervals = config.intervals as number[]
     const delayMinutes = intervals[0] || 30
-    let scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000)
+    const scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000)
 
-    // 5. Adjust for business hours
-    scheduledAt = this.getNextValidSlot(config.sending_schedule, scheduledAt)
-
-    // 6. Enqueue follow_up_send for step 1
+    // 5. Enqueue follow_up_send for step 1
     await EventQueueService.enqueue(
       cliente_id,
       'follow_up_send',
@@ -103,13 +103,13 @@ export class FollowupService {
     await supabase
       .from('followup_tracking')
       .update({
-        last_ai_message_at: new Date().toISOString(),
-        next_send_at: scheduledAt.toISOString(),
-        updated_at: new Date().toISOString(),
+        last_ai_message_at: toBrazilTimestamp(),
+        next_send_at: toBrazilTimestamp(scheduledAt),
+        updated_at: toBrazilTimestamp(),
       })
       .eq('id', tracking.id)
 
-    console.log(`[Followup] Scheduled follow-up step 1 for lead ${lead_id} at ${scheduledAt.toISOString()}`)
+    console.log(`[Followup] Scheduled follow-up step 1 for lead ${lead_id} at ${toBrazilTimestamp(scheduledAt)}`)
   }
 
   /**
@@ -130,8 +130,8 @@ export class FollowupService {
         status: 'responded',
         current_step: 0,
         next_send_at: null,
-        last_lead_message_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        last_lead_message_at: toBrazilTimestamp(),
+        updated_at: toBrazilTimestamp(),
       })
       .eq('lead_id', lead_id)
 
@@ -189,7 +189,7 @@ export class FollowupService {
           console.log(`[Followup] Lead ${lead_id} sent a message since last AI message, aborting`)
           await supabase
             .from('followup_tracking')
-            .update({ status: 'responded', current_step: 0, next_send_at: null, updated_at: new Date().toISOString() })
+            .update({ status: 'responded', current_step: 0, next_send_at: null, updated_at: toBrazilTimestamp() })
             .eq('id', tracking.id)
           return
         }
@@ -203,43 +203,23 @@ export class FollowupService {
       return
     }
 
-    // 5. Check business hours
+    // 5. Check business hours — if outside, defer (retry every ~15s until valid)
     const now = this.getBrazilNow()
     if (!this.isWithinBusinessHours(config.sending_schedule, now)) {
-      const nextSlot = this.getNextValidSlot(config.sending_schedule, now)
-      console.log(`[Followup] Outside business hours, rescheduling to ${nextSlot.toISOString()}`)
-      await EventQueueService.enqueue(
-        cliente_id, 'follow_up_send',
-        { lead_id, cliente_id, step },
-        nextSlot, 5
-      )
-      return
+      throw new DeferEvent(`Outside business hours for client ${cliente_id}`)
     }
 
-    // 6. Check daily limit
+    // 6. Check daily limit — if exceeded, defer (retry every ~15s until next day)
     const today = this.getBrazilToday()
     const limitCheck = await ControleEnviosService.podeEnviarMensagem(today, cliente_id)
     if (!limitCheck.podeEnviar) {
-      console.log(`[Followup] Daily limit reached for client ${cliente_id}`)
-      await EventQueueService.enqueue(
-        cliente_id, 'daily_limit_reached',
-        { lead_id, cliente_id }, undefined, 3
-      )
-      // Reschedule for next business day
-      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-      const nextSlot = this.getNextValidSlot(config.sending_schedule, tomorrow)
-      await EventQueueService.enqueue(
-        cliente_id, 'follow_up_send',
-        { lead_id, cliente_id, step },
-        nextSlot, 5
-      )
-      return
+      throw new DeferEvent(`Daily limit reached for client ${cliente_id}`)
     }
 
     // 7. Update tracking to in_progress
     await supabase
       .from('followup_tracking')
-      .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+      .update({ status: 'in_progress', updated_at: toBrazilTimestamp() })
       .eq('id', tracking.id)
 
     // 8. Execute AI Agent
@@ -271,8 +251,7 @@ export class FollowupService {
       const intervals = config.intervals as number[]
       if (step < config.max_attempts) {
         const nextDelay = intervals[step] || intervals[intervals.length - 1] || 1440
-        let nextSendAt = new Date(Date.now() + nextDelay * 60 * 1000)
-        nextSendAt = this.getNextValidSlot(config.sending_schedule, nextSendAt)
+        const nextSendAt = new Date(Date.now() + nextDelay * 60 * 1000)
 
         await EventQueueService.enqueue(
           cliente_id, 'follow_up_send',
@@ -285,12 +264,12 @@ export class FollowupService {
           .update({
             status: 'waiting',
             current_step: step,
-            next_send_at: nextSendAt.toISOString(),
-            updated_at: new Date().toISOString(),
+            next_send_at: toBrazilTimestamp(nextSendAt),
+            updated_at: toBrazilTimestamp(),
           })
           .eq('id', tracking.id)
 
-        console.log(`[Followup] Step ${step} sent for lead ${lead_id}. Next step ${step + 1} at ${nextSendAt.toISOString()}`)
+        console.log(`[Followup] Step ${step} sent for lead ${lead_id}. Next step ${step + 1} at ${toBrazilTimestamp(nextSendAt)}`)
       } else {
         // All attempts exhausted
         await EventQueueService.enqueue(
@@ -304,7 +283,7 @@ export class FollowupService {
             status: 'exhausted',
             current_step: step,
             next_send_at: null,
-            updated_at: new Date().toISOString(),
+            updated_at: toBrazilTimestamp(),
           })
           .eq('id', tracking.id)
 
@@ -324,7 +303,7 @@ export class FollowupService {
       // Restore tracking to waiting so retry can pick it up
       await supabase
         .from('followup_tracking')
-        .update({ status: 'waiting', updated_at: new Date().toISOString() })
+        .update({ status: 'waiting', updated_at: toBrazilTimestamp() })
         .eq('id', tracking.id)
 
       throw error // Re-throw so EventQueueProcessor handles retry
@@ -340,7 +319,7 @@ export class FollowupService {
 
     await supabase
       .from('followup_tracking')
-      .update({ status: 'exhausted', next_send_at: null, updated_at: new Date().toISOString() })
+      .update({ status: 'exhausted', next_send_at: null, updated_at: toBrazilTimestamp() })
       .eq('lead_id', lead_id)
 
     console.log(`[Followup] Lead ${lead_id} marked as exhausted`)
@@ -360,7 +339,7 @@ export class FollowupService {
     // 2. Update tracking to cancelled
     await supabase
       .from('followup_tracking')
-      .update({ status: 'cancelled', next_send_at: null, updated_at: new Date().toISOString() })
+      .update({ status: 'cancelled', next_send_at: null, updated_at: toBrazilTimestamp() })
       .eq('lead_id', lead_id)
 
     // BR-10: Keep ai_habilitada = true (do NOT set to false)
@@ -412,7 +391,7 @@ export class FollowupService {
         .from('followup_config')
         .update({
           ...input,
-          updated_at: new Date().toISOString(),
+          updated_at: toBrazilTimestamp(),
         })
         .eq('id', existing.id)
         .select()
@@ -493,8 +472,8 @@ export class FollowupService {
           status: 'waiting',
           current_step: 0,
           cycle_count: existing.cycle_count + 1,
-          last_ai_message_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          last_ai_message_at: toBrazilTimestamp(),
+          updated_at: toBrazilTimestamp(),
         })
         .eq('id', existing.id)
         .select()
@@ -512,7 +491,7 @@ export class FollowupService {
         status: 'waiting',
         current_step: 0,
         cycle_count: 1,
-        last_ai_message_at: new Date().toISOString(),
+        last_ai_message_at: toBrazilTimestamp(),
       })
       .select()
       .single()
