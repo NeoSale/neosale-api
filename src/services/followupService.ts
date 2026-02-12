@@ -58,31 +58,36 @@ export class FollowupService {
   /**
    * Handler for ai_message_sent event.
    * Triggered when N8N notifies that AI has responded to a lead.
-   * Creates/resets tracking and schedules the first follow_up_send.
+   * Automatically cancels any previous follow-ups (since trigger implies lead responded),
+   * then starts a new follow-up cycle.
    */
   static async handleAiMessageSent(event: EventQueueItem): Promise<void> {
     const { lead_id, cliente_id } = event.payload
 
-    // 1. Load config - if follow-up is not active, skip
+    // 1. Cancel ALL pending events for this lead (not just follow_up_send)
+    //    The fact that /trigger was called means the lead responded → AI replied
+    const cancelled = await EventQueueService.cancelByLeadId(lead_id)
+    if (cancelled > 0) {
+      console.log(`[Followup] Auto-cancelled ${cancelled} pending events for lead ${lead_id} (lead responded)`)
+    }
+
+    // 2. Load config - if follow-up is not active, skip
     const config = await this.getConfig(cliente_id)
     if (!config || !config.is_active) {
       console.log(`[Followup] Follow-up not active for client ${cliente_id}, skipping`)
       return
     }
 
-    // 2. Upsert tracking: reset step to 0, status to waiting, increment cycle
+    // 3. Upsert tracking: reset step to 0, status to waiting, increment cycle
     const tracking = await this.upsertTracking(lead_id, cliente_id)
 
-    // 3. Calculate next_send_at = now + intervals[0] minutes
+    // 4. Calculate next_send_at = now + intervals[0] minutes
     const intervals = config.intervals as number[]
     const delayMinutes = intervals[0] || 30
     let scheduledAt = new Date(Date.now() + delayMinutes * 60 * 1000)
 
-    // 4. Adjust for business hours
+    // 5. Adjust for business hours
     scheduledAt = this.getNextValidSlot(config.sending_schedule, scheduledAt)
-
-    // 5. Cancel any pending follow_up_send events for this lead
-    await EventQueueService.cancelByFilter('follow_up_send', { lead_id })
 
     // 6. Enqueue follow_up_send for step 1
     await EventQueueService.enqueue(
