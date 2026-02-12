@@ -52,11 +52,14 @@ import leadAtribuicaoRoutes from './routes/leadAtribuicaoRoutes'
 import notificationSettingsRoutes from './routes/notificationSettingsRoutes'
 import distributionReportRoutes from './routes/distributionReportRoutes'
 
+import llmConfigRoutes from './routes/llmConfigRoutes'
+import promptConfigRoutes from './routes/promptConfigRoutes'
 import prospectingRoutes from './routes/prospectingRoutes'
 import linkedinRoutes from './routes/linkedinRoutes'
 import adminRoutes from './routes/adminRoutes'
 import { errorHandler } from './middleware/errorHandler'
 import { ProspectingScheduler } from './schedulers/prospectingScheduler'
+import { EventQueueProcessor } from './schedulers/eventQueueProcessor'
 import packageJson from '../package.json'
 
 const app = express()
@@ -174,6 +177,8 @@ app.use('/api/vendedores', leadAtribuicaoRoutes) // Rota de dashboard de carga
 app.use('/api/settings/notifications', notificationSettingsRoutes) // Configurações de notificação
 app.use('/api/relatorios/distribuicao', distributionReportRoutes) // Relatórios de distribuição
 
+app.use('/api/llm-config', llmConfigRoutes)
+app.use('/api/prompt-config', promptConfigRoutes)
 app.use('/api/prospecting', prospectingRoutes)
 app.use('/api/linkedin', linkedinRoutes)
 app.use('/api/admin', adminRoutes)
@@ -221,6 +226,9 @@ async function startServer() {
 
     // Inicializar ProspectingScheduler (node-cron)
     await ProspectingScheduler.init()
+
+    // Inicializar EventQueueProcessor
+    await EventQueueProcessor.init()
 
     // Iniciar servidor
     app.listen(PORT, () => {

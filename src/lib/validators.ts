@@ -931,3 +931,41 @@ export type GenerateAccessTokenInput = z.infer<typeof generateAccessTokenSchema>
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>
 export type SyncGoogleCalendarInput = z.infer<typeof syncGoogleCalendarSchema>
 export type GoogleCalendarListQuery = z.infer<typeof googleCalendarListQuerySchema>
+
+// ============================================================
+// LLM Config Validators
+// ============================================================
+
+export const createLlmConfigSchema = z.object({
+  provider: z.enum(['openai', 'anthropic', 'google']),
+  model: z.string().min(1).max(100),
+  api_key: z.string().min(1),
+  temperature: z.number().min(0).max(2).optional().default(0.7),
+  max_tokens: z.number().int().min(1).max(128000).optional().default(1024),
+  is_active: z.boolean().optional().default(true),
+})
+
+export const updateLlmConfigSchema = z.object({
+  provider: z.enum(['openai', 'anthropic', 'google']).optional(),
+  model: z.string().min(1).max(100).optional(),
+  api_key: z.string().min(1).optional(),
+  temperature: z.number().min(0).max(2).optional(),
+  max_tokens: z.number().int().min(1).max(128000).optional(),
+  is_active: z.boolean().optional(),
+})
+
+export const testLlmConnectionSchema = z.object({
+  provider: z.enum(['openai', 'anthropic', 'google']),
+  model: z.string().min(1),
+  api_key: z.string().min(1),
+})
+
+export type CreateLlmConfigInput = z.infer<typeof createLlmConfigSchema>
+export type UpdateLlmConfigInput = z.infer<typeof updateLlmConfigSchema>
+export type TestLlmConnectionInput = z.infer<typeof testLlmConnectionSchema>
+
+// Prompt Config validators
+export const upsertPromptConfigSchema = z.object({
+  prompt: z.string().min(1),
+  changed_by: z.string().uuid().optional(),
+})
