@@ -23,6 +23,13 @@ export class FollowupController {
 
       const { lead_id, cliente_id } = parsed.data
 
+      // Cancel any existing pending events for this lead BEFORE enqueuing new one.
+      // This prevents duplicate pending events when trigger is called multiple times.
+      const cancelled = await EventQueueService.cancelByLeadId(lead_id)
+      if (cancelled > 0) {
+        console.log(`[FollowupController] Pre-cancelled ${cancelled} pending events for lead ${lead_id}`)
+      }
+
       await EventQueueService.enqueue(
         cliente_id,
         'ai_message_sent',
