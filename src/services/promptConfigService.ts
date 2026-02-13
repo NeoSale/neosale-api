@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { ParametroService } from './parametroService'
+import { toBrazilTimestamp } from './eventQueueService'
 
 export interface PromptConfig {
   id: string
@@ -108,7 +109,7 @@ export class PromptConfigService {
         .from('prompt_config')
         .update({
           prompt,
-          updated_at: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+          updated_at: toBrazilTimestamp(),
         })
         .eq('id', existing.id)
         .select()
@@ -126,7 +127,7 @@ export class PromptConfigService {
         context,
         prompt,
         is_active: true,
-        updated_at: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
+        updated_at: toBrazilTimestamp(),
       })
       .select()
       .single()

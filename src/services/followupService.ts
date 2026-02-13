@@ -227,16 +227,34 @@ export class FollowupService {
     const stepTemplates = (config.step_templates as string[]) || []
     const stepTemplate = stepTemplates[step - 1] || ''
 
+    // Calculate tempo_silencio (time since last lead response)
+    let tempoSilencio = ''
+    if (tracking.last_ai_message_at) {
+      const lastMessageDate = new Date(tracking.last_ai_message_at)
+      const diffMs = Date.now() - lastMessageDate.getTime()
+      const diffMinutes = Math.floor(diffMs / 60000)
+      if (diffMinutes < 60) {
+        tempoSilencio = `${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`
+      } else if (diffMinutes < 1440) {
+        const hours = Math.floor(diffMinutes / 60)
+        tempoSilencio = `${hours} hora${hours !== 1 ? 's' : ''}`
+      } else {
+        const days = Math.floor(diffMinutes / 1440)
+        tempoSilencio = `${days} dia${days !== 1 ? 's' : ''}`
+      }
+    }
+
     console.log(`[Followup] Executing AI Agent for lead ${lead_id}, step ${step}/${config.max_attempts}`)
     console.log(`[Followup] Step template (${stepTemplate ? stepTemplate.length + ' chars' : 'empty'}): ${stepTemplate ? stepTemplate.substring(0, 100) + '...' : '(none)'}`)
     console.log(`[Followup] Config has ${stepTemplates.length} templates, max_attempts=${config.max_attempts}`)
+    console.log(`[Followup] Tempo silêncio: ${tempoSilencio || '(unknown)'}`)
 
     try {
       const result = await AiAgentService.execute({
         leadId: lead_id,
         clienteId: cliente_id,
         context: 'follow_up',
-        metadata: { stepNumber: step, stepTemplate },
+        metadata: { stepTemplate, tempoSilencio },
       })
 
       if (!result.success) {

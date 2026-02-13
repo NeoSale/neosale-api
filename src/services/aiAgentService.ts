@@ -85,7 +85,6 @@ export class AiAgentService {
             promptTemplate: systemPromptFollowup?.valor || '',
             phone: agentData.phone,
             leadName: agentData.leadName,
-            contextPrompt,
             metadata: ctx.metadata,
           })
         : this.composeSystemPrompt({
@@ -391,17 +390,19 @@ export class AiAgentService {
   /**
    * Compose system prompt for follow-up messages using the parametrized template.
    *
-   * Loads the prompt template from parametros (system_prompt_followup) and replaces
-   * variables: {hoje}, {data}, {hora}, {dia_semana}, {nome}, {telefone},
-   * {contextPrompt}, {template}.
+   * Standard variables (shared across all prompts):
+   *   {hoje}, {data}, {hora}, {dia_semana}
    *
-   * Falls back to a simple default if the parameter is not configured.
+   * Follow-up specific variables:
+   *   {step}            - Step template text
+   *   {nome}            - Lead first name
+   *   {telefone}        - Lead phone number
+   *   {tempo_silencio}  - Time since last lead response
    */
   private static composeFollowUpSystemPrompt(params: {
     promptTemplate: string
     phone: string
     leadName: string
-    contextPrompt: string
     metadata?: Record<string, any> | undefined
   }): string {
     const now = new Date()
@@ -412,18 +413,17 @@ export class AiAgentService {
 
     const firstName = (params.leadName || '').split(' ')[0] || ''
     const stepTemplate = params.metadata?.stepTemplate || ''
+    const tempoSilencio = params.metadata?.tempoSilencio || ''
 
-    const template = params.promptTemplate
-
-    return template
+    return params.promptTemplate
       .replace(/\{hoje\}/g, hoje)
       .replace(/\{data\}/g, brazilDate)
       .replace(/\{hora\}/g, brazilHour)
       .replace(/\{dia_semana\}/g, dayOfWeek)
       .replace(/\{nome\}/g, firstName)
       .replace(/\{telefone\}/g, params.phone)
-      .replace(/\{contextPrompt\}/g, params.contextPrompt || '')
-      .replace(/\{template\}/g, stepTemplate)
+      .replace(/\{tempo_silencio\}/g, tempoSilencio)
+      .replace(/\{step\}/g, stepTemplate)
   }
 
   /**
