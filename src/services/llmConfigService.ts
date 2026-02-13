@@ -65,7 +65,7 @@ export class LlmConfigService {
         temperature: input.temperature ?? 0.7,
         max_tokens: input.max_tokens ?? 1024,
         is_active: input.is_active ?? true,
-        updated_at: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        updated_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -88,7 +88,7 @@ export class LlmConfigService {
       .from('llm_config')
       .update({
         ...input,
-        updated_at: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+        updated_at: new Date().toISOString()
       })
       .eq('cliente_id', clienteId)
       .select()
