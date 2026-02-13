@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { ParametroService } from './parametroService'
+import { toBrazilTimestamp } from './eventQueueService'
 
 export interface LlmConfig {
   id: string
@@ -65,7 +66,7 @@ export class LlmConfigService {
         temperature: input.temperature ?? 0.7,
         max_tokens: input.max_tokens ?? 1024,
         is_active: input.is_active ?? true,
-        updated_at: new Date().toISOString()
+        updated_at: toBrazilTimestamp()
       })
       .select()
       .single()
@@ -88,7 +89,7 @@ export class LlmConfigService {
       .from('llm_config')
       .update({
         ...input,
-        updated_at: new Date().toISOString()
+        updated_at: toBrazilTimestamp()
       })
       .eq('cliente_id', clienteId)
       .select()
