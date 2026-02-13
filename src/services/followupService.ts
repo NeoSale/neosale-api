@@ -83,9 +83,9 @@ export class FollowupService {
 
     // 3. Check if lead responded to an active follow-up cycle
     //    If current_step >= 1, the lead received at least 1 follow-up and is now responding.
-    //    Status can be 'waiting', 'in_progress', or even 'responded' (if /cancel ran first).
     if (!supabase) throw new Error('Supabase client not initialized')
     const existing = await this.getTrackingByLead(lead_id)
+    console.log(`[Followup] Response check for lead ${lead_id}: tracking=${existing ? `id=${existing.id}, step=${existing.current_step}, status=${existing.status}` : 'null'}`)
     if (existing && existing.current_step >= 1) {
       console.log(`[Followup] Lead ${lead_id} responded after step ${existing.current_step} (status was '${existing.status}'), logging response`)
       const { error: logError } = await supabase

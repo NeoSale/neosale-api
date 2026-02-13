@@ -6,5 +6,6 @@ VALUES ('apikey_openai', '')
 ON CONFLICT (chave) DO NOTHING;
 
 INSERT INTO parametros (chave, valor)
-VALUES ('modelo_openai', 'gpt-4o-mini')
+VALUES ('modelo_openai', 'gpt-4.1-mini')
 ON CONFLICT (chave) DO NOTHING;
+    

@@ -5,7 +5,7 @@
 -- Follow-up variables: {step}, {nome}, {telefone}, {tempo_silencio}
 
 INSERT INTO parametros (chave, valor)
-VALUES ('system_prompt_followup', 'Você é um assistente de vendas. Adapte a [step] abaixo personalizada com o primeiro nome do lead [nome] e continuando a conversa anterior. Depois retorne somente o texto da [step].
+VALUES ('prompt_followup', 'Você é um assistente de vendas. Adapte a [step] abaixo personalizada com o primeiro nome do lead [nome] e continuando a conversa anterior. Depois retorne somente o texto da [step].
 
 ## Regras
 - Seja natural, amigável e direto
