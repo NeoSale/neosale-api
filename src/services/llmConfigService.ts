@@ -126,6 +126,23 @@ export class LlmConfigService {
       }
     }
 
+    // Fallback to OpenAI params from parametros table
+    try {
+      const apiKeyParam = await ParametroService.getByChave('apikey_openai')
+      if (apiKeyParam?.valor) {
+        const modelParam = await ParametroService.getByChave('modelo_openai')
+        return {
+          provider: 'openai',
+          model: modelParam?.valor || 'gpt-4o-mini',
+          apiKey: apiKeyParam.valor,
+          temperature: 0.7,
+          maxTokens: 1024
+        }
+      }
+    } catch {
+      // Ignore errors, continue to next fallback
+    }
+
     // Fallback to Anthropic params from parametros table
     try {
       const apiKeyParam = await ParametroService.getByChave('apikey_anthropic')
@@ -141,18 +158,6 @@ export class LlmConfigService {
       }
     } catch {
       // Ignore errors, continue to next fallback
-    }
-
-    // Fallback to environment variable
-    const envKey = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY
-    if (envKey) {
-      return {
-        provider: 'openai',
-        model: 'gpt-4.1-mini',
-        apiKey: envKey,
-        temperature: 0.7,
-        maxTokens: 1024
-      }
     }
 
     throw new Error('No LLM configuration found. Configure an API key in Settings > AI or set OPENAI_API_KEY environment variable.')

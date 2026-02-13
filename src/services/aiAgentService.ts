@@ -26,6 +26,7 @@ interface AgentData {
   agent: any
   instanceName: string
   phone: string
+  leadName: string
   evolutionApiKey: string
 }
 
@@ -61,28 +62,54 @@ export class AiAgentService {
       const agentData = await this.loadAgentForLead(ctx.leadId, ctx.clienteId)
 
       // 4. Load system prompts from parametros
-      const [promptProtecao, promptTools, promptAgendamento, promptNaoAgendamento] = await Promise.all([
-        ParametroService.getByChave('prompt_sistema_protecao_agentes'),
-        ParametroService.getByChave('prompt_tools'),
-        ParametroService.getByChave('prompt_agendamento'),
-        ParametroService.getByChave('prompt_nao_agendamento'),
-      ])
+      let promptProtecao = null, promptTools = null, promptAgendamento = null, promptNaoAgendamento = null
+      let systemPromptFollowup = null
+      if (ctx.context === 'follow_up') {
+        systemPromptFollowup = await ParametroService.getByChave('system_prompt_followup')
+      } else {
+        [promptProtecao, promptTools, promptAgendamento, promptNaoAgendamento] = await Promise.all([
+          ParametroService.getByChave('prompt_sistema_protecao_agentes'),
+          ParametroService.getByChave('prompt_tools'),
+          ParametroService.getByChave('prompt_agendamento'),
+          ParametroService.getByChave('prompt_nao_agendamento'),
+        ])
+      }
 
       // 5. Load last 20 messages from n8n_chat_histories
       const chatHistory = await this.loadChatHistory(ctx.leadId)
 
       // 6. Compose system prompt
-      const systemPrompt = this.composeSystemPrompt({
-        phone: agentData.phone,
-        promptTools: promptTools?.valor || '',
-        agentPrompt: agentData.agent?.prompt || '',
-        contextPrompt,
-        hasAgendamento: agentData.agent?.agendamento === true,
-        promptAgendamento: promptAgendamento?.valor || '',
-        promptNaoAgendamento: promptNaoAgendamento?.valor || '',
-        promptProtecao: promptProtecao?.valor || '',
-        metadata: ctx.metadata,
-      })
+      const isFollowUp = ctx.context === 'follow_up'
+      const systemPrompt = isFollowUp
+        ? this.composeFollowUpSystemPrompt({
+            promptTemplate: systemPromptFollowup?.valor || '',
+            phone: agentData.phone,
+            leadName: agentData.leadName,
+            contextPrompt,
+            metadata: ctx.metadata,
+          })
+        : this.composeSystemPrompt({
+            phone: agentData.phone,
+            promptTools: promptTools?.valor || '',
+            agentPrompt: agentData.agent?.prompt || '',
+            contextPrompt,
+            hasAgendamento: agentData.agent?.agendamento === true,
+            promptAgendamento: promptAgendamento?.valor || '',
+            promptNaoAgendamento: promptNaoAgendamento?.valor || '',
+            promptProtecao: promptProtecao?.valor || '',
+            metadata: ctx.metadata,
+          })
+
+      // Log system prompt and chat history for debugging
+      console.log(`[AiAgent] Context: ${ctx.context}, Lead: ${ctx.leadId}`)
+      console.log(`[AiAgent] Metadata: ${JSON.stringify(ctx.metadata || {})}`)
+      console.log(`[AiAgent] Context prompt (${contextPrompt ? contextPrompt.length + ' chars' : 'empty'}): ${contextPrompt ? contextPrompt.substring(0, 150) + '...' : '(none)'}`)
+      console.log(`[AiAgent] System prompt (${systemPrompt.length} chars):\n${systemPrompt.substring(0, 500)}...`)
+      console.log(`[AiAgent] Chat history: ${chatHistory.length} messages`)
+      if (chatHistory.length > 0) {
+        const lastMsg = chatHistory[chatHistory.length - 1]
+        console.log(`[AiAgent] Last message in history: [${lastMsg.role}] ${lastMsg.content.substring(0, 100)}...`)
+      }
 
       // 7. Call LLM
       const llm = LlmProviderFactory.create(llmConfig.provider, llmConfig.apiKey)
@@ -99,6 +126,8 @@ export class AiAgentService {
       if (!llmResponse.content) {
         throw new Error('LLM returned empty response')
       }
+
+      console.log(`[AiAgent] LLM response (${llmResponse.content.length} chars, ${llmResponse.totalTokens} tokens): ${llmResponse.content.substring(0, 200)}`)
 
       // 8. Process response: strip markdown → split \n\n
       const cleanText = this.stripMarkdown(llmResponse.content)
@@ -224,7 +253,7 @@ export class AiAgentService {
     // Get lead data
     const { data: lead, error: leadError } = await supabase
       .from('leads')
-      .select('telefone, instance_name')
+      .select('nome, telefone, instance_name')
       .eq('id', leadId)
       .eq('cliente_id', clienteId)
       .single()
@@ -270,6 +299,7 @@ export class AiAgentService {
       agent,
       instanceName: lead.instance_name,
       phone: lead.telefone,
+      leadName: lead.nome || '',
       evolutionApiKey,
     }
   }
@@ -333,14 +363,6 @@ export class AiAgentService {
     parts.push(`Dia da semana: ${dayOfWeek}`)
     parts.push(`Telefone do lead: ${params.phone}`)
 
-    if (params.metadata?.stepNumber) {
-      parts.push(`Follow-up step: ${params.metadata.stepNumber}`)
-    }
-
-    if (params.metadata?.stepTemplate) {
-      parts.push(`Template de mensagem para este follow-up (use como base, adapte com naturalidade):\n${params.metadata.stepTemplate}`)
-    }
-
     if (params.promptTools) {
       parts.push(params.promptTools)
     }
@@ -364,6 +386,44 @@ export class AiAgentService {
     }
 
     return parts.join('\n\n')
+  }
+
+  /**
+   * Compose system prompt for follow-up messages using the parametrized template.
+   *
+   * Loads the prompt template from parametros (system_prompt_followup) and replaces
+   * variables: {hoje}, {data}, {hora}, {dia_semana}, {nome}, {telefone},
+   * {contextPrompt}, {template}.
+   *
+   * Falls back to a simple default if the parameter is not configured.
+   */
+  private static composeFollowUpSystemPrompt(params: {
+    promptTemplate: string
+    phone: string
+    leadName: string
+    contextPrompt: string
+    metadata?: Record<string, any> | undefined
+  }): string {
+    const now = new Date()
+    const dayOfWeek = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long' })
+    const brazilDate = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'long', year: 'numeric' })
+    const brazilHour = now.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const hoje = `${dayOfWeek}, ${brazilDate} às ${brazilHour}`
+
+    const firstName = (params.leadName || '').split(' ')[0] || ''
+    const stepTemplate = params.metadata?.stepTemplate || ''
+
+    const template = params.promptTemplate
+
+    return template
+      .replace(/\{hoje\}/g, hoje)
+      .replace(/\{data\}/g, brazilDate)
+      .replace(/\{hora\}/g, brazilHour)
+      .replace(/\{dia_semana\}/g, dayOfWeek)
+      .replace(/\{nome\}/g, firstName)
+      .replace(/\{telefone\}/g, params.phone)
+      .replace(/\{contextPrompt\}/g, params.contextPrompt || '')
+      .replace(/\{template\}/g, stepTemplate)
   }
 
   /**

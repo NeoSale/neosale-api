@@ -124,13 +124,12 @@ export class FollowupService {
     // 1. Cancel all pending events for this lead
     const cancelled = await EventQueueService.cancelByLeadId(lead_id)
 
-    // 2. Update tracking to responded, reset step
+    // 2. Update tracking to responded (keep current_step so we know which step triggered the response)
     if (!supabase) throw new Error('Supabase client not initialized')
     const { error } = await supabase
       .from('followup_tracking')
       .update({
         status: 'responded',
-        current_step: 0,
         next_send_at: null,
         last_lead_message_at: toBrazilTimestamp(),
         updated_at: toBrazilTimestamp(),
@@ -227,6 +226,10 @@ export class FollowupService {
     // 8. Execute AI Agent (with step template if available)
     const stepTemplates = (config.step_templates as string[]) || []
     const stepTemplate = stepTemplates[step - 1] || ''
+
+    console.log(`[Followup] Executing AI Agent for lead ${lead_id}, step ${step}/${config.max_attempts}`)
+    console.log(`[Followup] Step template (${stepTemplate ? stepTemplate.length + ' chars' : 'empty'}): ${stepTemplate ? stepTemplate.substring(0, 100) + '...' : '(none)'}`)
+    console.log(`[Followup] Config has ${stepTemplates.length} templates, max_attempts=${config.max_attempts}`)
 
     try {
       const result = await AiAgentService.execute({
@@ -542,10 +545,10 @@ export class FollowupService {
 
     const total_sent = sentData?.length || 0
 
-    // Total responded trackings
+    // Total responded trackings (include current_step for per-step breakdown)
     const { data: respondedData } = await supabase
       .from('followup_tracking')
-      .select('id')
+      .select('id, current_step')
       .eq('cliente_id', clienteId)
       .eq('status', 'responded')
 
@@ -561,12 +564,21 @@ export class FollowupService {
     const totalCompleted = allTrackings?.length || 0
     const response_rate = totalCompleted > 0 ? (total_responded / totalCompleted) * 100 : 0
 
-    // By step
+    // By step: count sent from logs + responded from trackings
     const stepMap = new Map<number, { sent: number; responded: number }>()
     for (const log of sentData || []) {
       const entry = stepMap.get(log.step) || { sent: 0, responded: 0 }
       entry.sent++
       stepMap.set(log.step, entry)
+    }
+
+    // Count responses per step (current_step = step where lead responded)
+    for (const t of respondedData || []) {
+      if (t.current_step > 0) {
+        const entry = stepMap.get(t.current_step) || { sent: 0, responded: 0 }
+        entry.responded++
+        stepMap.set(t.current_step, entry)
+      }
     }
 
     const by_step = Array.from(stepMap.entries())

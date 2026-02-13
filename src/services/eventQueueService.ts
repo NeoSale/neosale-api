@@ -19,11 +19,21 @@ export interface EventQueueItem {
 /**
  * Returns a Brazil-timezone timestamp string for TIMESTAMP WITHOUT TIME ZONE columns.
  * Format: '2026-02-12 02:21:32' (Brazil local time, no timezone suffix).
+ * Used by followup_tracking and other tables that store Brazil-local times.
  */
 export function toBrazilTimestamp(date?: Date): string {
   const d = date || new Date()
   // 'sv-SE' locale gives ISO-like format: '2026-02-12 02:21:32'
   return d.toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' })
+}
+
+/**
+ * Returns a proper UTC ISO timestamp for TIMESTAMPTZ columns (event_queue).
+ * PostgreSQL correctly interprets ISO strings with 'Z' suffix as UTC.
+ */
+function toUTCTimestamp(date?: Date): string {
+  const d = date || new Date()
+  return d.toISOString()
 }
 
 export class EventQueueService {
@@ -43,7 +53,7 @@ export class EventQueueService {
         event_type: eventType,
         payload,
         priority: priority ?? 5,
-        scheduled_at: toBrazilTimestamp(scheduledAt),
+        scheduled_at: toUTCTimestamp(scheduledAt),
       })
       .select()
       .single()
@@ -66,7 +76,7 @@ export class EventQueueService {
       .from('event_queue')
       .select('*')
       .eq('status', 'pending')
-      .lte('scheduled_at', toBrazilTimestamp())
+      .lte('scheduled_at', toUTCTimestamp())
       .order('priority', { ascending: true })
       .order('scheduled_at', { ascending: true })
       .limit(1)
@@ -81,7 +91,7 @@ export class EventQueueService {
     // 2. Atomically update to 'processing' (only if still pending)
     const { data: updated, error: updateError } = await supabase
       .from('event_queue')
-      .update({ status: 'processing', started_at: toBrazilTimestamp() })
+      .update({ status: 'processing', started_at: toUTCTimestamp() })
       .eq('id', events[0].id)
       .eq('status', 'pending')
       .select()
@@ -118,7 +128,7 @@ export class EventQueueService {
       .from('event_queue')
       .update({
         status: 'completed',
-        completed_at: toBrazilTimestamp(),
+        completed_at: toUTCTimestamp(),
       })
       .eq('id', id)
 
@@ -154,7 +164,7 @@ export class EventQueueService {
           status: 'pending',
           retry_count: newRetryCount,
           error_message: errorMessage,
-          scheduled_at: toBrazilTimestamp(nextAttempt),
+          scheduled_at: toUTCTimestamp(nextAttempt),
           started_at: null,
         })
         .eq('id', id)
@@ -169,7 +179,7 @@ export class EventQueueService {
           status: 'failed',
           retry_count: newRetryCount,
           error_message: errorMessage,
-          completed_at: toBrazilTimestamp(),
+          completed_at: toUTCTimestamp(),
         })
         .eq('id', id)
 
