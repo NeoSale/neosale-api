@@ -38,7 +38,7 @@ export interface FollowupLog {
   lead_id: string
   cliente_id: string
   step: number
-  status: 'sent' | 'failed' | 'cancelled'
+  status: 'sent' | 'failed' | 'cancelled' | 'responded'
   error_message: string | null
   created_at: string
 }
@@ -81,10 +81,27 @@ export class FollowupService {
       return
     }
 
-    // 3. Upsert tracking: reset step to 0, status to waiting, increment cycle
+    // 3. Check if lead responded to an active follow-up cycle
+    //    If current_step >= 1, the lead received at least 1 follow-up and is now responding
+    if (!supabase) throw new Error('Supabase client not initialized')
+    const existing = await this.getTrackingByLead(lead_id)
+    if (existing && existing.current_step >= 1 && ['waiting', 'in_progress'].includes(existing.status)) {
+      console.log(`[Followup] Lead ${lead_id} responded after step ${existing.current_step}, logging response`)
+      await supabase
+        .from('followup_log')
+        .insert({
+          tracking_id: existing.id,
+          lead_id,
+          cliente_id,
+          step: existing.current_step,
+          status: 'responded',
+        })
+    }
+
+    // 4. Upsert tracking: reset step to 0, status to waiting, increment cycle
     const tracking = await this.upsertTracking(lead_id, cliente_id)
 
-    // 4. Calculate next_send_at = now + intervals[0] minutes
+    // 5. Calculate next_send_at = now + intervals[0] minutes
     //    Business hours check happens at execution time in handleFollowUpSend,
     //    so config changes take effect even after scheduling.
     const intervals = config.intervals as number[]
@@ -100,8 +117,7 @@ export class FollowupService {
       5
     )
 
-    // 7. Update tracking
-    if (!supabase) throw new Error('Supabase client not initialized')
+    // 6. Update tracking
     await supabase
       .from('followup_tracking')
       .update({
@@ -563,26 +579,19 @@ export class FollowupService {
 
     const total_sent = sentData?.length || 0
 
-    // Total responded trackings (include current_step for per-step breakdown)
+    // Total responded from logs (append-only, never overwritten by tracking resets)
     const { data: respondedData } = await supabase
-      .from('followup_tracking')
-      .select('id, current_step')
+      .from('followup_log')
+      .select('id, step')
       .eq('cliente_id', clienteId)
       .eq('status', 'responded')
 
     const total_responded = respondedData?.length || 0
 
-    // Response rate
-    const { data: allTrackings } = await supabase
-      .from('followup_tracking')
-      .select('id')
-      .eq('cliente_id', clienteId)
-      .in('status', ['responded', 'exhausted'])
+    // Response rate: responded / sent
+    const response_rate = total_sent > 0 ? (total_responded / total_sent) * 100 : 0
 
-    const totalCompleted = allTrackings?.length || 0
-    const response_rate = totalCompleted > 0 ? (total_responded / totalCompleted) * 100 : 0
-
-    // By step: count sent from logs + responded from trackings
+    // By step: count sent + responded from logs
     const stepMap = new Map<number, { sent: number; responded: number }>()
     for (const log of sentData || []) {
       const entry = stepMap.get(log.step) || { sent: 0, responded: 0 }
@@ -590,12 +599,11 @@ export class FollowupService {
       stepMap.set(log.step, entry)
     }
 
-    // Count responses per step (current_step = step where lead responded)
     for (const t of respondedData || []) {
-      if (t.current_step > 0) {
-        const entry = stepMap.get(t.current_step) || { sent: 0, responded: 0 }
+      if (t.step > 0) {
+        const entry = stepMap.get(t.step) || { sent: 0, responded: 0 }
         entry.responded++
-        stepMap.set(t.current_step, entry)
+        stepMap.set(t.step, entry)
       }
     }
 
