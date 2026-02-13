@@ -82,12 +82,13 @@ export class FollowupService {
     }
 
     // 3. Check if lead responded to an active follow-up cycle
-    //    If current_step >= 1, the lead received at least 1 follow-up and is now responding
+    //    If current_step >= 1, the lead received at least 1 follow-up and is now responding.
+    //    Status can be 'waiting', 'in_progress', or even 'responded' (if /cancel ran first).
     if (!supabase) throw new Error('Supabase client not initialized')
     const existing = await this.getTrackingByLead(lead_id)
-    if (existing && existing.current_step >= 1 && ['waiting', 'in_progress'].includes(existing.status)) {
-      console.log(`[Followup] Lead ${lead_id} responded after step ${existing.current_step}, logging response`)
-      await supabase
+    if (existing && existing.current_step >= 1) {
+      console.log(`[Followup] Lead ${lead_id} responded after step ${existing.current_step} (status was '${existing.status}'), logging response`)
+      const { error: logError } = await supabase
         .from('followup_log')
         .insert({
           tracking_id: existing.id,
@@ -96,6 +97,9 @@ export class FollowupService {
           step: existing.current_step,
           status: 'responded',
         })
+      if (logError) {
+        console.error(`[Followup] Error logging response for lead ${lead_id}:`, logError.message)
+      }
     }
 
     // 4. Upsert tracking: reset step to 0, status to waiting, increment cycle
