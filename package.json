@@ -1,6 +1,6 @@
 {
   "name": "neosale-api",
-  "version": "1.24.5",
+  "version": "1.24.6",
   "private": true,
   "scripts": {
     "dev": "powershell -ExecutionPolicy Bypass -File scripts/kill-port-3000.ps1 && set PORT=3000 && nodemon src/server.ts",
