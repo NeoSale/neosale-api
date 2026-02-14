@@ -51,6 +51,33 @@ export class ChatService {
     }
   }
 
+  // Count messages sent today
+  static async getTodayCount(cliente_id: string): Promise<{ total: number; human: number; ai: number }> {
+    ChatService.checkSupabaseConnection();
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
+
+    const { data, error } = await supabase!
+      .from('chat')
+      .select('tipo')
+      .eq('cliente_id', cliente_id)
+      .gte('created_at', todayISO);
+
+    if (error) {
+      console.error('Error counting today messages:', error);
+      throw new Error(`Error counting messages: ${error.message}`);
+    }
+
+    const messages = data || [];
+    return {
+      total: messages.length,
+      human: messages.filter(m => m.tipo === 'human').length,
+      ai: messages.filter(m => m.tipo === 'ai').length,
+    };
+  }
+
   // Criar nova mensagem de chat
   static async create(data: CreateChatData): Promise<Chat> {
     ChatService.checkSupabaseConnection();

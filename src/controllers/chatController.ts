@@ -204,6 +204,29 @@ export class ChatController {
     }
   }
 
+  // GET /api/chat/stats/today - Count messages sent today
+  static async getTodayCount(req: Request, res: Response) {
+    try {
+      const cliente_id = req.headers['cliente_id'] as string;
+
+      if (!cliente_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente ID é obrigatório no cabeçalho'
+        });
+      }
+
+      const stats = await ChatService.getTodayCount(cliente_id);
+
+      return res.status(200).json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      return ChatController.handleError(res, error);
+    }
+  }
+
   // PUT /api/chat/:id - Atualizar mensagem
   static async update(req: Request, res: Response) {
     try {

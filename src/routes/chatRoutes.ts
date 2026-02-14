@@ -204,6 +204,28 @@ router.get('/', validateClienteId, ChatController.getAll);
 
 /**
  * @swagger
+ * /api/chat/stats/today:
+ *   get:
+ *     summary: Count messages sent today
+ *     tags: [Chat]
+ *     security:
+ *       - ClienteId: []
+ *     parameters:
+ *       - in: header
+ *         name: cliente_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: ID do cliente
+ *     responses:
+ *       200:
+ *         description: Today message counts
+ */
+router.get('/stats/today', validateClienteId, ChatController.getTodayCount);
+
+/**
+ * @swagger
  * /api/chat/{id}:
  *   get:
  *     summary: Buscar mensagem por ID
